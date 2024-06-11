@@ -1,5 +1,8 @@
 
+import 'package:flutter/foundation.dart';
+
 import '../models/user.dart';
+import '../services/request.dart';
 import '../services/web_service.dart'; // Import your WebService class
 
 class AuthRepository {
@@ -7,14 +10,20 @@ class AuthRepository {
 
   AuthRepository({required this.webService});
 
-  Future<User?> signInWithEmailAndPassword(String email, String password) async {
+  Future<String?> signInWithMobileAndPassword(String mobile, String password) async {
     try {
-      final data = await webService.postData('signin', {'email': email, 'password': password});
-      final user = User.fromJson(data); // Assuming you have a User model and a fromJson method
-      return user;
+      String request = frameLoginRequest(mobile, password);
+      if (kDebugMode) {
+        print(request);
+      }
+      final data = await webService.postData('login', request);
+
+      return data.toString();
     } catch (error) {
-      print("Error signing in: $error");
-      throw error;
+      if (kDebugMode) {
+        print("Error signing in: $error");
+      }
+      rethrow;
     }
   }
 

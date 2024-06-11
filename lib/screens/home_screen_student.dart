@@ -1,6 +1,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:sms/screens/attendance_screen.dart';
+import 'package:sms/screens/profile_screen.dart';
 
 import 'calendar_screen.dart';
 import 'messages_screen.dart';
@@ -11,7 +12,8 @@ class HomeScreenStudent extends StatelessWidget {
     Item(name: 'Calendar', imagePath: 'assets/images/calendar.png'),
     Item(name: 'Messages', imagePath: 'assets/images/messages.png'),
     Item(name: 'Attendance', imagePath: 'assets/images/attendance.png'),
-    Item(name: 'Item 4', imagePath: 'assets/images/students3.png'),
+    Item(name: 'Profile', imagePath: 'assets/images/students2.png'),
+    Item(name: 'Item 5', imagePath: 'assets/images/students3.png'),
     Item(name: 'Item 5', imagePath: 'assets/images/students3.png'),
   ];
 
@@ -64,6 +66,13 @@ class GridItem extends StatelessWidget {
                 context,
                 MaterialPageRoute(
                   builder: (context) => AttendanceScreen(),
+                ),
+              );
+            }else if (item.name == 'Profile') {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => ProfileScreen(),
                 ),
               );
             }
