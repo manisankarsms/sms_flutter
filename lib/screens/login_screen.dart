@@ -8,6 +8,8 @@ import 'package:sms/screens/home_screen_student.dart';
 import 'package:sms/widgets/radio_list_tile.dart';
 import 'package:sms/widgets/text_form_field.dart';
 
+import 'home_screen_admin.dart';
+
 class LoginScreen extends StatefulWidget {
   @override
   _LoginScreenState createState() => _LoginScreenState();
@@ -16,7 +18,7 @@ class LoginScreen extends StatefulWidget {
 class _LoginScreenState extends State<LoginScreen> {
   String email = '';
   String password = '';
-  String userType = ''; // State variable to store selected user type
+  String userType = '';
 
   @override
   Widget build(BuildContext context) {
@@ -32,22 +34,22 @@ class _LoginScreenState extends State<LoginScreen> {
             ),
           );
         } else if (state is AuthAuthenticated) {
-          if (userType.isNotEmpty) {
-            // Navigate to the corresponding home screen based on the selected user type
-            switch (userType) {
-              case 'Student':
-                Navigator.pushReplacement(
-                  context,
-                  MaterialPageRoute(builder: (context) => HomeScreenStudent()),
-                );
-                break;
-              case 'Staff':
-                Navigator.pushReplacement(
-                  context,
-                  MaterialPageRoute(builder: (context) => HomeScreenStaff()),
-                );
-                break;
-            }
+          final user = state.user;
+          if (user.userType == 'Student') {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (context) => HomeScreenStudent()),
+            );
+          } else if (user.userType == 'Staff') {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (context) => HomeScreenStaff()),
+            );
+          } else if (user.userType == 'Admin') {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (context) => HomeScreenAdmin()),
+            );
           }
         }
       },
@@ -97,7 +99,6 @@ class _LoginScreenState extends State<LoginScreen> {
                   Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: <Widget>[
-                      // Email TextFormField
                       CustomTextFormField(
                         label: 'Email',
                         onChanged: (value) {
@@ -107,7 +108,6 @@ class _LoginScreenState extends State<LoginScreen> {
                         },
                       ),
                       SizedBox(height: 20),
-                      // Password TextFormField
                       CustomTextFormField(
                         label: 'Password',
                         obscureText: true,
@@ -118,17 +118,14 @@ class _LoginScreenState extends State<LoginScreen> {
                         },
                       ),
                       SizedBox(height: 20),
-                      // User type radio buttons
                       ElevatedButton(
                         onPressed: () {
                           if (userType.isNotEmpty) {
-                            // Dispatch login event if a user type is selected
                             authBloc.add(LoginButtonPressed(
                               email: email,
                               password: password,
                             ));
                           } else {
-                            // Show error message if no user type is selected
                             ScaffoldMessenger.of(context).showSnackBar(
                               const SnackBar(
                                 content: Text('Please select a user type.'),
@@ -139,7 +136,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         child: const Text('Login'),
                       ),
                     ],
-                  )
+                  ),
                 ],
               ),
             ),

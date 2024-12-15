@@ -1,5 +1,7 @@
 // auth_state.dart
+
 import 'package:equatable/equatable.dart';
+import '../../models/user.dart';
 
 abstract class AuthState extends Equatable {
   const AuthState();
@@ -12,7 +14,14 @@ class AuthInitial extends AuthState {}
 
 class AuthLoading extends AuthState {}
 
-class AuthSuccess extends AuthState {}
+class AuthAuthenticated extends AuthState {
+  final User user;
+
+  const AuthAuthenticated(this.user);
+
+  @override
+  List<Object> get props => [user];
+}
 
 class AuthFailure extends AuthState {
   final String error;
@@ -22,5 +31,3 @@ class AuthFailure extends AuthState {
   @override
   List<Object> get props => [error];
 }
-
-class AuthAuthenticated extends AuthState {} // New state for authentication success

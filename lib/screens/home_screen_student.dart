@@ -1,8 +1,7 @@
-
 import 'package:flutter/material.dart';
 import 'package:sms/screens/attendance_screen.dart';
 import 'package:sms/screens/profile_screen.dart';
-
+import '../models/item.dart';
 import 'calendar_screen.dart';
 import 'messages_screen.dart';
 
@@ -14,7 +13,7 @@ class HomeScreenStudent extends StatelessWidget {
     Item(name: 'Attendance', imagePath: 'assets/images/attendance.png'),
     Item(name: 'Profile', imagePath: 'assets/images/students2.png'),
     Item(name: 'Item 5', imagePath: 'assets/images/students3.png'),
-    Item(name: 'Item 5', imagePath: 'assets/images/students3.png'),
+    Item(name: 'Item 6', imagePath: 'assets/images/students3.png'),
   ];
 
   @override
@@ -23,11 +22,23 @@ class HomeScreenStudent extends StatelessWidget {
       appBar: AppBar(
         title: const Text('Student Home'),
       ),
-      body: GridView.count(
-        crossAxisCount: 3, // Number of columns
-        children: items.map((item) {
-          return GridItem(item: item);
-        }).toList(),
+      body: LayoutBuilder(
+        builder: (context, constraints) {
+          int crossAxisCount;
+          if (constraints.maxWidth > 1200) {
+            crossAxisCount = 5; // Large screens
+          } else if (constraints.maxWidth > 800) {
+            crossAxisCount = 3; // Medium screens
+          } else {
+            crossAxisCount = 2; // Small screens
+          }
+          return GridView.count(
+            crossAxisCount: crossAxisCount,
+            children: items.map((item) {
+              return GridItem(item: item);
+            }).toList(),
+          );
+        },
       ),
     );
   }
@@ -41,8 +52,12 @@ class GridItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.all(8.0),
+      padding: const EdgeInsets.all(16.0),
       child: Card(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12.0),
+        ),
+        elevation: 4.0,
         child: InkWell(
           onTap: () {
             // Handle tap on grid item
@@ -68,15 +83,14 @@ class GridItem extends StatelessWidget {
                   builder: (context) => AttendanceScreen(),
                 ),
               );
-            }else if (item.name == 'Profile') {
+            } else if (item.name == 'Profile') {
               Navigator.push(
                 context,
                 MaterialPageRoute(
                   builder: (context) => ProfileScreen(),
                 ),
               );
-            }
-            else {
+            } else {
               // Handle navigation for other items
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(
@@ -90,13 +104,14 @@ class GridItem extends StatelessWidget {
             children: [
               Image.asset(
                 item.imagePath,
-                width: 50,
-                height: 50,
+                width: 60,
+                height: 60,
                 fit: BoxFit.cover,
               ),
-              const SizedBox(height: 8), // Adjust spacing between image and text
+              const SizedBox(height: 12),
               Text(
                 item.name,
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
               ),
             ],
           ),
@@ -104,11 +119,4 @@ class GridItem extends StatelessWidget {
       ),
     );
   }
-}
-
-class Item {
-  final String name;
-  final String imagePath;
-
-  Item({required this.name, required this.imagePath});
 }

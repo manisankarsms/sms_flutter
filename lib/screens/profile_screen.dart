@@ -1,4 +1,14 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+
+import '../bloc/profile/profile_bloc.dart';
+import '../bloc/profile/profile_event.dart';
+import '../bloc/profile/profile_state.dart';
+import '../models/profile.dart';
+import '../repositories/mock_profile_repository.dart';
+import '../repositories/profile_repository.dart';
+import '../services/web_service.dart';
 
 class ProfileScreen extends StatefulWidget {
   @override
@@ -7,29 +17,24 @@ class ProfileScreen extends StatefulWidget {
 
 class _ProfileScreenState extends State<ProfileScreen> {
   final _formKey = GlobalKey<FormState>();
+  final IProfileRepository profileRepository = MockProfileRepository();
 
-  String studentName = "John Doe";
-  String studentId = "123456";
-  String email = "johndoe@example.com";
-  String phone = "123-456-7890";
-  String address = "123 Main St, City, State";
-  String dateOfBirth = "01/01/2000";
-  String gender = "Male";
-  String department = "Computer Science";
-  String yearOfStudy = "Sophomore";
-  String major = "Software Engineering";
-  String minor = "Mathematics";
-  String gpa = "3.8";
-  List<String> classes = ["CS101", "MATH201", "PHYS101"];
-  String academicAdvisor = "Dr. Smith";
-  String academicStanding = "Good";
-  List<String> scholarships = ["Dean's Scholarship", "Merit Scholarship"];
-  List<String> achievements = ["First Place in Hackathon", "Published Research Paper"];
-  List<String> activities = ["Coding Club", "Basketball Team"];
-  List<String> hobbies = ["Reading", "Gaming", "Traveling"];
-  String emergencyContactName = "Jane Doe";
-  String emergencyContactPhone = "987-654-3210";
-  String emergencyContactRelationship = "Mother";
+  Profile? _profile;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadProfile();
+  }
+
+  Future<void> _loadProfile() async {
+    String mobileNo = '555-555-5555';
+    String userId = '123456';
+    Profile profile = await profileRepository.fetchProfile(mobileNo, userId);
+    setState(() {
+      _profile = profile;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -37,121 +42,31 @@ class _ProfileScreenState extends State<ProfileScreen> {
       appBar: AppBar(
         title: Text('Profile'),
       ),
-      body: LayoutBuilder(
+      body: _profile == null
+          ? Center(child: CircularProgressIndicator())
+          : LayoutBuilder(
         builder: (context, constraints) {
           if (constraints.maxWidth > 600) {
-            // Web layout
-            return _buildWebLayout();
+            return _buildWebLayout(_profile!);
           } else {
-            // Mobile layout
-            return _buildMobileLayout();
+            return _buildMobileLayout(_profile!);
           }
         },
       ),
     );
   }
 
-  Widget _buildWebLayout() {
+  Widget _buildWebLayout(Profile profile) {
     return SingleChildScrollView(
       padding: EdgeInsets.all(32.0),
       child: Center(
         child: Container(
-          width: MediaQuery.of(context).size.width * 0.9, // Adjusts the width to 90% of the screen width
+          width: MediaQuery.of(context).size.width * 0.9,
           child: Form(
             key: _formKey,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Center(child: _buildProfilePicture()),
-                SizedBox(height: 16),
-                GridView.count(
-                  shrinkWrap: true,
-                  crossAxisCount: 4,
-                  crossAxisSpacing: 16,
-                  mainAxisSpacing: 0, // Remove space between rows
-                  padding: EdgeInsets.zero, // Remove padding around GridView
-                  children: [
-                    _buildTextInputField('Name', studentName, (value) {
-                      studentName = value;
-                    }),
-                    _buildTextInputField('ID', studentId, (value) {
-                      studentId = value;
-                    }),
-                    _buildTextInputField('Email', email, (value) {
-                      email = value;
-                    }),
-                    _buildTextInputField('Phone', phone, (value) {
-                      phone = value;
-                    }),
-                    _buildTextInputField('Address', address, (value) {
-                      address = value;
-                    }),
-                    _buildTextInputField('Date of Birth', dateOfBirth, (value) {
-                      dateOfBirth = value;
-                    }),
-                    _buildTextInputField('Gender', gender, (value) {
-                      gender = value;
-                    }),
-                    _buildTextInputField('Department', department, (value) {
-                      department = value;
-                    }),
-                    _buildTextInputField('Year of Study', yearOfStudy, (value) {
-                      yearOfStudy = value;
-                    }),
-                    _buildTextInputField('Major', major, (value) {
-                      major = value;
-                    }),
-                    _buildTextInputField('Minor', minor, (value) {
-                      minor = value;
-                    }),
-                    _buildTextInputField('GPA', gpa, (value) {
-                      gpa = value;
-                    }),
-                    _buildTextInputField('Classes Enrolled', classes.join(', '), (value) {
-                      classes = value.split(',').map((s) => s.trim()).toList();
-                    }),
-                    _buildTextInputField('Academic Advisor', academicAdvisor, (value) {
-                      academicAdvisor = value;
-                    }),
-                    _buildTextInputField('Academic Standing', academicStanding, (value) {
-                      academicStanding = value;
-                    }),
-                    _buildTextInputField('Scholarships', scholarships.join(', '), (value) {
-                      scholarships = value.split(',').map((s) => s.trim()).toList();
-                    }),
-                    _buildTextInputField('Achievements', achievements.join(', '), (value) {
-                      achievements = value.split(',').map((s) => s.trim()).toList();
-                    }),
-                    _buildTextInputField('Extracurricular Activities', activities.join(', '), (value) {
-                      activities = value.split(',').map((s) => s.trim()).toList();
-                    }),
-                    _buildTextInputField('Hobbies and Interests', hobbies.join(', '), (value) {
-                      hobbies = value.split(',').map((s) => s.trim()).toList();
-                    }),
-                    _buildTextInputField('Emergency Contact Name', emergencyContactName, (value) {
-                      emergencyContactName = value;
-                    }),
-                    _buildTextInputField('Emergency Contact Phone', emergencyContactPhone, (value) {
-                      emergencyContactPhone = value;
-                    }),
-                    _buildTextInputField('Emergency Contact Relationship', emergencyContactRelationship, (value) {
-                      emergencyContactRelationship = value;
-                    }),
-                  ],
-                ),
-                SizedBox(height: 16),
-                Center(
-                  child: ElevatedButton(
-                    onPressed: () {
-                      if (_formKey.currentState!.validate()) {
-                        _formKey.currentState!.save();
-                        // Logic to save profile changes
-                      }
-                    },
-                    child: Text('Save Profile'),
-                  ),
-                ),
-              ],
+              children: _buildFormFields(profile),
             ),
           ),
         ),
@@ -159,173 +74,142 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  Widget _buildMobileLayout() {
+  Widget _buildMobileLayout(Profile profile) {
     return SingleChildScrollView(
       padding: EdgeInsets.all(16.0),
       child: Form(
         key: _formKey,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Center(child: _buildProfilePicture()),
-            SizedBox(height: 16),
-            _buildTextInputField('Name', studentName, (value) {
-              studentName = value;
-            }),
-            _buildTextInputField('ID', studentId, (value) {
-              studentId = value;
-            }),
-            _buildTextInputField('Email', email, (value) {
-              email = value;
-            }),
-            _buildTextInputField('Phone', phone, (value) {
-              phone = value;
-            }),
-            _buildTextInputField('Address', address, (value) {
-              address = value;
-            }),
-            _buildTextInputField('Date of Birth', dateOfBirth, (value) {
-              dateOfBirth = value;
-            }),
-            _buildTextInputField('Gender', gender, (value) {
-              gender = value;
-            }),
-            _buildTextInputField('Department', department, (value) {
-              department = value;
-            }),
-            _buildTextInputField('Year of Study', yearOfStudy, (value) {
-              yearOfStudy = value;
-            }),
-            _buildTextInputField('Major', major, (value) {
-              major = value;
-            }),
-            _buildTextInputField('Minor', minor, (value) {
-              minor = value;
-            }),
-            _buildTextInputField('GPA', gpa, (value) {
-              gpa = value;
-            }),
-            _buildTextInputField('Classes Enrolled', classes.join(', '), (value) {
-              classes = value.split(',').map((s) => s.trim()).toList();
-            }),
-            _buildTextInputField('Academic Advisor', academicAdvisor, (value) {
-              academicAdvisor = value;
-            }),
-            _buildTextInputField('Academic Standing', academicStanding, (value) {
-              academicStanding = value;
-            }),
-            _buildTextInputField('Scholarships', scholarships.join(', '), (value) {
-              scholarships = value.split(',').map((s) => s.trim()).toList();
-            }),
-            _buildTextInputField('Achievements', achievements.join(', '), (value) {
-              achievements = value.split(',').map((s) => s.trim()).toList();
-            }),
-            _buildTextInputField('Extracurricular Activities', activities.join(', '), (value) {
-              activities = value.split(',').map((s) => s.trim()).toList();
-            }),
-            _buildTextInputField('Hobbies and Interests', hobbies.join(', '), (value) {
-              hobbies = value.split(',').map((s) => s.trim()).toList();
-            }),
-            _buildTextInputField('Emergency Contact Name', emergencyContactName, (value) {
-              emergencyContactName = value;
-            }),
-            _buildTextInputField('Emergency Contact Phone', emergencyContactPhone, (value) {
-              emergencyContactPhone = value;
-            }),
-            _buildTextInputField('Emergency Contact Relationship', emergencyContactRelationship, (value) {
-              emergencyContactRelationship = value;
-            }),
-            SizedBox(height: 16),
-            Center(
-              child: ElevatedButton(
-                onPressed: () {
-                  if (_formKey.currentState!.validate()) {
-                    _formKey.currentState!.save();
-                    // Logic to save profile changes
-                  }
-                },
-                child: Text('Save Profile'),
-              ),
-            ),
-          ],
+          children: _buildFormFields(profile),
         ),
+      ),
+    );
+  }
+
+  List<Widget> _buildFormFields(Profile profile) {
+    return [
+      Center(child: _buildProfilePicture()),
+      SizedBox(height: 16),
+      _buildTextInputField('Name', profile.studentName, (value) {
+        _profile = profile.copyWith(studentName: value);
+      }),
+      _buildTextInputField('ID', profile.studentId, (value) {
+        _profile = profile.copyWith(studentId: value);
+      }),
+      _buildTextInputField('Email', profile.email, (value) {
+        _profile = profile.copyWith(email: value);
+      }),
+      _buildTextInputField('Phone', profile.phone, (value) {
+        _profile = profile.copyWith(phone: value);
+      }),
+      _buildTextInputField('Address', profile.address, (value) {
+        _profile = profile.copyWith(address: value);
+      }),
+      _buildTextInputField('Date of Birth', profile.dateOfBirth, (value) {
+        _profile = profile.copyWith(dateOfBirth: value);
+      }),
+      _buildTextInputField('Gender', profile.gender, (value) {
+        _profile = profile.copyWith(gender: value);
+      }),
+      _buildTextInputField('Department', profile.department, (value) {
+        _profile = profile.copyWith(department: value);
+      }),
+      _buildTextInputField('Year of Study', profile.yearOfStudy, (value) {
+        _profile = profile.copyWith(yearOfStudy: value);
+      }),
+      _buildTextInputField('Major', profile.major, (value) {
+        _profile = profile.copyWith(major: value);
+      }),
+      _buildTextInputField('Minor', profile.minor, (value) {
+        _profile = profile.copyWith(minor: value);
+      }),
+      _buildTextInputField('GPA', profile.gpa.toString(), (value) {
+        _profile = profile.copyWith(gpa: double.parse(value));
+      }),
+      _buildTextInputField('Classes', profile.classes.join(', '), (value) {
+        _profile = profile.copyWith(classes: value.split(', ').toList());
+      }),
+      _buildTextInputField('Academic Advisor', profile.academicAdvisor, (value) {
+        _profile = profile.copyWith(academicAdvisor: value);
+      }),
+      _buildTextInputField('Academic Standing', profile.academicStanding, (value) {
+        _profile = profile.copyWith(academicStanding: value);
+      }),
+      _buildTextInputField('Scholarships', profile.scholarships.join(', '), (value) {
+        _profile = profile.copyWith(scholarships: value.split(', ').toList());
+      }),
+      _buildTextInputField('Achievements', profile.achievements.join(', '), (value) {
+        _profile = profile.copyWith(achievements: value.split(', ').toList());
+      }),
+      _buildTextInputField('Activities', profile.activities.join(', '), (value) {
+        _profile = profile.copyWith(activities: value.split(', ').toList());
+      }),
+      _buildTextInputField('Hobbies', profile.hobbies.join(', '), (value) {
+        _profile = profile.copyWith(hobbies: value.split(', ').toList());
+      }),
+      _buildTextInputField('Emergency Contact Name', profile.emergencyContactName, (value) {
+        _profile = profile.copyWith(emergencyContactName: value);
+      }),
+      _buildTextInputField('Emergency Contact Phone', profile.emergencyContactPhone, (value) {
+        _profile = profile.copyWith(emergencyContactPhone: value);
+      }),
+      _buildTextInputField('Emergency Contact Relationship', profile.emergencyContactRelationship, (value) {
+        _profile = profile.copyWith(emergencyContactRelationship: value);
+      }),
+      SizedBox(height: 16),
+      Center(
+        child: ElevatedButton(
+          onPressed: _updateProfile,
+          child: Text('Save'),
+        ),
+      ),
+    ];
+  }
+
+  Widget _buildTextInputField(String label, String initialValue, ValueChanged<String> onChanged) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8.0),
+      child: TextFormField(
+        initialValue: initialValue,
+        decoration: InputDecoration(labelText: label),
+        onChanged: onChanged,
+        validator: (value) {
+          if (value == null || value.isEmpty) {
+            return 'Please enter $label';
+          }
+          return null;
+        },
       ),
     );
   }
 
   Widget _buildProfilePicture() {
-    return Column(
-      children: [
-        CircleAvatar(
-          radius: 50,
-          backgroundImage: AssetImage('assets/images/students.png'), // Ensure this path matches the path in your pubspec.yaml
-        ),
-        SizedBox(height: 16),
-        ElevatedButton(
-          onPressed: () {
-            // Logic to upload profile picture
-          },
-          child: Text('Upload Profile Picture'),
-        ),
-      ],
-    );
-  }
-
-  /*Widget _buildTextInputField(String label, String initialValue, Function(String) onSaved) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8.0),
-      child: TextFormField(
-        initialValue: initialValue,
-        decoration: InputDecoration(
-          labelText: label,
-          border: OutlineInputBorder(),
-        ),
-        validator: (value) {
-          if (value == null || value.isEmpty) {
-            return 'Please enter $label';
-          }
-          return null;
-        },
-        onSaved: (value) => onSaved(value!),
-      ),
-    );
-  }*/
-  Widget _buildTextInputField(String label, String initialValue, Function(String) onSaved, {EdgeInsetsGeometry padding = const EdgeInsets.symmetric(vertical: 8.0)}) {
-    return Padding(
-      padding: padding,
-      child: TextFormField(
-        initialValue: initialValue,
-        decoration: InputDecoration(
-          labelText: label,
-          labelStyle: TextStyle(color: Colors.grey[700], fontSize: 16),
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(8.0),
-            borderSide: BorderSide(color: Colors.grey[400]!),
+    return CircleAvatar(
+      radius: 60,
+      backgroundImage: AssetImage('assets/profile_picture.png'),
+      child: Align(
+        alignment: Alignment.bottomRight,
+        child: CircleAvatar(
+          backgroundColor: Colors.white,
+          radius: 20,
+          child: IconButton(
+            icon: Icon(Icons.camera_alt, color: Colors.blue),
+            onPressed: () {
+              // Implement your logic to upload a new profile picture
+            },
           ),
-          focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(8.0),
-            borderSide: BorderSide(color: Colors.blue, width: 2.0),
-          ),
-          errorBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(8.0),
-            borderSide: BorderSide(color: Colors.red, width: 2.0),
-          ),
-          focusedErrorBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(8.0),
-            borderSide: BorderSide(color: Colors.red, width: 2.0),
-          ),
-          contentPadding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 14.0),
-          errorStyle: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
         ),
-        validator: (value) {
-          if (value == null || value.isEmpty) {
-            return 'Please enter $label';
-          }
-          return null;
-        },
-        onSaved: (value) => onSaved(value!),
       ),
     );
   }
 
+  void _updateProfile() {
+    if (_formKey.currentState!.validate()) {
+      _formKey.currentState!.save();
+      // Call the repository to save the updated profile
+      profileRepository.updateProfile(_profile!);
+      // Show a success message or navigate back
+    }
+  }
 }
