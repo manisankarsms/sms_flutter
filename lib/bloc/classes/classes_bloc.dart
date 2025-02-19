@@ -6,9 +6,9 @@ import 'classes_event.dart';
 import 'classes_state.dart';
 
 class ClassesBloc extends Bloc<ClassesEvent, ClassesState> {
-  final ClassRepository classRepository;
+  final ClassRepository repository;
 
-  ClassesBloc(this.classRepository) : super(const ClassesState()) {
+  ClassesBloc({required this.repository}) : super(const ClassesState()) {
     on<LoadClasses>(_onLoadClasses);
     on<AddClass>(_onAddClass);
     on<DeleteClass>(_onDeleteClass);
@@ -22,19 +22,22 @@ class ClassesBloc extends Bloc<ClassesEvent, ClassesState> {
     emit(state.copyWith(status: ClassesStatus.loading));
 
     try {
-      final classes = await classRepository.fetchClasses();
+      final classes = await repository.fetchClasses();
+      print("Fetched classes: $classes"); // Debugging
       emit(state.copyWith(
         status: ClassesStatus.success,
         classes: classes,
         filteredClasses: classes,
       ));
-    } catch (_) {
+    } catch (e) {
+      print("Error fetching classes: $e"); // Debugging
       emit(state.copyWith(status: ClassesStatus.failure));
     }
   }
 
+
   Future<void> _onAddClass(AddClass event, Emitter<ClassesState> emit) async {
-    await classRepository.addClass(event.newClass);
+    await repository.addClass(event.newClass);
     final updatedClasses = List<Class>.from(state.classes)..add(event.newClass);
     emit(state.copyWith(
       classes: updatedClasses,
@@ -43,7 +46,7 @@ class ClassesBloc extends Bloc<ClassesEvent, ClassesState> {
   }
 
   Future<void> _onDeleteClass(DeleteClass event, Emitter<ClassesState> emit) async {
-    await classRepository.deleteClass(event.classId);
+    await repository.deleteClass(event.classId);
     final updatedClasses = state.classes.where((c) => c.id != event.classId).toList();
     emit(state.copyWith(
       classes: updatedClasses,
@@ -65,8 +68,7 @@ class ClassesBloc extends Bloc<ClassesEvent, ClassesState> {
     return classes.where((cls) {
       final lowercaseQuery = query.toLowerCase();
       return cls.name.toLowerCase().contains(lowercaseQuery) ||
-          cls.subjects.any((subject) => subject.toLowerCase().contains(lowercaseQuery)) ||
-          (cls.instructor?.toLowerCase().contains(lowercaseQuery) ?? false);
+          (cls.staff?.toLowerCase().contains(lowercaseQuery) ?? false);
     }).toList();
   }
 }

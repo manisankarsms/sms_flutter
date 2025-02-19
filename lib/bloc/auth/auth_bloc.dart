@@ -11,7 +11,7 @@ import 'auth_event.dart';
 import 'auth_state.dart';
 
 class AuthBloc extends Bloc<AuthEvent, AuthState> {
-  final MockAuthRepository authRepository;
+  final AuthRepository authRepository;
 
   AuthBloc({required this.authRepository}) : super(AuthInitial()) {
     on<LoginButtonPressed>(_onLoginButtonPressed);
@@ -25,7 +25,6 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
         event.email,
         event.password,
       );
-
       if (user != null) {
         emit(AuthAuthenticated(user)); // Pass user information
       }

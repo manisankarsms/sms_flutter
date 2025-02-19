@@ -7,26 +7,12 @@ import '../bloc/classes/classes_event.dart';
 import '../bloc/classes/classes_state.dart';
 import '../models/class.dart';
 
-class ClassesScreen extends StatelessWidget {
-  const ClassesScreen({super.key});
-
+class ClassesScreen extends StatefulWidget {
   @override
-  Widget build(BuildContext context) {
-    final ClassRepository classRepository = ClassRepository(); // Create an instance of AuthRepository
-
-    return BlocProvider(
-      create: (context) => ClassesBloc(classRepository),
-      child: ClassesView(),
-    );
-  }
+  _ClassesScreenState createState() => _ClassesScreenState();
 }
 
-class ClassesView extends StatefulWidget {
-  @override
-  _ClassesViewState createState() => _ClassesViewState();
-}
-
-class _ClassesViewState extends State<ClassesView> {
+class _ClassesScreenState extends State<ClassesScreen> {
   final TextEditingController _searchController = TextEditingController();
 
   @override
@@ -40,6 +26,16 @@ class _ClassesViewState extends State<ClassesView> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Classes'),
+        actions: [
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 10),
+            child: IconButton(
+              icon: const Icon(Icons.add),
+              onPressed: () => _showAddClassDialog(context),
+              tooltip: 'Add New Class',
+            ),
+          ),
+        ],
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(60),
           child: Padding(
@@ -56,7 +52,7 @@ class _ClassesViewState extends State<ClassesView> {
                 fillColor: Colors.white,
               ),
               onChanged: (query) {
-                BlocProvider.of<ClassesBloc>(context).add(SearchClasses(query));
+                context.read<ClassesBloc>().add(SearchClasses(query));
               },
             ),
           ),
@@ -69,22 +65,16 @@ class _ClassesViewState extends State<ClassesView> {
           }
 
           if (state.filteredClasses.isEmpty) {
-            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Icon(Icons.class_, size: 100, color: Colors.grey),
-                  const SizedBox(height: 20),
-                  Text(
-                    'No classes found',
-                    style: TextStyle(fontSize: 18, color: Colors.grey),
-                  ),
-                ],
+            return const Center(
+              child: Text(
+                'No classes found',
+                style: TextStyle(fontSize: 18, color: Colors.grey),
               ),
             );
           }
 
           return ListView.builder(
+            padding: const EdgeInsets.all(10),
             itemCount: state.filteredClasses.length,
             itemBuilder: (context, index) {
               final cls = state.filteredClasses[index];
@@ -92,11 +82,6 @@ class _ClassesViewState extends State<ClassesView> {
             },
           );
         },
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => _showAddClassDialog(context),
-        child: const Icon(Icons.add),
-        tooltip: 'Add New Class',
       ),
     );
   }
@@ -114,30 +99,11 @@ class _ClassesViewState extends State<ClassesView> {
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              TextField(
-                controller: nameController,
-                decoration: const InputDecoration(
-                  labelText: 'Class Name',
-                  border: OutlineInputBorder(),
-                ),
-              ),
+              _buildTextField(nameController, 'Class Name', 'Enter class name'),
               const SizedBox(height: 10),
-              TextField(
-                controller: subjectsController,
-                decoration: const InputDecoration(
-                  labelText: 'Subjects (comma-separated)',
-                  border: OutlineInputBorder(),
-                  hintText: 'e.g. Math, Algebra',
-                ),
-              ),
+              _buildTextField(subjectsController, 'Subjects', 'Math, Science'),
               const SizedBox(height: 10),
-              TextField(
-                controller: instructorController,
-                decoration: const InputDecoration(
-                  labelText: 'Instructor (Optional)',
-                  border: OutlineInputBorder(),
-                ),
-              ),
+              _buildTextField(instructorController, 'Instructor (Optional)', ''),
             ],
           ),
           actions: [
@@ -147,25 +113,18 @@ class _ClassesViewState extends State<ClassesView> {
             ),
             ElevatedButton(
               onPressed: () {
-                if (nameController.text.isNotEmpty &&
-                    subjectsController.text.isNotEmpty) {
+                if (nameController.text.isNotEmpty && subjectsController.text.isNotEmpty) {
                   final newClass = Class(
                     id: DateTime.now().millisecondsSinceEpoch.toString(),
                     name: nameController.text,
-                    subjects: subjectsController.text
-                        .split(',')
-                        .map((s) => s.trim())
-                        .toList(),
-                    instructor: instructorController.text.isEmpty
-                        ? null
-                        : instructorController.text,
+                    staff: instructorController.text.isEmpty ? null : instructorController.text,
                   );
 
-                  BlocProvider.of<ClassesBloc>(context).add(AddClass(newClass));
+                  context.read<ClassesBloc>().add(AddClass(newClass));
                   Navigator.of(context).pop();
                 } else {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Please fill in all required fields')),
+                    const SnackBar(content: Text('Please fill in required fields')),
                   );
                 }
               },
@@ -176,35 +135,38 @@ class _ClassesViewState extends State<ClassesView> {
       },
     );
   }
+
+  Widget _buildTextField(TextEditingController controller, String label, String hint) {
+    return TextField(
+      controller: controller,
+      decoration: InputDecoration(
+        labelText: label,
+        hintText: hint,
+        border: OutlineInputBorder(),
+      ),
+    );
+  }
 }
 
 class ClassCard extends StatelessWidget {
   final Class classData;
 
-  const ClassCard({required this.classData});
+  const ClassCard({super.key, required this.classData});
 
   @override
   Widget build(BuildContext context) {
     return Card(
-      margin: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+      margin: const EdgeInsets.symmetric(vertical: 5),
       child: ListTile(
-        key: ValueKey(classData.id),
         title: Text(
           classData.name,
           style: const TextStyle(fontWeight: FontWeight.bold),
         ),
-        subtitle: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('Subjects: ${classData.subjects.join(", ")}'),
-            if (classData.instructor != null)
-              Text('Instructor: ${classData.instructor!}'),
-          ],
-        ),
+        subtitle: classData.staff != null ? Text('Instructor: ${classData.staff!}') : null,
         trailing: IconButton(
           icon: const Icon(Icons.delete, color: Colors.red),
           onPressed: () {
-            BlocProvider.of<ClassesBloc>(context).add(DeleteClass(classData.id));
+            context.read<ClassesBloc>().add(DeleteClass(classData.id));
           },
         ),
       ),

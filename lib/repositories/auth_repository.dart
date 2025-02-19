@@ -1,4 +1,6 @@
 
+import 'dart:convert';
+
 import 'package:flutter/foundation.dart';
 
 import '../models/user.dart';
@@ -10,15 +12,14 @@ class AuthRepository {
 
   AuthRepository({required this.webService});
 
-  Future<String?> signInWithMobileAndPassword(String mobile, String password) async {
+  Future<User?> signInWithMobileAndPassword(String mobile, String password) async {
     try {
       String request = frameLoginRequest(mobile, password);
       if (kDebugMode) {
         print(request);
       }
       final data = await webService.postData('login', request);
-
-      return data.toString();
+      return User.fromJson(jsonDecode(data.toString()));
     } catch (error) {
       if (kDebugMode) {
         print("Error signing in: $error");

@@ -1,33 +1,15 @@
-// class_model.dart
-import 'package:equatable/equatable.dart';
-
-class Class extends Equatable {
+class Class {
   final String id;
   final String name;
-  final List<String> subjects;
-  final String? instructor;
+  final String? staff; // Change instructor to match 'staff' from API
 
-  const Class({
-    required this.id,
-    required this.name,
-    required this.subjects,
-    this.instructor,
-  });
+  Class({required this.id, required this.name, this.staff});
 
-  Class copyWith({
-    String? id,
-    String? name,
-    List<String>? subjects,
-    String? instructor,
-  }) {
+  factory Class.fromJson(Map<String, dynamic> json) {
     return Class(
-      id: id ?? this.id,
-      name: name ?? this.name,
-      subjects: subjects ?? this.subjects,
-      instructor: instructor ?? this.instructor,
+      id: json['id'].toString(), // Convert int to String
+      name: json['name'] ?? 'Unknown', // Provide a default value
+      staff: json['staff']?.toString(), // Change from 'instructor' to 'staff'
     );
   }
-
-  @override
-  List<Object?> get props => [id, name, subjects, instructor];
 }

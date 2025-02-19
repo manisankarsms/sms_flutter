@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:sms/screens/calendar_screen.dart';
+import 'package:sms/screens/dashboard_screen.dart';
 import 'package:sms/screens/new_student_screen.dart';
 
 import '../models/item.dart';
@@ -14,6 +15,7 @@ class _HomeScreenAdminState extends State<HomeScreenAdmin> {
   int _selectedIndex = 0;
 
   final List<Widget> _screens = [
+    DashboardScreen(),
     NewStudentScreen(),
     ClassesScreen(),
     Center(child: Text('Staffs - Development In Progress')),
@@ -21,6 +23,7 @@ class _HomeScreenAdminState extends State<HomeScreenAdmin> {
   ];
 
   final List<Item> items = [
+    Item(name: 'Dashboard', imagePath: 'assets/images/students.png'),
     Item(name: 'New Student', imagePath: 'assets/images/students.png'),
     Item(name: 'Classes', imagePath: 'assets/images/calendar.png'),
     Item(name: 'Staffs', imagePath: 'assets/images/messages.png'),
