@@ -19,6 +19,21 @@ class Student {
     required this.studentStandard,
   });
 
+  String get fullName => '$firstName $lastName';
+
+  factory Student.fromJson(Map<String, dynamic> json) {
+    return Student(
+      firstName: json['firstName'],
+      lastName: json['lastName'],
+      dateOfBirth: json['dateOfBirth'],
+      gender: json['gender'],
+      contactNumber: json['contactNumber'],
+      email: json['email'],
+      address: json['address'],
+      studentStandard: json['studentStandard'],
+    );
+  }
+
   Map<String, dynamic> toJson() {
     return {
       'firstName': firstName,

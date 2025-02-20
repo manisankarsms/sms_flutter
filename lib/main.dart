@@ -3,10 +3,12 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:sms/bloc/attendance/attendance_bloc.dart';
 import 'package:sms/bloc/auth/auth_bloc.dart';
 import 'package:sms/bloc/classes/classes_bloc.dart';
+import 'package:sms/bloc/new_student/new_student_bloc.dart';
 import 'package:sms/repositories/auth_repository.dart';
 import 'package:sms/repositories/class_repository.dart';
 import 'package:sms/repositories/dashboard_repository.dart';
 import 'package:sms/repositories/mock_repository.dart';
+import 'package:sms/repositories/students_repository.dart';
 import 'package:sms/screens/attendance_screen.dart';
 import 'package:sms/screens/home_screen_student.dart';
 import 'package:sms/screens/login_screen.dart';
@@ -21,6 +23,7 @@ void main() {
   final AuthRepository authRepository = AuthRepository(webService: webService);
   final DashboardRepository dashboardRepository = DashboardRepository(webService: webService);
   final ClassRepository classRepository = ClassRepository(webService: webService);
+  final StudentsRepository studentsRepository = StudentsRepository(webService: webService);
 
   runApp(
     MultiBlocProvider(
@@ -33,6 +36,9 @@ void main() {
         ),
         BlocProvider<ClassesBloc>(
           create: (context) => ClassesBloc(repository: classRepository), // Provide DashboardBloc
+        ),
+        RepositoryProvider(
+          create: (context) => studentsRepository,
         ),
       ],
       child: MaterialApp(

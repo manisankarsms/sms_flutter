@@ -1,11 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:sms/repositories/class_repository.dart';
+import 'package:sms/screens/students_screen.dart';
 
 import '../bloc/classes/classes_bloc.dart';
 import '../bloc/classes/classes_event.dart';
 import '../bloc/classes/classes_state.dart';
+import '../bloc/students/students_bloc.dart';
+import '../bloc/students/students_event.dart';
 import '../models/class.dart';
+import '../repositories/students_repository.dart';
 
 class ClassesScreen extends StatefulWidget {
   @override
@@ -14,6 +18,7 @@ class ClassesScreen extends StatefulWidget {
 
 class _ClassesScreenState extends State<ClassesScreen> {
   final TextEditingController _searchController = TextEditingController();
+  final GlobalKey<NavigatorState> _navigatorKey = GlobalKey<NavigatorState>();
 
   @override
   void dispose() {
@@ -23,65 +28,70 @@ class _ClassesScreenState extends State<ClassesScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Classes'),
-        actions: [
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 10),
-            child: IconButton(
-              icon: const Icon(Icons.add),
-              onPressed: () => _showAddClassDialog(context),
-              tooltip: 'Add New Class',
+    return Navigator(
+      key: _navigatorKey,
+      onGenerateRoute: (settings) => MaterialPageRoute(
+        builder: (context) => Scaffold(
+          appBar: AppBar(
+            title: const Text('Classes'),
+            actions: [
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 10),
+                child: IconButton(
+                  icon: const Icon(Icons.add),
+                  onPressed: () => _showAddClassDialog(context),
+                  tooltip: 'Add New Class',
+                ),
+              ),
+            ],
+            bottom: PreferredSize(
+              preferredSize: const Size.fromHeight(60),
+              child: Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: TextField(
+                  controller: _searchController,
+                  decoration: InputDecoration(
+                    hintText: 'Search classes...',
+                    prefixIcon: const Icon(Icons.search),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    filled: true,
+                    fillColor: Colors.white,
+                  ),
+                  onChanged: (query) {
+                    context.read<ClassesBloc>().add(SearchClasses(query));
+                  },
+                ),
+              ),
             ),
           ),
-        ],
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(60),
-          child: Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: TextField(
-              controller: _searchController,
-              decoration: InputDecoration(
-                hintText: 'Search classes...',
-                prefixIcon: const Icon(Icons.search),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                filled: true,
-                fillColor: Colors.white,
-              ),
-              onChanged: (query) {
-                context.read<ClassesBloc>().add(SearchClasses(query));
-              },
-            ),
+          body: BlocBuilder<ClassesBloc, ClassesState>(
+            builder: (context, state) {
+              if (state.status == ClassesStatus.loading) {
+                return const Center(child: CircularProgressIndicator());
+              }
+
+              if (state.filteredClasses.isEmpty) {
+                return const Center(
+                  child: Text(
+                    'No classes found',
+                    style: TextStyle(fontSize: 18, color: Colors.grey),
+                  ),
+                );
+              }
+
+              return ListView.builder(
+                padding: const EdgeInsets.all(10),
+                itemCount: state.filteredClasses.length,
+                itemBuilder: (context, index) {
+                  final cls = state.filteredClasses[index];
+                  return ClassCard(classData: cls);
+                },
+              );
+            },
           ),
         ),
-      ),
-      body: BlocBuilder<ClassesBloc, ClassesState>(
-        builder: (context, state) {
-          if (state.status == ClassesStatus.loading) {
-            return const Center(child: CircularProgressIndicator());
-          }
-
-          if (state.filteredClasses.isEmpty) {
-            return const Center(
-              child: Text(
-                'No classes found',
-                style: TextStyle(fontSize: 18, color: Colors.grey),
-              ),
-            );
-          }
-
-          return ListView.builder(
-            padding: const EdgeInsets.all(10),
-            itemCount: state.filteredClasses.length,
-            itemBuilder: (context, index) {
-              final cls = state.filteredClasses[index];
-              return ClassCard(classData: cls);
-            },
-          );
-        },
       ),
     );
   }
@@ -158,16 +168,45 @@ class ClassCard extends StatelessWidget {
     return Card(
       margin: const EdgeInsets.symmetric(vertical: 5),
       child: ListTile(
+        onTap: () => _navigateToStudents(context),
         title: Text(
           classData.name,
           style: const TextStyle(fontWeight: FontWeight.bold),
         ),
-        subtitle: classData.staff != null ? Text('Instructor: ${classData.staff!}') : null,
-        trailing: IconButton(
-          icon: const Icon(Icons.delete, color: Colors.red),
-          onPressed: () {
-            context.read<ClassesBloc>().add(DeleteClass(classData.id));
-          },
+        subtitle: classData.staff != null
+            ? Text('Instructor: ${classData.staff!}')
+            : null,
+        trailing: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            IconButton(
+              icon: const Icon(Icons.people, color: Colors.blue),
+              onPressed: () => _navigateToStudents(context),
+              tooltip: 'View Students',
+            ),
+            IconButton(
+              icon: const Icon(Icons.delete, color: Colors.red),
+              onPressed: () {
+                context.read<ClassesBloc>().add(DeleteClass(classData.id));
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _navigateToStudents(BuildContext context) {
+    Navigator.of(context, rootNavigator: false).push(
+      MaterialPageRoute(
+        builder: (context) => BlocProvider(
+          create: (context) => StudentsBloc(
+            repository: context.read<StudentsRepository>(),
+          )..add(LoadStudents(classData.id)),
+          child: StudentsScreen(
+            standard: classData.name,
+            classId: classData.id,
+          ),
         ),
       ),
     );

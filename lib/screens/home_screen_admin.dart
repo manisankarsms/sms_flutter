@@ -17,7 +17,11 @@ class _HomeScreenAdminState extends State<HomeScreenAdmin> {
   final List<Widget> _screens = [
     DashboardScreen(),
     NewStudentScreen(),
-    ClassesScreen(),
+    Navigator(
+      onGenerateRoute: (settings) => MaterialPageRoute(
+        builder: (context) => ClassesScreen(),
+      ),
+    ),
     Center(child: Text('Staffs - Development In Progress')),
     Center(child: Text('Students - Development In Progress')),
   ];
