@@ -1,4 +1,6 @@
 // repository/class_repository.dart
+import 'dart:convert';
+
 import '../models/class.dart';
 
 // repository/class_repository.dart
@@ -12,9 +14,10 @@ class ClassRepository {
 
   Future<List<Class>> fetchClasses() async {
     try {
-      final Map<String, dynamic> response = await webService.fetchData('admin/classes');
-      print("API Response: $response"); // Debugging
+      final String responseString = await webService.fetchData('admin/classes');
+      print("API Response: $responseString"); // Debugging
 
+      final Map<String, dynamic> response = jsonDecode(responseString); // Parse JSON here
       final List<dynamic> classesJson = response['classes'];
       return classesJson.map((json) => Class.fromJson(json)).toList();
     } catch (e) {

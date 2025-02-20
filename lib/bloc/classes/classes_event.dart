@@ -1,6 +1,6 @@
 import '../../models/class.dart';
 
-abstract class ClassesEvent {}
+abstract class  ClassesEvent {}
 
 class LoadClasses extends ClassesEvent {}
 

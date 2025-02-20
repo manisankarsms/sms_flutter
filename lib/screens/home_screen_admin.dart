@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:sms/screens/calendar_screen.dart';
 import 'package:sms/screens/dashboard_screen.dart';
 import 'package:sms/screens/new_student_screen.dart';
+import 'package:sms/screens/staffs_screen.dart';
 
 import '../models/item.dart';
 import 'classes_screen.dart';
@@ -22,7 +23,7 @@ class _HomeScreenAdminState extends State<HomeScreenAdmin> {
         builder: (context) => ClassesScreen(),
       ),
     ),
-    Center(child: Text('Staffs - Development In Progress')),
+    StaffsScreen(),
     Center(child: Text('Students - Development In Progress')),
   ];
 

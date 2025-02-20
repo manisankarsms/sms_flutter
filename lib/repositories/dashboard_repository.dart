@@ -11,8 +11,8 @@ class DashboardRepository {
 
   Future<DashboardModel> fetchDashboardData() async {
     try {
-      final Map<String, dynamic> response = await webService.fetchData('admin/dashboard');
-      return DashboardModel.fromJson(response);
+      final response = await webService.fetchData('admin/dashboard');
+      return DashboardModel.fromJson(jsonDecode(response));
     } catch (e) {
       throw Exception('Failed to fetch dashboard data: $e');
     }
