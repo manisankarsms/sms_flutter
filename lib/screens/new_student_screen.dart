@@ -300,8 +300,23 @@ class _NewStudentScreenState extends State<NewStudentScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('New Student Registration'),
+        title: const Text('Admission', style: TextStyle(fontWeight: FontWeight.bold)),
+        backgroundColor: Colors.white,
         elevation: 0,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.notifications_outlined),
+            onPressed: () {
+              // TODO: Implement notifications
+            },
+          ),
+          IconButton(
+            icon: const Icon(Icons.settings_outlined),
+            onPressed: () {
+              // TODO: Implement settings
+            },
+          ),
+        ],
       ),
       body: SafeArea(
         child: SingleChildScrollView(

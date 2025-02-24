@@ -49,18 +49,21 @@ class _DashboardScreenState extends State<DashboardScreen> {
       child: Scaffold(
         backgroundColor: Colors.grey.shade100,
         appBar: AppBar(
-          title: const Text('School Dashboard', style: TextStyle(fontWeight: FontWeight.bold)),
+          title: const Text(
+            'School Dashboard',
+            style: TextStyle(fontWeight: FontWeight.bold, color: Colors.black),
+          ),
           backgroundColor: Colors.white,
           elevation: 0,
           actions: [
             IconButton(
-              icon: const Icon(Icons.notifications_outlined),
+              icon: const Icon(Icons.notifications_outlined, color: Colors.black),
               onPressed: () {
                 // TODO: Implement notifications
               },
             ),
             IconButton(
-              icon: const Icon(Icons.settings_outlined),
+              icon: const Icon(Icons.settings_outlined, color: Colors.black),
               onPressed: () {
                 // TODO: Implement settings
               },

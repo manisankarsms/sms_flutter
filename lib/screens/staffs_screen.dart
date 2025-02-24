@@ -23,10 +23,16 @@ class _StaffsScreenState extends State<StaffsScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Staffs'),
+        title: const Text(
+          'Staffs',
+          style: TextStyle(fontWeight: FontWeight.bold, color: Colors.black),
+        ),
+        centerTitle: false, // Ensures the title is left-aligned
+        backgroundColor: Colors.white,
+        elevation: 0,
         actions: [
           IconButton(
-            icon: const Icon(Icons.add),
+            icon: const Icon(Icons.add, color: Colors.black),
             onPressed: () => _showAddStaffDialog(context),
             tooltip: 'Add New Staff',
           ),
@@ -39,7 +45,7 @@ class _StaffsScreenState extends State<StaffsScreen> {
               controller: _searchController,
               decoration: InputDecoration(
                 hintText: 'Search staffs...',
-                prefixIcon: const Icon(Icons.search),
+                prefixIcon: const Icon(Icons.search, color: Colors.black),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(10),
                 ),

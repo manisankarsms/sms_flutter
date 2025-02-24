@@ -33,7 +33,10 @@ class _ClassesScreenState extends State<ClassesScreen> {
       onGenerateRoute: (settings) => MaterialPageRoute(
         builder: (context) => Scaffold(
           appBar: AppBar(
-            title: const Text('Classes'),
+            title: const Text('Classes', style: TextStyle(fontWeight: FontWeight.bold)),
+            backgroundColor: Colors.white,
+            elevation: 0,
+            centerTitle: false, // Ensures the title is left-aligned
             actions: [
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 10),
