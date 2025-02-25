@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:sms/screens/calendar_screen.dart';
 import 'package:sms/screens/dashboard_screen.dart';
+import 'package:sms/screens/holiday_screen.dart';
 import 'package:sms/screens/new_student_screen.dart';
 import 'package:sms/screens/staffs_screen.dart';
 import 'package:sms/screens/classes_screen.dart';
@@ -33,6 +34,7 @@ class _HomeScreenAdminState extends State<HomeScreenAdmin> {
     ),
     StaffsScreen(),
     const Center(child: Text('Students - Development In Progress')),
+    HolidayScreen()
   ];
 
   final List<NavigationItem> items = [
@@ -58,6 +60,11 @@ class _HomeScreenAdminState extends State<HomeScreenAdmin> {
     ),
     NavigationItem(
       name: 'Students',
+      imagePath: 'assets/images/attendance.png',
+      icon: Icons.school_rounded,
+    ),
+    NavigationItem(
+      name: 'Holiday Calendar',
       imagePath: 'assets/images/attendance.png',
       icon: Icons.school_rounded,
     ),
@@ -292,31 +299,28 @@ class _HomeScreenAdminState extends State<HomeScreenAdmin> {
         color: theme.colorScheme.surface,
         child: Column(
           children: [
+            // Branding Section
             DrawerHeader(
-              decoration: BoxDecoration(
-                color: theme.colorScheme.primary,
-              ),
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
                   Image.asset(
-                    'assets/images/students.png',
+                    'assets/images/school_logo.png', // Replace with actual logo
                     width: 60,
                     height: 60,
-                    color: theme.colorScheme.onPrimary,
                   ),
                   const SizedBox(height: 12),
                   Text(
-                    'School Management',
+                    'XYZ School', // Replace with actual school name
                     style: theme.textTheme.titleLarge?.copyWith(
-                      color: theme.colorScheme.onPrimary,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
                 ],
               ),
             ),
+
             Expanded(
               child: ListView(
                 padding: EdgeInsets.zero,
@@ -356,7 +360,10 @@ class _HomeScreenAdminState extends State<HomeScreenAdmin> {
                 }).toList(),
               ),
             ),
+
             const Divider(),
+
+            // Logout Option
             ListTile(
               leading: Icon(
                 Icons.logout,
@@ -368,10 +375,7 @@ class _HomeScreenAdminState extends State<HomeScreenAdmin> {
                   color: theme.colorScheme.error,
                 ),
               ),
-              onTap: () {
-                // Handle logout
-                _confirmLogout();
-              },
+              onTap: _confirmLogout,
             ),
             const SizedBox(height: 16),
           ],
@@ -380,6 +384,7 @@ class _HomeScreenAdminState extends State<HomeScreenAdmin> {
     );
   }
 
+
   Widget _buildSideNavigation(ThemeData theme, bool isExpanded) {
     return AnimatedContainer(
       duration: const Duration(milliseconds: 200),
@@ -387,22 +392,22 @@ class _HomeScreenAdminState extends State<HomeScreenAdmin> {
       color: theme.colorScheme.surface,
       child: Column(
         children: [
+          // Branding Space
           Container(
-            height: 70,
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            alignment: Alignment.center,
+            height: 100, // Adjust height as needed
+            padding: const EdgeInsets.all(16),
             child: Row(
               children: [
                 Image.asset(
-                  'assets/images/students.png',
-                  width: 40,
-                  height: 40,
+                  'assets/images/school_logo.png', // Replace with actual logo path
+                  width: isExpanded ? 50 : 40,
+                  height: isExpanded ? 50 : 40,
                 ),
                 if (isExpanded) ...[
-                  const SizedBox(width: 16),
+                  const SizedBox(width: 12),
                   Expanded(
                     child: Text(
-                      'SMS Admin',
+                      'XYZ School', // Replace with actual school name
                       style: theme.textTheme.titleMedium?.copyWith(
                         fontWeight: FontWeight.bold,
                       ),
@@ -414,6 +419,8 @@ class _HomeScreenAdminState extends State<HomeScreenAdmin> {
             ),
           ),
           const Divider(height: 1),
+
+          // Navigation Items
           Expanded(
             child: ListView(
               padding: const EdgeInsets.symmetric(vertical: 8),
@@ -427,15 +434,11 @@ class _HomeScreenAdminState extends State<HomeScreenAdmin> {
                     horizontal: isExpanded ? 16 : 0,
                     vertical: 4,
                   ),
-                  leading: Container(
-                    width: 56,
-                    alignment: Alignment.center,
-                    child: Icon(
-                      item.icon,
-                      color: isSelected
-                          ? theme.colorScheme.primary
-                          : theme.colorScheme.onSurface.withOpacity(0.7),
-                    ),
+                  leading: Icon(
+                    item.icon,
+                    color: isSelected
+                        ? theme.colorScheme.primary
+                        : theme.colorScheme.onSurface.withOpacity(0.7),
                   ),
                   title: isExpanded
                       ? Text(
@@ -462,19 +465,18 @@ class _HomeScreenAdminState extends State<HomeScreenAdmin> {
               }).toList(),
             ),
           ),
+
           const Divider(height: 1),
+
+          // Logout Option
           ListTile(
             contentPadding: EdgeInsets.symmetric(
               horizontal: isExpanded ? 16 : 0,
               vertical: 4,
             ),
-            leading: Container(
-              width: 56,
-              alignment: Alignment.center,
-              child: Icon(
-                Icons.logout,
-                color: theme.colorScheme.error,
-              ),
+            leading: Icon(
+              Icons.logout,
+              color: theme.colorScheme.error,
             ),
             title: isExpanded
                 ? Text(
@@ -485,7 +487,7 @@ class _HomeScreenAdminState extends State<HomeScreenAdmin> {
             )
                 : null,
             onTap: () {
-              // Handle logout
+              _confirmLogout();
             },
           ),
           const SizedBox(height: 16),
@@ -493,6 +495,7 @@ class _HomeScreenAdminState extends State<HomeScreenAdmin> {
       ),
     );
   }
+
 
   Widget _buildBottomNav(ThemeData theme) {
     return Container(
