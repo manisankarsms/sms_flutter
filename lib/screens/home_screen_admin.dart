@@ -68,6 +68,41 @@ class _HomeScreenAdminState extends State<HomeScreenAdmin> {
       imagePath: 'assets/images/attendance.png',
       icon: Icons.school_rounded,
     ),
+    NavigationItem(
+      name: 'Holiday Calendar',
+      imagePath: 'assets/images/attendance.png',
+      icon: Icons.school_rounded,
+    ),
+    NavigationItem(
+      name: 'Holiday Calendar',
+      imagePath: 'assets/images/attendance.png',
+      icon: Icons.school_rounded,
+    ),
+    NavigationItem(
+      name: 'Holiday Calendar',
+      imagePath: 'assets/images/attendance.png',
+      icon: Icons.school_rounded,
+    ),
+    NavigationItem(
+      name: 'Holiday Calendar',
+      imagePath: 'assets/images/attendance.png',
+      icon: Icons.school_rounded,
+    ),
+    NavigationItem(
+      name: 'Holiday Calendar',
+      imagePath: 'assets/images/attendance.png',
+      icon: Icons.school_rounded,
+    ),
+    NavigationItem(
+      name: 'Holiday Calendar',
+      imagePath: 'assets/images/attendance.png',
+      icon: Icons.school_rounded,
+    ),
+    NavigationItem(
+      name: 'Holiday Calendar',
+      imagePath: 'assets/images/attendance.png',
+      icon: Icons.school_rounded,
+    ),
   ];
 
   @override
@@ -498,6 +533,11 @@ class _HomeScreenAdminState extends State<HomeScreenAdmin> {
 
 
   Widget _buildBottomNav(ThemeData theme) {
+    List<BottomNavigationBarItem> visibleItems = items
+        .take(4) // Show only the first 4 items
+        .map((item) => BottomNavigationBarItem(icon: Icon(item.icon), label: item.name))
+        .toList();
+
     return Container(
       decoration: BoxDecoration(
         color: theme.colorScheme.surface,
@@ -512,9 +552,13 @@ class _HomeScreenAdminState extends State<HomeScreenAdmin> {
       child: BottomNavigationBar(
         currentIndex: _selectedIndex > 4 ? 0 : _selectedIndex,
         onTap: (int index) {
-          setState(() {
-            _selectedIndex = index;
-          });
+          if (index == 4) {
+            _showMoreOptions();
+          } else {
+            setState(() {
+              _selectedIndex = index;
+            });
+          }
         },
         type: BottomNavigationBarType.fixed,
         backgroundColor: theme.colorScheme.surface,
@@ -523,11 +567,34 @@ class _HomeScreenAdminState extends State<HomeScreenAdmin> {
         selectedLabelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
         unselectedLabelStyle: const TextStyle(fontSize: 12),
         elevation: 0,
-        items: items.map((item) => BottomNavigationBarItem(
-          icon: Icon(item.icon),
-          label: item.name,
-        )).toList(),
+        items: [
+          ...visibleItems,
+          BottomNavigationBarItem(icon: const Icon(Icons.more_horiz), label: 'More'),
+        ],
       ),
+    );
+  }
+
+// Function to show overflow menu
+  void _showMoreOptions() {
+    showModalBottomSheet(
+      context: context,
+      builder: (context) {
+        return Wrap(
+          children: items.skip(4).map((item) {
+            return ListTile(
+              leading: Icon(item.icon),
+              title: Text(item.name),
+              onTap: () {
+                setState(() {
+                  _selectedIndex = items.indexOf(item);
+                });
+                Navigator.pop(context);
+              },
+            );
+          }).toList(),
+        );
+      },
     );
   }
 
