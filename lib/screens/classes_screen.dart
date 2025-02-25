@@ -32,43 +32,6 @@ class _ClassesScreenState extends State<ClassesScreen> {
       key: _navigatorKey,
       onGenerateRoute: (settings) => MaterialPageRoute(
         builder: (context) => Scaffold(
-          appBar: AppBar(
-            title: const Text('Classes', style: TextStyle(fontWeight: FontWeight.bold)),
-            backgroundColor: Colors.white,
-            elevation: 0,
-            centerTitle: false, // Ensures the title is left-aligned
-            actions: [
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 10),
-                child: IconButton(
-                  icon: const Icon(Icons.add),
-                  onPressed: () => _showAddClassDialog(context),
-                  tooltip: 'Add New Class',
-                ),
-              ),
-            ],
-            bottom: PreferredSize(
-              preferredSize: const Size.fromHeight(60),
-              child: Padding(
-                padding: const EdgeInsets.all(8.0),
-                child: TextField(
-                  controller: _searchController,
-                  decoration: InputDecoration(
-                    hintText: 'Search classes...',
-                    prefixIcon: const Icon(Icons.search),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    filled: true,
-                    fillColor: Colors.white,
-                  ),
-                  onChanged: (query) {
-                    context.read<ClassesBloc>().add(SearchClasses(query));
-                  },
-                ),
-              ),
-            ),
-          ),
           body: BlocBuilder<ClassesBloc, ClassesState>(
             builder: (context, state) {
               if (state.status == ClassesStatus.loading) {

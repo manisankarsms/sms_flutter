@@ -31,3 +31,5 @@ class AuthFailure extends AuthState {
   @override
   List<Object> get props => [error];
 }
+
+class AuthUnauthenticated extends AuthState {} // New Logout State

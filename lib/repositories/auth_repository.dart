@@ -28,5 +28,26 @@ class AuthRepository {
     }
   }
 
+  Future<void> logout() async {
+    try {
+      // await webService.postData('logout', '{}'); // Adjust API endpoint if needed
+      // Clear stored session data (e.g., tokens)
+      await clearSession();
+      if (kDebugMode) {
+        print("User logged out successfully.");
+      }
+    } catch (error) {
+      if (kDebugMode) {
+        print("Error logging out: $error");
+      }
+    }
+  }
+
+  Future<void> clearSession() async {
+    // Example: Clearing stored user session (modify as needed)
+    // final prefs = await SharedPreferences.getInstance();
+    // await prefs.clear();
+  }
+
 // Additional authentication methods like signOut, signUp, resetPassword can be added here.
 }

@@ -15,6 +15,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
 
   AuthBloc({required this.authRepository}) : super(AuthInitial()) {
     on<LoginButtonPressed>(_onLoginButtonPressed);
+    on<LogoutRequested>(_onLogoutRequested);
   }
 
   void _onLoginButtonPressed(LoginButtonPressed event, Emitter<AuthState> emit) async {
@@ -31,5 +32,10 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     } catch (error) {
       emit(AuthFailure(error: error.toString()));
     }
+  }
+
+  void _onLogoutRequested(LogoutRequested event, Emitter<AuthState> emit) async {
+    await authRepository.logout(); // Ensure logout clears session/token
+    emit(AuthUnauthenticated()); // Emit unauthenticated state
   }
 }

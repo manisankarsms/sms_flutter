@@ -1,137 +1,574 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:sms/screens/calendar_screen.dart';
 import 'package:sms/screens/dashboard_screen.dart';
 import 'package:sms/screens/new_student_screen.dart';
 import 'package:sms/screens/staffs_screen.dart';
-
+import 'package:sms/screens/classes_screen.dart';
+import '../bloc/auth/auth_bloc.dart';
+import '../bloc/auth/auth_event.dart';
 import '../models/item.dart';
-import 'classes_screen.dart';
+import 'login_screen.dart';
 
 class HomeScreenAdmin extends StatefulWidget {
+  const HomeScreenAdmin({Key? key}) : super(key: key);
+
   @override
   _HomeScreenAdminState createState() => _HomeScreenAdminState();
 }
 
 class _HomeScreenAdminState extends State<HomeScreenAdmin> {
   int _selectedIndex = 0;
+  bool _isDrawerOpen = false;
+  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 
   final List<Widget> _screens = [
-    DashboardScreen(),
-    NewStudentScreen(),
+    const DashboardScreen(),
+    const NewStudentScreen(),
     Navigator(
       onGenerateRoute: (settings) => MaterialPageRoute(
-        builder: (context) => ClassesScreen(),
+        builder: (context) =>  ClassesScreen(),
       ),
     ),
     StaffsScreen(),
-    Center(child: Text('Students - Development In Progress')),
+    const Center(child: Text('Students - Development In Progress')),
   ];
 
-  final List<Item> items = [
-    Item(name: 'Dashboard', imagePath: 'assets/images/students.png'),
-    Item(name: 'New Student', imagePath: 'assets/images/students.png'),
-    Item(name: 'Classes', imagePath: 'assets/images/calendar.png'),
-    Item(name: 'Staffs', imagePath: 'assets/images/messages.png'),
-    Item(name: 'Students', imagePath: 'assets/images/attendance.png'),
+  final List<NavigationItem> items = [
+    NavigationItem(
+      name: 'Dashboard',
+      imagePath: 'assets/images/students.png',
+      icon: Icons.dashboard_rounded,
+    ),
+    NavigationItem(
+      name: 'New Admission',
+      imagePath: 'assets/images/students.png',
+      icon: Icons.person_add_rounded,
+    ),
+    NavigationItem(
+      name: 'Classes',
+      imagePath: 'assets/images/calendar.png',
+      icon: Icons.class_rounded,
+    ),
+    NavigationItem(
+      name: 'Staff',
+      imagePath: 'assets/images/messages.png',
+      icon: Icons.groups_rounded,
+    ),
+    NavigationItem(
+      name: 'Students',
+      imagePath: 'assets/images/attendance.png',
+      icon: Icons.school_rounded,
+    ),
   ];
 
   @override
   Widget build(BuildContext context) {
-    final isLargeScreen = MediaQuery.of(context).size.width > 600;
+    final theme = Theme.of(context);
+    final size = MediaQuery.of(context).size;
+    final isSmallScreen = size.width < 600;
+    final isMediumScreen = size.width >= 600 && size.width < 1200;
+    final isLargeScreen = size.width >= 1200;
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Admin Home'),
-      ),
-      drawer: !isLargeScreen
-          ? Drawer(
-        child: ListView(
+      key: _scaffoldKey,
+      backgroundColor: theme.colorScheme.background,
+      appBar: isSmallScreen ? _buildAppBar(theme) : null,
+      drawer: isSmallScreen ? _buildDrawer(theme) : null,
+      body: SafeArea(
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            DrawerHeader(
-              decoration: BoxDecoration(color: Theme.of(context).primaryColor),
-              child: const Text(
-                'Admin Menu',
-                style: TextStyle(color: Colors.white, fontSize: 18),
+            // Side Navigation for medium and large screens
+            if (!isSmallScreen) _buildSideNavigation(theme, isLargeScreen),
+
+            // Main content area
+            Expanded(
+              child: Column(
+                children: [
+                  // Top app bar for medium and large screens
+                  if (!isSmallScreen) _buildTopBar(theme, isLargeScreen),
+
+                  // Main content
+                  Expanded(
+                    child: Container(
+                      padding: const EdgeInsets.all(16),
+                      child: _screens[_selectedIndex],
+                    ),
+                  ),
+                ],
               ),
             ),
-            ...items.asMap().entries.map((entry) {
-              int index = entry.key;
-              Item item = entry.value;
-              return ListTile(
-                leading: Image.asset(item.imagePath, width: 24, height: 24),
-                title: Text(item.name),
-                selected: _selectedIndex == index,
-                onTap: () {
-                  setState(() {
-                    _selectedIndex = index;
-                  });
-                  Navigator.pop(context); // Close drawer on selection
-                },
-              );
-            }).toList(),
           ],
         ),
-      )
-          : null,
-      body: isLargeScreen
-          ? Row(
-        children: [
-          NavigationRail(
-            selectedIndex: _selectedIndex,
-            onDestinationSelected: (int index) {
-              setState(() {
-                _selectedIndex = index;
-              });
-            },
-            destinations: items
-                .map((item) => NavigationRailDestination(
-              icon: Image.asset(
-                item.imagePath,
-                width: 24,
-                height: 24,
-                fit: BoxFit.cover,
-              ),
-              label: Text(item.name),
-            ))
-                .toList(),
-            labelType: NavigationRailLabelType.all,
-          ),
-          const VerticalDivider(thickness: 1, width: 1),
-          Expanded(
-            child: _screens[_selectedIndex],
-          ),
-        ],
-      )
-          : _screens[_selectedIndex],
-      bottomNavigationBar: !isLargeScreen
-          ? BottomNavigationBar(
-        currentIndex: _selectedIndex > 3 ? 0 : _selectedIndex,
-        onTap: (int index) {
-          if (index == 3) {
-            Scaffold.of(context).openDrawer(); // Open Drawer for more options
-          } else {
-            setState(() {
-              _selectedIndex = index;
-            });
-          }
-        },
-        items: [
-          ...items.sublist(0, 3).map((item) => BottomNavigationBarItem(
-            icon: Image.asset(
-              item.imagePath,
-              width: 24,
-              height: 24,
-              fit: BoxFit.cover,
-            ),
-            label: item.name,
-          )),
-          BottomNavigationBarItem(
-            icon: const Icon(Icons.more_horiz),
-            label: 'More',
-          ),
-        ],
-      )
-          : null,
+      ),
+      bottomNavigationBar: isSmallScreen ? _buildBottomNav(theme) : null,
     );
   }
+
+  PreferredSizeWidget _buildAppBar(ThemeData theme) {
+    return AppBar(
+      backgroundColor: theme.colorScheme.surface,
+      elevation: 0,
+      title: Text(
+        'School Management',
+        style: TextStyle(
+          color: theme.colorScheme.onSurface,
+          fontWeight: FontWeight.bold,
+        ),
+      ),
+      centerTitle: true,
+      leading: IconButton(
+        icon: Icon(
+          Icons.menu,
+          color: theme.colorScheme.primary,
+        ),
+        onPressed: () {
+          _scaffoldKey.currentState?.openDrawer();
+        },
+      ),
+      actions: [
+        IconButton(
+          icon: Icon(
+            Icons.notifications_outlined,
+            color: theme.colorScheme.primary,
+          ),
+          onPressed: () {
+            // Handle notifications
+          },
+        ),
+        const SizedBox(width: 8),
+        CircleAvatar(
+          radius: 16,
+          backgroundColor: theme.colorScheme.primary.withOpacity(0.2),
+          child: Icon(
+            Icons.person_outline,
+            size: 20,
+            color: theme.colorScheme.primary,
+          ),
+        ),
+        const SizedBox(width: 16),
+      ],
+    );
+  }
+
+  Widget _buildTopBar(ThemeData theme, bool isLargeScreen) {
+    return Container(
+      height: 70,
+      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surface,
+        boxShadow: [
+          BoxShadow(
+            color: theme.shadowColor.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          // Page title
+          Text(
+            items[_selectedIndex].name,
+            style: theme.textTheme.titleLarge?.copyWith(
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const Spacer(),
+
+          // Action buttons
+          IconButton(
+            icon: Icon(
+              Icons.notifications_outlined,
+              color: theme.colorScheme.onSurface,
+            ),
+            onPressed: () {
+              // Handle notifications
+            },
+          ),
+          const SizedBox(width: 16),
+          IconButton(
+            icon: Icon(
+              Icons.help_outline_rounded,
+              color: theme.colorScheme.onSurface,
+            ),
+            onPressed: () {
+              // Handle help
+            },
+          ),
+          const SizedBox(width: 16),
+          PopupMenuButton<dynamic>(
+            offset: const Offset(0, 45),
+            child: Row(
+              children: [
+                CircleAvatar(
+                  radius: 18,
+                  backgroundColor: theme.colorScheme.primary.withOpacity(0.2),
+                  child: Text(
+                    'A',
+                    style: TextStyle(
+                      color: theme.colorScheme.primary,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+                if (isLargeScreen) ...[
+                  const SizedBox(width: 8),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        'Admin User',
+                        style: theme.textTheme.bodyLarge?.copyWith(
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      Text(
+                        'Administrator',
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: theme.colorScheme.onSurface.withOpacity(0.7),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(width: 4),
+                  Icon(
+                    Icons.arrow_drop_down,
+                    color: theme.colorScheme.onSurface,
+                  ),
+                ],
+              ],
+            ),
+            onSelected: (value) {
+              // Handle menu selection based on the value
+            },
+            itemBuilder: (context) => <PopupMenuEntry<dynamic>>[
+              PopupMenuItem<String>(
+                value: 'profile', // Add value
+                child: Row(
+                  children: [
+                    Icon(Icons.person_outline, color: theme.colorScheme.primary),
+                    const SizedBox(width: 8),
+                    const Text('Profile'),
+                  ],
+                ),
+              ),
+              PopupMenuItem<String>(
+                value: 'settings', // Add value
+                child: Row(
+                  children: [
+                    Icon(Icons.settings_outlined, color: theme.colorScheme.primary),
+                    const SizedBox(width: 8),
+                    const Text('Settings'),
+                  ],
+                ),
+              ),
+              const PopupMenuDivider(),
+              PopupMenuItem<String>(
+                onTap: _confirmLogout,
+                value: 'logout', // Add value
+                child: Row(
+                  children: [
+                    Icon(Icons.logout, color: theme.colorScheme.error),
+                    const SizedBox(width: 8),
+                    const Text('Logout'),
+                  ],
+                ),
+              ),
+            ],
+          ),
+
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDrawer(ThemeData theme) {
+    return Drawer(
+      child: Container(
+        color: theme.colorScheme.surface,
+        child: Column(
+          children: [
+            DrawerHeader(
+              decoration: BoxDecoration(
+                color: theme.colorScheme.primary,
+              ),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Image.asset(
+                    'assets/images/students.png',
+                    width: 60,
+                    height: 60,
+                    color: theme.colorScheme.onPrimary,
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    'School Management',
+                    style: theme.textTheme.titleLarge?.copyWith(
+                      color: theme.colorScheme.onPrimary,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Expanded(
+              child: ListView(
+                padding: EdgeInsets.zero,
+                children: items.asMap().entries.map((entry) {
+                  final index = entry.key;
+                  final item = entry.value;
+                  final isSelected = _selectedIndex == index;
+
+                  return ListTile(
+                    leading: Icon(
+                      item.icon,
+                      color: isSelected
+                          ? theme.colorScheme.primary
+                          : theme.colorScheme.onSurface.withOpacity(0.7),
+                    ),
+                    title: Text(
+                      item.name,
+                      style: TextStyle(
+                        fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                        color: isSelected
+                            ? theme.colorScheme.primary
+                            : theme.colorScheme.onSurface,
+                      ),
+                    ),
+                    selected: isSelected,
+                    selectedTileColor: theme.colorScheme.primary.withOpacity(0.1),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    onTap: () {
+                      setState(() {
+                        _selectedIndex = index;
+                      });
+                      Navigator.pop(context);
+                    },
+                  );
+                }).toList(),
+              ),
+            ),
+            const Divider(),
+            ListTile(
+              leading: Icon(
+                Icons.logout,
+                color: theme.colorScheme.error,
+              ),
+              title: Text(
+                'Logout',
+                style: TextStyle(
+                  color: theme.colorScheme.error,
+                ),
+              ),
+              onTap: () {
+                // Handle logout
+                _confirmLogout();
+              },
+            ),
+            const SizedBox(height: 16),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSideNavigation(ThemeData theme, bool isExpanded) {
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 200),
+      width: isExpanded ? 250 : 80,
+      color: theme.colorScheme.surface,
+      child: Column(
+        children: [
+          Container(
+            height: 70,
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            alignment: Alignment.center,
+            child: Row(
+              children: [
+                Image.asset(
+                  'assets/images/students.png',
+                  width: 40,
+                  height: 40,
+                ),
+                if (isExpanded) ...[
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Text(
+                      'SMS Admin',
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+          const Divider(height: 1),
+          Expanded(
+            child: ListView(
+              padding: const EdgeInsets.symmetric(vertical: 8),
+              children: items.asMap().entries.map((entry) {
+                final index = entry.key;
+                final item = entry.value;
+                final isSelected = _selectedIndex == index;
+
+                return ListTile(
+                  contentPadding: EdgeInsets.symmetric(
+                    horizontal: isExpanded ? 16 : 0,
+                    vertical: 4,
+                  ),
+                  leading: Container(
+                    width: 56,
+                    alignment: Alignment.center,
+                    child: Icon(
+                      item.icon,
+                      color: isSelected
+                          ? theme.colorScheme.primary
+                          : theme.colorScheme.onSurface.withOpacity(0.7),
+                    ),
+                  ),
+                  title: isExpanded
+                      ? Text(
+                    item.name,
+                    style: TextStyle(
+                      fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                      color: isSelected
+                          ? theme.colorScheme.primary
+                          : theme.colorScheme.onSurface,
+                    ),
+                  )
+                      : null,
+                  selected: isSelected,
+                  selectedTileColor: isSelected ? theme.colorScheme.primary.withOpacity(0.1) : null,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  onTap: () {
+                    setState(() {
+                      _selectedIndex = index;
+                    });
+                  },
+                );
+              }).toList(),
+            ),
+          ),
+          const Divider(height: 1),
+          ListTile(
+            contentPadding: EdgeInsets.symmetric(
+              horizontal: isExpanded ? 16 : 0,
+              vertical: 4,
+            ),
+            leading: Container(
+              width: 56,
+              alignment: Alignment.center,
+              child: Icon(
+                Icons.logout,
+                color: theme.colorScheme.error,
+              ),
+            ),
+            title: isExpanded
+                ? Text(
+              'Logout',
+              style: TextStyle(
+                color: theme.colorScheme.error,
+              ),
+            )
+                : null,
+            onTap: () {
+              // Handle logout
+            },
+          ),
+          const SizedBox(height: 16),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildBottomNav(ThemeData theme) {
+    return Container(
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surface,
+        boxShadow: [
+          BoxShadow(
+            color: theme.shadowColor.withOpacity(0.1),
+            blurRadius: 10,
+            offset: const Offset(0, -5),
+          ),
+        ],
+      ),
+      child: BottomNavigationBar(
+        currentIndex: _selectedIndex > 4 ? 0 : _selectedIndex,
+        onTap: (int index) {
+          setState(() {
+            _selectedIndex = index;
+          });
+        },
+        type: BottomNavigationBarType.fixed,
+        backgroundColor: theme.colorScheme.surface,
+        selectedItemColor: theme.colorScheme.primary,
+        unselectedItemColor: theme.colorScheme.onSurface.withOpacity(0.7),
+        selectedLabelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
+        unselectedLabelStyle: const TextStyle(fontSize: 12),
+        elevation: 0,
+        items: items.map((item) => BottomNavigationBarItem(
+          icon: Icon(item.icon),
+          label: item.name,
+        )).toList(),
+      ),
+    );
+  }
+
+  void _confirmLogout() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Logout'),
+        content: const Text('Are you sure you want to log out?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context), // Close dialog
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () {
+              _logout();
+            },
+            child: const Text('Logout', style: TextStyle(color: Colors.red)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _logout() {
+    Navigator.pop(context); // Close dialog
+    context.read<AuthBloc>().add(LogoutRequested());
+    // Add navigation cleanup
+    Navigator.pushAndRemoveUntil(
+      context,
+      MaterialPageRoute(builder: (context) => const LoginScreen()),
+          (route) => false,
+    );
+  }
+
+}
+
+class NavigationItem extends Item {
+  final IconData icon;
+
+  NavigationItem({
+    required String name,
+    required String imagePath,
+    required this.icon,
+  }) : super(name: name, imagePath: imagePath);
 }
