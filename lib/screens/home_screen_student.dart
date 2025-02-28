@@ -5,6 +5,7 @@ import 'package:sms/screens/profile_screen.dart';
 import '../bloc/auth/auth_bloc.dart';
 import '../bloc/auth/auth_event.dart';
 import '../models/post.dart';
+import '../models/user.dart';
 import 'attendance_screen.dart';
 import 'calendar_screen.dart';
 import 'feed_screen.dart';
@@ -13,8 +14,9 @@ import 'login_screen.dart';
 import 'messages_screen.dart';
 
 class StudentHomeScreen extends StatefulWidget {
-  const StudentHomeScreen({Key? key}) : super(key: key);
+  final User user;
 
+  const StudentHomeScreen({Key? key, required this.user}) : super(key: key);
   @override
   _StudentHomeScreenState createState() => _StudentHomeScreenState();
 }

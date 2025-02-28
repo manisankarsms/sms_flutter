@@ -8,6 +8,8 @@ import 'package:sms/screens/home_screen_staff.dart';
 import 'package:sms/screens/home_screen_student.dart';
 import 'package:sms/screens/home_screen_admin.dart';
 
+import '../models/user.dart';
+
 class LoginScreen extends StatefulWidget {
   const LoginScreen({Key? key}) : super(key: key);
 
@@ -38,7 +40,7 @@ class _LoginScreenState extends State<LoginScreen> {
         if (state is AuthFailure) {
           _showErrorSnackbar(state.error);
         } else if (state is AuthAuthenticated) {
-          _navigateToHomeScreen(state.user.userType);
+          _navigateToHomeScreen(state.user);
         } else if (state is AuthUnauthenticated) {
           // Instead of navigating to "Login", just ensure we're already on login
           if (ModalRoute.of(context)?.settings.name != '/login') {
@@ -532,24 +534,21 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
-  void _navigateToHomeScreen(String userType) {
+  void _navigateToHomeScreen(User user) {
     Widget homeScreen;
 
-    switch (userType) {
+    switch (user.userType) {
       case 'Student':
-        homeScreen = const StudentHomeScreen();
+        homeScreen = StudentHomeScreen(user: user);
         break;
       case 'Staff':
-        homeScreen = HomeScreenStaff();
+        homeScreen = StaffHomeScreen(user: user);
         break;
       case 'Admin':
-        homeScreen = const HomeScreenAdmin();
-        break;
-      case 'Login':
-        homeScreen = const LoginScreen();
+        homeScreen = HomeScreenAdmin(user: user);
         break;
       default:
-        homeScreen = const StudentHomeScreen();
+        homeScreen = StudentHomeScreen(user: user);
     }
 
     Navigator.pushReplacement(
@@ -557,4 +556,5 @@ class _LoginScreenState extends State<LoginScreen> {
       MaterialPageRoute(builder: (context) => homeScreen),
     );
   }
+
 }

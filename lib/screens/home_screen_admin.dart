@@ -11,11 +11,13 @@ import 'package:sms/screens/classes_screen.dart';
 import '../bloc/auth/auth_bloc.dart';
 import '../bloc/auth/auth_event.dart';
 import '../models/item.dart';
+import '../models/user.dart';
 import 'login_screen.dart';
 
 class HomeScreenAdmin extends StatefulWidget {
-  const HomeScreenAdmin({Key? key}) : super(key: key);
+  final User user;
 
+  const HomeScreenAdmin({Key? key, required this.user}) : super(key: key);
   @override
   _HomeScreenAdminState createState() => _HomeScreenAdminState();
 }
