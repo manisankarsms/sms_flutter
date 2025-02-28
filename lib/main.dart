@@ -3,13 +3,17 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:sms/bloc/attendance/attendance_bloc.dart';
 import 'package:sms/bloc/auth/auth_bloc.dart';
 import 'package:sms/bloc/classes/classes_bloc.dart';
+import 'package:sms/bloc/feed/feed_bloc.dart';
 import 'package:sms/bloc/holiday/holiday_bloc.dart';
 import 'package:sms/bloc/new_student/new_student_bloc.dart';
+import 'package:sms/bloc/post/post_bloc.dart';
 import 'package:sms/repositories/auth_repository.dart';
 import 'package:sms/repositories/class_repository.dart';
 import 'package:sms/repositories/dashboard_repository.dart';
+import 'package:sms/repositories/feed_repository.dart';
 import 'package:sms/repositories/holiday_repository.dart';
 import 'package:sms/repositories/mock_repository.dart';
+import 'package:sms/repositories/post_repository.dart';
 import 'package:sms/repositories/staff_repository.dart';
 import 'package:sms/repositories/students_repository.dart';
 import 'package:sms/screens/attendance_screen.dart';
@@ -31,6 +35,8 @@ void main() {
   final StudentsRepository studentsRepository = StudentsRepository(webService: webService);
   final StaffRepository staffRepository = StaffRepository(webService: webService);
   final HolidayRepository holidayRepository = HolidayRepository(webService: webService);
+  final PostRepository postRepository = PostRepository(webService: webService);
+  final FeedRepository feedRepository = FeedRepository(webService: webService);
 
   runApp(
     MultiBlocProvider(
@@ -50,11 +56,17 @@ void main() {
         BlocProvider<HolidayBloc>(
           create: (context) => HolidayBloc(repository: holidayRepository), // Provide DashboardBloc
         ),
+        BlocProvider<PostBloc>(
+          create: (context) => PostBloc(postRepository: postRepository), // Provide DashboardBloc
+        ),
+        BlocProvider<FeedBloc>(
+          create: (context) => FeedBloc(feedRepository: feedRepository), // Provide DashboardBloc
+        ),
         RepositoryProvider(
           create: (context) => studentsRepository,
         ),
       ],
-      child: MaterialApp(
+      child: const MaterialApp(
         title: 'Your App',
         home: LoginScreen(),
       ),

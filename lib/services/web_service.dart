@@ -36,6 +36,34 @@ class WebService {
     }
   }
 
+  // New method for PUT requests
+  Future<String> putData(String endpoint, String data) async {
+    final response = await http.put(
+      Uri.parse('$baseUrl/$endpoint'),
+      headers: <String, String>{
+        'Content-Type': 'application/json; charset=UTF-8',
+      },
+      body: data,
+    );
+    if (response.statusCode == 200) {
+      return response.body;
+    } else {
+      throw Exception('Failed to update data');
+    }
+  }
 
-// You can add more methods here for different types of HTTP requests (GET, PUT, DELETE, etc.)
+  // New method for DELETE requests
+  Future<String> deleteData(String endpoint) async {
+    final response = await http.delete(
+      Uri.parse('$baseUrl/$endpoint'),
+      headers: <String, String>{
+        'Content-Type': 'application/json; charset=UTF-8',
+      },
+    );
+    if (response.statusCode == 200 || response.statusCode == 204) {
+      return response.statusCode == 204 ? '' : response.body;
+    } else {
+      throw Exception('Failed to delete data');
+    }
+  }
 }

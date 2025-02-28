@@ -75,6 +75,8 @@ flutter:
     - assets/images/attendance.png
     - assets/images/messages.png
     - assets/images/school_logo.png
+    - assets/images/exam_schedule.png
+    - assets/images/school_banner.png
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/assets-and-images/#resolution-aware

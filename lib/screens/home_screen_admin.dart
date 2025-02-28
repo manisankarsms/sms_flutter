@@ -5,6 +5,7 @@ import 'package:sms/screens/calendar_screen.dart';
 import 'package:sms/screens/dashboard_screen.dart';
 import 'package:sms/screens/holiday_screen.dart';
 import 'package:sms/screens/new_student_screen.dart';
+import 'package:sms/screens/posts_screen.dart';
 import 'package:sms/screens/staffs_screen.dart';
 import 'package:sms/screens/classes_screen.dart';
 import '../bloc/auth/auth_bloc.dart';
@@ -34,7 +35,8 @@ class _HomeScreenAdminState extends State<HomeScreenAdmin> {
     ),
     StaffsScreen(),
     const Center(child: Text('Students - Development In Progress')),
-    HolidayScreen()
+    HolidayScreen(),
+    PostsScreen()
   ];
 
   final List<NavigationItem> items = [
@@ -69,7 +71,7 @@ class _HomeScreenAdminState extends State<HomeScreenAdmin> {
       icon: Icons.school_rounded,
     ),
     NavigationItem(
-      name: 'Holiday Calendar',
+      name: 'Posts',
       imagePath: 'assets/images/attendance.png',
       icon: Icons.school_rounded,
     ),

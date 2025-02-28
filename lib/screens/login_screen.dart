@@ -537,7 +537,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
     switch (userType) {
       case 'Student':
-        homeScreen = HomeScreenStudent();
+        homeScreen = const StudentHomeScreen();
         break;
       case 'Staff':
         homeScreen = HomeScreenStaff();
@@ -549,7 +549,7 @@ class _LoginScreenState extends State<LoginScreen> {
         homeScreen = const LoginScreen();
         break;
       default:
-        homeScreen = HomeScreenStudent();
+        homeScreen = const StudentHomeScreen();
     }
 
     Navigator.pushReplacement(
