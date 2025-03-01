@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:sms/repositories/class_repository.dart';
 import 'package:sms/screens/students_screen.dart';
 
 import '../bloc/classes/classes_bloc.dart';
@@ -9,9 +8,14 @@ import '../bloc/classes/classes_state.dart';
 import '../bloc/students/students_bloc.dart';
 import '../bloc/students/students_event.dart';
 import '../models/class.dart';
+import '../models/user.dart';
 import '../repositories/students_repository.dart';
 
 class ClassesScreen extends StatefulWidget {
+
+  final User user;
+  const ClassesScreen({Key? key, required this.user}) : super(key: key);
+
   @override
   _ClassesScreenState createState() => _ClassesScreenState();
 }

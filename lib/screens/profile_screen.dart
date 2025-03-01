@@ -1,14 +1,7 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 
-import '../bloc/profile/profile_bloc.dart';
-import '../bloc/profile/profile_event.dart';
-import '../bloc/profile/profile_state.dart';
 import '../models/profile.dart';
 import '../repositories/mock_profile_repository.dart';
-import '../repositories/profile_repository.dart';
-import '../services/web_service.dart';
 
 class ProfileScreen extends StatefulWidget {
   @override

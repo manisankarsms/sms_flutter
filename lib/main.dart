@@ -1,25 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:sms/bloc/attendance/attendance_bloc.dart';
 import 'package:sms/bloc/auth/auth_bloc.dart';
 import 'package:sms/bloc/classes/classes_bloc.dart';
 import 'package:sms/bloc/feed/feed_bloc.dart';
 import 'package:sms/bloc/holiday/holiday_bloc.dart';
-import 'package:sms/bloc/new_student/new_student_bloc.dart';
 import 'package:sms/bloc/post/post_bloc.dart';
 import 'package:sms/repositories/auth_repository.dart';
 import 'package:sms/repositories/class_repository.dart';
 import 'package:sms/repositories/dashboard_repository.dart';
 import 'package:sms/repositories/feed_repository.dart';
 import 'package:sms/repositories/holiday_repository.dart';
-import 'package:sms/repositories/mock_repository.dart';
 import 'package:sms/repositories/post_repository.dart';
 import 'package:sms/repositories/staff_repository.dart';
 import 'package:sms/repositories/students_repository.dart';
-import 'package:sms/screens/attendance_screen.dart';
-import 'package:sms/screens/home_screen_student.dart';
 import 'package:sms/screens/login_screen.dart';
-import 'package:sms/screens/profile_screen.dart';
 import 'package:sms/services/web_service.dart';
 
 import 'bloc/dashboard/dashboard_bloc.dart';
@@ -46,9 +40,6 @@ void main() {
         ),
         BlocProvider<DashboardBloc>(
           create: (context) => DashboardBloc(repository: dashboardRepository), // Provide DashboardBloc
-        ),
-        BlocProvider<ClassesBloc>(
-          create: (context) => ClassesBloc(repository: classRepository), // Provide DashboardBloc
         ),
         BlocProvider<StaffsBloc>(
           create: (context) => StaffsBloc(repository: staffRepository), // Provide DashboardBloc

@@ -1,10 +1,6 @@
 // repository/class_repository.dart
 import 'dart:convert';
 
-import '../models/class.dart';
-
-// repository/class_repository.dart
-import '../models/class.dart';
 import '../models/student.dart';
 import '../services/web_service.dart';
 

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:sms/screens/classes_screen.dart';
 import 'package:sms/screens/feed_screen.dart';
+
 // import 'package:sms/screens/attendance_mark_screen.dart';
 import 'package:sms/screens/profile_screen.dart';
 import '../bloc/auth/auth_bloc.dart';
@@ -24,16 +26,26 @@ class _StaffHomeScreenState extends State<StaffHomeScreen> {
   int _selectedIndex = 0;
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 
-  final List<Widget> _screens = [
-    const StudentFeedScreen(),
-    // StaffTasksScreen(),
-    MessagesScreen(),
-    ProfileScreen(),
-  ];
+  late List<Widget> _screens;
+
+  @override
+  void initState() {
+    super.initState();
+    _screens = _buildScreens(widget.user);
+  }
+
+  List<Widget> _buildScreens(User user) {
+    return [
+      ClassesScreen(user: user),
+      // StaffTasksScreen(),
+      MessagesScreen(),
+      ProfileScreen(),
+    ];
+  }
 
   final List<NavigationItem> _navItems = [
     NavigationItem(
-      name: 'Mark Attendance',
+      name: 'My Class',
       imagePath: 'assets/images/attendance.png',
       icon: Icons.check_circle_outline,
     ),
@@ -89,7 +101,9 @@ class _StaffHomeScreenState extends State<StaffHomeScreen> {
     return AppBar(
       backgroundColor: theme.colorScheme.surface,
       elevation: 0,
-      title: Text('Staff Dashboard', style: TextStyle(color: theme.colorScheme.onSurface, fontWeight: FontWeight.bold)),
+      title: Text('Staff Dashboard',
+          style: TextStyle(
+              color: theme.colorScheme.onSurface, fontWeight: FontWeight.bold)),
       centerTitle: true,
       leading: IconButton(
         icon: Icon(Icons.menu, color: theme.colorScheme.primary),
@@ -108,9 +122,12 @@ class _StaffHomeScreenState extends State<StaffHomeScreen> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Image.asset('assets/images/school_logo.png', width: 60, height: 60),
+                  Image.asset('assets/images/school_logo.png',
+                      width: 60, height: 60),
                   const SizedBox(height: 12),
-                  Text('XYZ School', style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
+                  Text('XYZ School',
+                      style: theme.textTheme.titleLarge
+                          ?.copyWith(fontWeight: FontWeight.bold)),
                 ],
               ),
             ),
@@ -121,8 +138,15 @@ class _StaffHomeScreenState extends State<StaffHomeScreen> {
                   final item = entry.value;
                   final isSelected = _selectedIndex == index;
                   return ListTile(
-                    leading: Icon(item.icon, color: isSelected ? theme.colorScheme.primary : theme.colorScheme.onSurface.withOpacity(0.7)),
-                    title: Text(item.name, style: TextStyle(color: isSelected ? theme.colorScheme.primary : theme.colorScheme.onSurface)),
+                    leading: Icon(item.icon,
+                        color: isSelected
+                            ? theme.colorScheme.primary
+                            : theme.colorScheme.onSurface.withOpacity(0.7)),
+                    title: Text(item.name,
+                        style: TextStyle(
+                            color: isSelected
+                                ? theme.colorScheme.primary
+                                : theme.colorScheme.onSurface)),
                     selected: isSelected,
                     onTap: () {
                       setState(() {
@@ -137,7 +161,8 @@ class _StaffHomeScreenState extends State<StaffHomeScreen> {
             const Divider(),
             ListTile(
               leading: Icon(Icons.logout, color: theme.colorScheme.error),
-              title: Text('Logout', style: TextStyle(color: theme.colorScheme.error)),
+              title: Text('Logout',
+                  style: TextStyle(color: theme.colorScheme.error)),
               onTap: _confirmLogout,
             ),
           ],
@@ -160,7 +185,8 @@ class _StaffHomeScreenState extends State<StaffHomeScreen> {
             child: Row(
               children: [
                 Image.asset(
-                  'assets/images/school_logo.png', // Replace with actual logo path
+                  'assets/images/school_logo.png',
+                  // Replace with actual logo path
                   width: isExpanded ? 50 : 40,
                   height: isExpanded ? 50 : 40,
                 ),
@@ -203,17 +229,21 @@ class _StaffHomeScreenState extends State<StaffHomeScreen> {
                   ),
                   title: isExpanded
                       ? Text(
-                    item.name,
-                    style: TextStyle(
-                      fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                      color: isSelected
-                          ? theme.colorScheme.primary
-                          : theme.colorScheme.onSurface,
-                    ),
-                  )
+                          item.name,
+                          style: TextStyle(
+                            fontWeight: isSelected
+                                ? FontWeight.bold
+                                : FontWeight.normal,
+                            color: isSelected
+                                ? theme.colorScheme.primary
+                                : theme.colorScheme.onSurface,
+                          ),
+                        )
                       : null,
                   selected: isSelected,
-                  selectedTileColor: isSelected ? theme.colorScheme.primary.withOpacity(0.1) : null,
+                  selectedTileColor: isSelected
+                      ? theme.colorScheme.primary.withOpacity(0.1)
+                      : null,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(8),
                   ),
@@ -241,11 +271,11 @@ class _StaffHomeScreenState extends State<StaffHomeScreen> {
             ),
             title: isExpanded
                 ? Text(
-              'Logout',
-              style: TextStyle(
-                color: theme.colorScheme.error,
-              ),
-            )
+                    'Logout',
+                    style: TextStyle(
+                      color: theme.colorScheme.error,
+                    ),
+                  )
                 : null,
             onTap: () {
               _confirmLogout();
@@ -257,11 +287,11 @@ class _StaffHomeScreenState extends State<StaffHomeScreen> {
     );
   }
 
-
   Widget _buildBottomNav(ThemeData theme) {
     List<BottomNavigationBarItem> visibleItems = _navItems
         .take(4) // Show only the first 4 items
-        .map((item) => BottomNavigationBarItem(icon: Icon(item.icon), label: item.name))
+        .map((item) =>
+            BottomNavigationBarItem(icon: Icon(item.icon), label: item.name))
         .toList();
 
     return Container(
@@ -290,17 +320,18 @@ class _StaffHomeScreenState extends State<StaffHomeScreen> {
         backgroundColor: theme.colorScheme.surface,
         selectedItemColor: theme.colorScheme.primary,
         unselectedItemColor: theme.colorScheme.onSurface.withOpacity(0.7),
-        selectedLabelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
+        selectedLabelStyle:
+            const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
         unselectedLabelStyle: const TextStyle(fontSize: 12),
         elevation: 0,
         items: [
           ...visibleItems,
-          BottomNavigationBarItem(icon: const Icon(Icons.more_horiz), label: 'More'),
+          BottomNavigationBarItem(
+              icon: const Icon(Icons.more_horiz), label: 'More'),
         ],
       ),
     );
   }
-
 
   void _confirmLogout() {
     showDialog(
@@ -309,8 +340,12 @@ class _StaffHomeScreenState extends State<StaffHomeScreen> {
         title: const Text('Logout'),
         content: const Text('Are you sure you want to log out?'),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
-          TextButton(onPressed: _logout, child: const Text('Logout', style: TextStyle(color: Colors.red))),
+          TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancel')),
+          TextButton(
+              onPressed: _logout,
+              child: const Text('Logout', style: TextStyle(color: Colors.red))),
         ],
       ),
     );
@@ -319,7 +354,10 @@ class _StaffHomeScreenState extends State<StaffHomeScreen> {
   void _logout() {
     Navigator.pop(context);
     context.read<AuthBloc>().add(LogoutRequested());
-    Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (context) => const LoginScreen()), (route) => false);
+    Navigator.pushAndRemoveUntil(
+        context,
+        MaterialPageRoute(builder: (context) => const LoginScreen()),
+        (route) => false);
   }
 
   void _showMoreOptions() {
@@ -350,7 +388,12 @@ class _StaffHomeScreenState extends State<StaffHomeScreen> {
       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
       decoration: BoxDecoration(
         color: theme.colorScheme.surface,
-        boxShadow: [BoxShadow(color: theme.shadowColor.withOpacity(0.1), blurRadius: 10, offset: const Offset(0, 5))],
+        boxShadow: [
+          BoxShadow(
+              color: theme.shadowColor.withOpacity(0.1),
+              blurRadius: 10,
+              offset: const Offset(0, 5))
+        ],
       ),
       child: Row(
         children: [
@@ -361,7 +404,8 @@ class _StaffHomeScreenState extends State<StaffHomeScreen> {
           const Spacer(),
           Text(
             "Welcome, ${widget.user.displayName} (${widget.user.userType})",
-            style: theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.bold, color: theme.colorScheme.primary),
+            style: theme.textTheme.bodyMedium?.copyWith(
+                fontWeight: FontWeight.bold, color: theme.colorScheme.primary),
           ),
         ],
       ),

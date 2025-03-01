@@ -1,14 +1,16 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../models/class.dart';
+import '../../models/user.dart';
 import '../../repositories/class_repository.dart';
 import 'classes_event.dart';
 import 'classes_state.dart';
 
 class ClassesBloc extends Bloc<ClassesEvent, ClassesState> {
   final ClassRepository repository;
+  final User user;
 
-  ClassesBloc({required this.repository}) : super(const ClassesState()) {
+  ClassesBloc({required this.repository, required this.user}) : super(const ClassesState()) {
     on<LoadClasses>(_onLoadClasses);
     on<AddClass>(_onAddClass);
     on<DeleteClass>(_onDeleteClass);
@@ -22,7 +24,7 @@ class ClassesBloc extends Bloc<ClassesEvent, ClassesState> {
     emit(state.copyWith(status: ClassesStatus.loading));
 
     try {
-      final classes = await repository.fetchClasses();
+      final classes = await repository.fetchClasses(user.id);
       print("Fetched classes: $classes"); // Debugging
       emit(state.copyWith(
         status: ClassesStatus.success,

@@ -8,7 +8,22 @@ import 'package:sms/screens/home_screen_staff.dart';
 import 'package:sms/screens/home_screen_student.dart';
 import 'package:sms/screens/home_screen_admin.dart';
 
+import '../bloc/classes/classes_bloc.dart';
+import '../bloc/dashboard/dashboard_bloc.dart';
+import '../bloc/feed/feed_bloc.dart';
+import '../bloc/holiday/holiday_bloc.dart';
+import '../bloc/post/post_bloc.dart';
+import '../bloc/staffs/staff_bloc.dart';
 import '../models/user.dart';
+import '../repositories/auth_repository.dart';
+import '../repositories/class_repository.dart';
+import '../repositories/dashboard_repository.dart';
+import '../repositories/feed_repository.dart';
+import '../repositories/holiday_repository.dart';
+import '../repositories/post_repository.dart';
+import '../repositories/staff_repository.dart';
+import '../repositories/students_repository.dart';
+import '../services/web_service.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({Key? key}) : super(key: key);
@@ -40,7 +55,7 @@ class _LoginScreenState extends State<LoginScreen> {
         if (state is AuthFailure) {
           _showErrorSnackbar(state.error);
         } else if (state is AuthAuthenticated) {
-          _navigateToHomeScreen(state.user);
+          _navigateToHomeScreen(context, state.user);
         } else if (state is AuthUnauthenticated) {
           // Instead of navigating to "Login", just ensure we're already on login
           if (ModalRoute.of(context)?.settings.name != '/login') {
@@ -534,18 +549,58 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
-  void _navigateToHomeScreen(User user) {
+  void _navigateToHomeScreen(BuildContext context, User user) {
     Widget homeScreen;
+    final WebService webService = WebService(baseUrl: 'https://mock.apidog.com/m1/820032-799426-default');
+    final AuthRepository authRepository = AuthRepository(webService: webService);
+    final DashboardRepository dashboardRepository = DashboardRepository(webService: webService);
+    final ClassRepository classRepository = ClassRepository(webService: webService);
+    final StudentsRepository studentsRepository = StudentsRepository(webService: webService);
+    final StaffRepository staffRepository = StaffRepository(webService: webService);
+    final HolidayRepository holidayRepository = HolidayRepository(webService: webService);
+    final PostRepository postRepository = PostRepository(webService: webService);
+    final FeedRepository feedRepository = FeedRepository(webService: webService);
 
     switch (user.userType) {
       case 'Student':
         homeScreen = StudentHomeScreen(user: user);
         break;
       case 'Staff':
-        homeScreen = StaffHomeScreen(user: user);
+        homeScreen = MultiBlocProvider(
+          providers: [
+            BlocProvider<ClassesBloc>(
+              create: (context) => ClassesBloc(repository: classRepository, user: user),
+            ),
+            // Add other Blocs here if needed
+          ],
+          child: StaffHomeScreen(user: user),
+        );
         break;
       case 'Admin':
-        homeScreen = HomeScreenAdmin(user: user);
+        homeScreen = MultiBlocProvider(
+          providers: [
+            BlocProvider<DashboardBloc>(
+              create: (context) => DashboardBloc(repository: dashboardRepository),
+            ),
+            BlocProvider<ClassesBloc>(
+              create: (context) => ClassesBloc(repository: classRepository, user: user),
+            ),
+            BlocProvider<StaffsBloc>(
+              create: (context) => StaffsBloc(repository: staffRepository),
+            ),
+            BlocProvider<HolidayBloc>(
+              create: (context) => HolidayBloc(repository: holidayRepository),
+            ),
+            BlocProvider<PostBloc>(
+              create: (context) => PostBloc(postRepository: postRepository),
+            ),
+            BlocProvider<FeedBloc>(
+              create: (context) => FeedBloc(feedRepository: feedRepository),
+            ),
+            // Add other Blocs here if needed
+          ],
+          child: HomeScreenAdmin(user: user),
+        );
         break;
       default:
         homeScreen = StudentHomeScreen(user: user);

@@ -1,5 +1,5 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
-import '../../models/holiday.dart';
+
 import '../../repositories/holiday_repository.dart';
 import 'holiday_event.dart';
 import 'holiday_state.dart';

@@ -1,13 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:sms/screens/calendar_screen.dart';
+import 'package:sms/screens/classes_screen.dart';
 import 'package:sms/screens/dashboard_screen.dart';
 import 'package:sms/screens/holiday_screen.dart';
 import 'package:sms/screens/new_student_screen.dart';
 import 'package:sms/screens/posts_screen.dart';
 import 'package:sms/screens/staffs_screen.dart';
-import 'package:sms/screens/classes_screen.dart';
+
 import '../bloc/auth/auth_bloc.dart';
 import '../bloc/auth/auth_event.dart';
 import '../models/item.dart';
@@ -18,6 +17,7 @@ class HomeScreenAdmin extends StatefulWidget {
   final User user;
 
   const HomeScreenAdmin({Key? key, required this.user}) : super(key: key);
+
   @override
   _HomeScreenAdminState createState() => _HomeScreenAdminState();
 }
@@ -27,19 +27,29 @@ class _HomeScreenAdminState extends State<HomeScreenAdmin> {
   bool _isDrawerOpen = false;
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 
-  final List<Widget> _screens = [
-    const DashboardScreen(),
-    const NewStudentScreen(),
-    Navigator(
-      onGenerateRoute: (settings) => MaterialPageRoute(
-        builder: (context) =>  ClassesScreen(),
+  late List<Widget> _screens;
+
+  @override
+  void initState() {
+    super.initState();
+    _screens = _buildScreens(widget.user);
+  }
+
+  List<Widget> _buildScreens(User user) {
+    return [
+      const DashboardScreen(),
+      const NewStudentScreen(),
+      Navigator(
+        onGenerateRoute: (settings) => MaterialPageRoute(
+          builder: (context) => ClassesScreen(user: user),
+        ),
       ),
-    ),
-    StaffsScreen(),
-    const Center(child: Text('Students - Development In Progress')),
-    HolidayScreen(),
-    PostsScreen()
-  ];
+      StaffsScreen(),
+      const Center(child: Text('Students - Development In Progress')),
+      HolidayScreen(),
+      PostsScreen()
+    ];
+  }
 
   final List<NavigationItem> items = [
     NavigationItem(
@@ -296,7 +306,8 @@ class _HomeScreenAdminState extends State<HomeScreenAdmin> {
                 value: 'profile', // Add value
                 child: Row(
                   children: [
-                    Icon(Icons.person_outline, color: theme.colorScheme.primary),
+                    Icon(Icons.person_outline,
+                        color: theme.colorScheme.primary),
                     const SizedBox(width: 8),
                     const Text('Profile'),
                   ],
@@ -306,7 +317,8 @@ class _HomeScreenAdminState extends State<HomeScreenAdmin> {
                 value: 'settings', // Add value
                 child: Row(
                   children: [
-                    Icon(Icons.settings_outlined, color: theme.colorScheme.primary),
+                    Icon(Icons.settings_outlined,
+                        color: theme.colorScheme.primary),
                     const SizedBox(width: 8),
                     const Text('Settings'),
                   ],
@@ -326,7 +338,6 @@ class _HomeScreenAdminState extends State<HomeScreenAdmin> {
               ),
             ],
           ),
-
         ],
       ),
     );
@@ -378,14 +389,16 @@ class _HomeScreenAdminState extends State<HomeScreenAdmin> {
                     title: Text(
                       item.name,
                       style: TextStyle(
-                        fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                        fontWeight:
+                            isSelected ? FontWeight.bold : FontWeight.normal,
                         color: isSelected
                             ? theme.colorScheme.primary
                             : theme.colorScheme.onSurface,
                       ),
                     ),
                     selected: isSelected,
-                    selectedTileColor: theme.colorScheme.primary.withOpacity(0.1),
+                    selectedTileColor:
+                        theme.colorScheme.primary.withOpacity(0.1),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(8),
                     ),
@@ -423,7 +436,6 @@ class _HomeScreenAdminState extends State<HomeScreenAdmin> {
     );
   }
 
-
   Widget _buildSideNavigation(ThemeData theme, bool isExpanded) {
     return AnimatedContainer(
       duration: const Duration(milliseconds: 200),
@@ -438,7 +450,8 @@ class _HomeScreenAdminState extends State<HomeScreenAdmin> {
             child: Row(
               children: [
                 Image.asset(
-                  'assets/images/school_logo.png', // Replace with actual logo path
+                  'assets/images/school_logo.png',
+                  // Replace with actual logo path
                   width: isExpanded ? 50 : 40,
                   height: isExpanded ? 50 : 40,
                 ),
@@ -481,17 +494,21 @@ class _HomeScreenAdminState extends State<HomeScreenAdmin> {
                   ),
                   title: isExpanded
                       ? Text(
-                    item.name,
-                    style: TextStyle(
-                      fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                      color: isSelected
-                          ? theme.colorScheme.primary
-                          : theme.colorScheme.onSurface,
-                    ),
-                  )
+                          item.name,
+                          style: TextStyle(
+                            fontWeight: isSelected
+                                ? FontWeight.bold
+                                : FontWeight.normal,
+                            color: isSelected
+                                ? theme.colorScheme.primary
+                                : theme.colorScheme.onSurface,
+                          ),
+                        )
                       : null,
                   selected: isSelected,
-                  selectedTileColor: isSelected ? theme.colorScheme.primary.withOpacity(0.1) : null,
+                  selectedTileColor: isSelected
+                      ? theme.colorScheme.primary.withOpacity(0.1)
+                      : null,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(8),
                   ),
@@ -519,11 +536,11 @@ class _HomeScreenAdminState extends State<HomeScreenAdmin> {
             ),
             title: isExpanded
                 ? Text(
-              'Logout',
-              style: TextStyle(
-                color: theme.colorScheme.error,
-              ),
-            )
+                    'Logout',
+                    style: TextStyle(
+                      color: theme.colorScheme.error,
+                    ),
+                  )
                 : null,
             onTap: () {
               _confirmLogout();
@@ -535,11 +552,11 @@ class _HomeScreenAdminState extends State<HomeScreenAdmin> {
     );
   }
 
-
   Widget _buildBottomNav(ThemeData theme) {
     List<BottomNavigationBarItem> visibleItems = items
         .take(4) // Show only the first 4 items
-        .map((item) => BottomNavigationBarItem(icon: Icon(item.icon), label: item.name))
+        .map((item) =>
+            BottomNavigationBarItem(icon: Icon(item.icon), label: item.name))
         .toList();
 
     return Container(
@@ -568,12 +585,14 @@ class _HomeScreenAdminState extends State<HomeScreenAdmin> {
         backgroundColor: theme.colorScheme.surface,
         selectedItemColor: theme.colorScheme.primary,
         unselectedItemColor: theme.colorScheme.onSurface.withOpacity(0.7),
-        selectedLabelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
+        selectedLabelStyle:
+            const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
         unselectedLabelStyle: const TextStyle(fontSize: 12),
         elevation: 0,
         items: [
           ...visibleItems,
-          BottomNavigationBarItem(icon: const Icon(Icons.more_horiz), label: 'More'),
+          BottomNavigationBarItem(
+              icon: const Icon(Icons.more_horiz), label: 'More'),
         ],
       ),
     );
@@ -631,10 +650,9 @@ class _HomeScreenAdminState extends State<HomeScreenAdmin> {
     Navigator.pushAndRemoveUntil(
       context,
       MaterialPageRoute(builder: (context) => const LoginScreen()),
-          (route) => false,
+      (route) => false,
     );
   }
-
 }
 
 class NavigationItem extends Item {
