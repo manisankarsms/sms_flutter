@@ -24,6 +24,7 @@ import '../repositories/post_repository.dart';
 import '../repositories/staff_repository.dart';
 import '../repositories/students_repository.dart';
 import '../services/web_service.dart';
+import '../utils/constants.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({Key? key}) : super(key: key);
@@ -551,7 +552,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
   void _navigateToHomeScreen(BuildContext context, User user) {
     Widget homeScreen;
-    final WebService webService = WebService(baseUrl: 'https://mock.apidog.com/m1/820032-799426-default');
+    final WebService webService = WebService(baseUrl: Constants.baseUrl);
     final AuthRepository authRepository = AuthRepository(webService: webService);
     final DashboardRepository dashboardRepository = DashboardRepository(webService: webService);
     final ClassRepository classRepository = ClassRepository(webService: webService);

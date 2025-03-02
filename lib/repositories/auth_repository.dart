@@ -2,6 +2,7 @@
 import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
+import 'package:sms/utils/constants.dart';
 
 import '../models/user.dart';
 import '../services/request.dart';
@@ -18,7 +19,7 @@ class AuthRepository {
       if (kDebugMode) {
         print(request);
       }
-      final data = await webService.postData('login', request);
+      final data = await webService.postData(ApiEndpoints.login, request);
       return User.fromJson(jsonDecode(data.toString()));
     } catch (error) {
       if (kDebugMode) {

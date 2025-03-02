@@ -14,14 +14,13 @@ import 'package:sms/repositories/staff_repository.dart';
 import 'package:sms/repositories/students_repository.dart';
 import 'package:sms/screens/login_screen.dart';
 import 'package:sms/services/web_service.dart';
+import 'package:sms/utils/constants.dart';
 
 import 'bloc/dashboard/dashboard_bloc.dart';
 import 'bloc/staffs/staff_bloc.dart';
 
 void main() {
-  // final WebService webService = WebService(baseUrl: 'https://0ceba48b-6fa5-45d1-9520-4d0792c8d123.mock.pstmn.io');
-  // final WebService webService = WebService(baseUrl: 'https://api.mockfly.dev/mocks/8bc986d0-f33b-4f0d-80cf-a9655739a6c4');
-  final WebService webService = WebService(baseUrl: 'https://mock.apidog.com/m1/820032-799426-default');
+  final WebService webService = WebService(baseUrl: Constants.baseUrl);
   final AuthRepository authRepository = AuthRepository(webService: webService);
   final DashboardRepository dashboardRepository = DashboardRepository(webService: webService);
   final ClassRepository classRepository = ClassRepository(webService: webService);

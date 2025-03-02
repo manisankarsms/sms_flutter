@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:sms/models/staff.dart';
 import 'package:sms/services/web_service.dart';
+import 'package:sms/utils/constants.dart';
 
 class StaffRepository {
   final WebService webService;
@@ -14,7 +15,7 @@ class StaffRepository {
     } // Debugging
 
     try {
-      final response = await webService.fetchData('admin/staffs');
+      final response = await webService.fetchData(ApiEndpoints.adminStaffs);
       if (kDebugMode) {
         print("API Response: $response");
       } // Debugging

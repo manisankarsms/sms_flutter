@@ -2,6 +2,7 @@
 import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
+import 'package:sms/utils/constants.dart';
 
 import '../models/post.dart';
 import '../services/web_service.dart';
@@ -13,7 +14,7 @@ class PostRepository {
 
   Future<List<Post>> fetchPosts() async {
     try {
-      final String responseString = await webService.fetchData('admin/posts');
+      final String responseString = await webService.fetchData(ApiEndpoints.adminPosts);
       if (kDebugMode) {
         print("API Response: $responseString");
       } // Debugging

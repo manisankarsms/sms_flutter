@@ -1,5 +1,7 @@
 import 'dart:convert';
 
+import 'package:sms/utils/constants.dart';
+
 import '../models/post.dart';
 import '../services/web_service.dart';
 
@@ -10,7 +12,7 @@ class FeedRepository {
 
   Future<List<Post>> fetchFeedPosts() async {
     try {
-      final String responseString = await webService.fetchData('students/feed');
+      final String responseString = await webService.fetchData(ApiEndpoints.studentFeed);
       final Map<String, dynamic> response = jsonDecode(responseString);
       final List<dynamic> postsJson = response['posts'];
       return postsJson.map((json) => Post.fromJson(json)).toList();
