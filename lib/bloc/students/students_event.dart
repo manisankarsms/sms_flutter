@@ -10,13 +10,12 @@ abstract class StudentsEvent extends Equatable {
 }
 
 class LoadStudents extends StudentsEvent {
-  final String standard;
-
-  const LoadStudents(this.standard);
-
-  @override
-  List<Object> get props => [standard];
+  final String classId;
+  final String userRole; // Add userRole to decide the endpoint
+  final String date;
+  const LoadStudents(this.classId, this.userRole, this.date);
 }
+
 
 
 class RefreshStudents extends StudentsEvent {

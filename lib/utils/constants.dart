@@ -12,4 +12,5 @@ class ApiEndpoints {
   static const String adminPosts = 'admin/posts';
   static const String adminStaffs = 'admin/staffs';
   static const String adminStudents = 'admin/students';
+  static const String staffAttendance = 'staff/attendance';
 }

@@ -6,36 +6,93 @@ import '../bloc/students/students_bloc.dart';
 import '../bloc/students/students_event.dart';
 import '../bloc/students/students_state.dart';
 import '../models/student.dart';
+import 'package:intl/intl.dart';
 import '../utils/ExportUtil.dart';
 
-class StudentsScreen extends StatelessWidget {
+class StudentsScreen extends StatefulWidget {
   final String standard;
   final String classId;
+  final String userRole; // "admin" or "staff"
 
-  const StudentsScreen(
-      {Key? key, required this.standard, required this.classId})
-      : super(key: key);
+  const StudentsScreen({
+    Key? key,
+    required this.standard,
+    required this.classId,
+    required this.userRole,
+  }) : super(key: key);
+
+  @override
+  _StudentsScreenState createState() => _StudentsScreenState();
+}
+
+class _StudentsScreenState extends State<StudentsScreen> {
+  DateTime selectedDate = DateTime.now(); // ✅ Default to today
+  late PlutoGridStateManager _stateManager; // ✅ State Manager for PlutoGrid
+  Map<String, String> attendanceMap = {}; // ✅ Ensure it's initialized
+
+  @override
+  void initState() {
+    super.initState();
+    context
+        .read<StudentsBloc>()
+        .add(LoadStudents(widget.classId, widget.userRole, DateFormat('yyyy-MM-dd').format(selectedDate).toString()));
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('$standard Students'),
+        title: Column(
+          children: [
+            Text('${widget.standard} Students'),
+            Text(
+              '${DateFormat('yyyy-MM-dd').format(selectedDate)}', // ✅ Show selected date
+              style: TextStyle(fontSize: 14, fontWeight: FontWeight.w400),
+            ),
+          ],
+        ),
         actions: [
-          IconButton(
-              icon: const Icon(Icons.print),
-              onPressed: () => _printStudentList(context)),
-          IconButton(
-              icon: const Icon(Icons.download),
-              onPressed: () => _showExportOptions(context)),
+          if (widget.userRole == "Admin") ...[
+            IconButton(
+                icon: const Icon(Icons.print),
+                onPressed: () => _printStudentList(context)),
+            IconButton(
+                icon: const Icon(Icons.download),
+                onPressed: () => _showExportOptions(context)),
+          ],
           IconButton(
               icon: const Icon(Icons.refresh),
               onPressed: () {
-                context.read<StudentsBloc>().add(RefreshStudents(classId));
+                context
+                    .read<StudentsBloc>()
+                    .add(RefreshStudents(widget.classId));
               }),
-          IconButton(
-              icon: const Icon(Icons.add),
-              onPressed: () => _showAddStudentDialog(context)),
+          if (widget.userRole == "Admin")
+            IconButton(
+                icon: const Icon(Icons.add),
+                onPressed: () => _showAddStudentDialog(context)),
+          if (widget.userRole == "Staff") ...[
+            IconButton(
+              icon: const Icon(Icons.calendar_today),
+              onPressed: () => _pickDate(),
+              tooltip: "Select Date",
+            ),
+            IconButton(
+              icon: const Icon(Icons.check_circle, color: Colors.green),
+              onPressed: () => _submitAttendance(),
+              tooltip: "Submit Attendance",
+            ),
+            IconButton(
+              icon: const Icon(Icons.done_all, color: Colors.blue),
+              onPressed: () => _markAllAttendance("Present"),
+              tooltip: "Mark All Present",
+            ),
+            IconButton(
+              icon: const Icon(Icons.timelapse, color: Colors.orange),
+              onPressed: () => _markAllAttendance("Half-Day"),
+              tooltip: "Mark All Half-Day",
+            ),
+          ],
         ],
       ),
       body: BlocBuilder<StudentsBloc, StudentsState>(
@@ -53,8 +110,9 @@ class StudentsScreen extends StatelessWidget {
                       style: const TextStyle(color: Colors.red)),
                   const SizedBox(height: 16),
                   ElevatedButton(
-                    onPressed: () =>
-                        context.read<StudentsBloc>().add(LoadStudents(classId)),
+                    onPressed: () => context
+                        .read<StudentsBloc>()
+                        .add(LoadStudents(widget.classId, widget.userRole, DateFormat('yyyy-MM-dd').format(selectedDate).toString())),
                     child: const Text('Retry'),
                   ),
                 ],
@@ -69,23 +127,37 @@ class StudentsScreen extends StatelessWidget {
           }
 
           if (state is StudentsLoaded) {
-            return PlutoGrid(
-              columns: _buildGridColumns(),
-              rows: _buildGridRows(state.students),
-              configuration: const PlutoGridConfiguration(
-                style: PlutoGridStyleConfig(
-                  rowHeight: 60,
-                  oddRowColor: Colors.white, // Light grey for odd rows
-                  evenRowColor: Colors.white, // White for even rows
+            return Column(
+              children: [
+                if (widget.userRole == "Staff") _buildAttendanceSummary(),
+                // ✅ Show only for Staff
+                Expanded(
+                  child: PlutoGrid(
+                    columns: widget.userRole == "Admin"
+                        ? _buildAdminGridColumns()
+                        : _buildStaffGridColumns(),
+                    rows: widget.userRole == "Admin"
+                        ? _buildAdminGridRows(state.students)
+                        : _buildStaffGridRows(state.students),
+                    configuration: const PlutoGridConfiguration(
+                      style: PlutoGridStyleConfig(
+                        rowHeight: 60,
+                        oddRowColor: Colors.white,
+                        evenRowColor: Colors.white,
+                      ),
+                      columnSize: PlutoGridColumnSizeConfig(
+                          autoSizeMode: PlutoAutoSizeMode.scale),
+                    ),
+                    onLoaded: (event) {
+                      _stateManager =
+                          event.stateManager; // ✅ Store PlutoGridStateManager
+                      event.stateManager.setShowColumnFilter(true);
+                      event.stateManager.setPageSize(10);
+                    },
+                    mode: PlutoGridMode.normal,
+                  ),
                 ),
-                columnSize: PlutoGridColumnSizeConfig(
-                    autoSizeMode: PlutoAutoSizeMode.scale),
-              ),
-              onLoaded: (event) {
-                event.stateManager.setShowColumnFilter(true);
-                event.stateManager.setPageSize(10);
-              },
-              mode: PlutoGridMode.select,
+              ],
             );
           }
 
@@ -95,41 +167,25 @@ class StudentsScreen extends StatelessWidget {
     );
   }
 
-  List<PlutoColumn> _buildGridColumns() {
+  // Admin Grid
+  List<PlutoColumn> _buildAdminGridColumns() {
     return [
+      PlutoColumn(title: 'Name', field: 'name', type: PlutoColumnType.text()),
+      PlutoColumn(title: 'Email', field: 'email', type: PlutoColumnType.text()),
+      PlutoColumn(title: 'DOB', field: 'dob', type: PlutoColumnType.text()),
       PlutoColumn(
-          title: 'Name',
-          field: 'name',
-          type: PlutoColumnType.text(),
-          enableFilterMenuItem: true,
-          enableSorting: true),
-      PlutoColumn(
-          title: 'Email',
-          field: 'email',
-          type: PlutoColumnType.text(),
-          enableFilterMenuItem: true),
-      PlutoColumn(
-          title: 'DOB',
-          field: 'dob',
-          type: PlutoColumnType.text(),
-          enableSorting: true),
-      PlutoColumn(
-          title: 'Gender',
-          field: 'gender',
-          type: PlutoColumnType.text(),
-          enableSorting: true),
+          title: 'Gender', field: 'gender', type: PlutoColumnType.text()),
       PlutoColumn(
           title: 'Contact', field: 'contact', type: PlutoColumnType.text()),
       PlutoColumn(
           title: 'Address',
           field: 'address',
           type: PlutoColumnType.text(),
-          width: 200,
-          enableColumnDrag: false),
+          width: 200),
     ];
   }
 
-  List<PlutoRow> _buildGridRows(List<Student> students) {
+  List<PlutoRow> _buildAdminGridRows(List<Student> students) {
     return students
         .map((student) => PlutoRow(cells: {
               'name':
@@ -143,15 +199,62 @@ class StudentsScreen extends StatelessWidget {
         .toList();
   }
 
+  // Staff Grid (For Attendance)
+  List<PlutoColumn> _buildStaffGridColumns() {
+    return [
+      PlutoColumn(
+          title: 'Student ID', field: 'id', type: PlutoColumnType.text()),
+      PlutoColumn(title: 'Name', field: 'name', type: PlutoColumnType.text()),
+      PlutoColumn(
+        title: 'Attendance',
+        field: 'attendance',
+        type: PlutoColumnType.select(['Present', 'Half-Day', 'Absent']),
+      ),
+    ];
+  }
+
+  List<PlutoRow> _buildStaffGridRows(List<Student> students) {
+    return students
+        .map((student) => PlutoRow(cells: {
+              'id': PlutoCell(value: student.studentId),
+              'name':
+                  PlutoCell(value: '${student.firstName} ${student.lastName}'),
+              'attendance': PlutoCell(
+                  value: attendanceMap[student.studentId] ?? 'Absent'),
+            }))
+        .toList();
+  }
+
+  // Submitting Attendance Data
+  void _submitAttendance() {
+    // Construct payload
+    final attendanceData = attendanceMap.entries.map((entry) {
+      return {
+        "studentId": entry.key,
+        "status": entry.value,
+      };
+    }).toList();
+
+    final requestBody = {
+      "classId": widget.classId,
+      "date": "2025-03-01",
+      "attendance": attendanceData
+    };
+
+    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+      content: Text("Attendance submitted successfully!"),
+    ));
+  }
+
   void _showAddStudentDialog(BuildContext context) {
     showDialog(
       context: context,
       builder: (context) {
         return AlertDialog(
           title: const Text('Add Student'),
-          content: Column(
+          content: const Column(
             mainAxisSize: MainAxisSize.min,
-            children: const [
+            children: [
               TextField(decoration: InputDecoration(labelText: 'Name')),
               TextField(decoration: InputDecoration(labelText: 'Email')),
               TextField(decoration: InputDecoration(labelText: 'DOB')),
@@ -187,7 +290,7 @@ class StudentsScreen extends StatelessWidget {
             ],
             data: students
                 .map((s) => [
-                      s.firstName + ' ' + s.lastName,
+                      '${s.firstName} ${s.lastName}',
                       s.email,
                       s.dateOfBirth,
                       s.gender,
@@ -208,7 +311,7 @@ class StudentsScreen extends StatelessWidget {
       final headers = ['Name', 'Email', 'DOB', 'Gender', 'Contact', 'Address'];
       final data = students
           .map((s) => [
-                s.firstName + ' ' + s.lastName,
+                '${s.firstName} ${s.lastName}',
                 s.email,
                 s.dateOfBirth,
                 s.gender,
@@ -251,4 +354,77 @@ class StudentsScreen extends StatelessWidget {
       );
     }
   }
+
+  Widget _buildAttendanceSummary() {
+    int presentCount =
+        attendanceMap.values.where((status) => status == "Present").length;
+    int halfDayCount =
+        attendanceMap.values.where((status) => status == "Half-Day").length;
+    int absentCount =
+        attendanceMap.values.where((status) => status == "Absent").length;
+
+    return Padding(
+      padding: const EdgeInsets.all(8.0),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+        children: [
+          _statusChip("Present", presentCount, Colors.green),
+          _statusChip("Half-Day", halfDayCount, Colors.orange),
+          _statusChip("Absent", absentCount, Colors.red),
+        ],
+      ),
+    );
+  }
+
+  Widget _statusChip(String label, int count, Color color) {
+    return Chip(
+      label: Text("$label: $count"),
+      backgroundColor: color.withOpacity(0.2),
+      labelStyle: TextStyle(color: color, fontWeight: FontWeight.bold),
+    );
+  }
+
+  void _markAllAttendance(String status) {
+    setState(() {
+      attendanceMap.updateAll((key, value) => status);
+    });
+
+    // ✅ Update PlutoGrid rows manually
+    for (var row in _stateManager.rows) {
+      row.cells['attendance']!.value = status;
+    }
+
+    _stateManager.notifyListeners(); // ✅ Force PlutoGrid to refresh
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text("All students marked as $status")),
+    );
+  }
+
+  Future<void> _pickDate() async {
+    DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: selectedDate,
+      firstDate: DateTime(2023),
+      lastDate: DateTime(2030),
+    );
+
+    if (picked != null && picked != selectedDate) {
+      setState(() {
+        selectedDate = picked;
+      });
+
+      _fetchStudents(); // ✅ Fetch students for the selected date
+    }
+  }
+
+  void _fetchStudents() {
+    context.read<StudentsBloc>().add(LoadStudents(
+      widget.classId,
+      widget.userRole,
+      DateFormat('yyyy-MM-dd').format(selectedDate).toString(), // ✅ Pass date
+    ));
+  }
+
+
 }

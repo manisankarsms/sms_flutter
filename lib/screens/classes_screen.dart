@@ -56,7 +56,7 @@ class _ClassesScreenState extends State<ClassesScreen> {
                 itemCount: state.filteredClasses.length,
                 itemBuilder: (context, index) {
                   final cls = state.filteredClasses[index];
-                  return ClassCard(classData: cls);
+                  return ClassCard(classData: cls, user: widget.user);
                 },
               );
             },
@@ -130,8 +130,9 @@ class _ClassesScreenState extends State<ClassesScreen> {
 
 class ClassCard extends StatelessWidget {
   final Class classData;
+  final User user;
 
-  const ClassCard({super.key, required this.classData});
+  const ClassCard({super.key, required this.classData, required this.user});
 
   @override
   Widget build(BuildContext context) {
@@ -172,10 +173,11 @@ class ClassCard extends StatelessWidget {
         builder: (context) => BlocProvider(
           create: (context) => StudentsBloc(
             repository: context.read<StudentsRepository>(),
-          )..add(LoadStudents(classData.id)),
+          ),
           child: StudentsScreen(
             standard: classData.name,
             classId: classData.id,
+            userRole: user.userType,
           ),
         ),
       ),

@@ -1,4 +1,5 @@
 class Student {
+  final String studentId; // ✅ Added studentId
   final String firstName;
   final String lastName;
   final String dateOfBirth;
@@ -9,6 +10,7 @@ class Student {
   final String studentStandard;
 
   Student({
+    required this.studentId, // ✅ Added this field
     required this.firstName,
     required this.lastName,
     required this.dateOfBirth,
@@ -23,19 +25,21 @@ class Student {
 
   factory Student.fromJson(Map<String, dynamic> json) {
     return Student(
-      firstName: json['firstName'],
-      lastName: json['lastName'],
-      dateOfBirth: json['dateOfBirth'],
-      gender: json['gender'],
-      contactNumber: json['contactNumber'],
-      email: json['email'],
-      address: json['address'],
-      studentStandard: json['studentStandard'],
+      studentId: json['studentId'] ?? '', // ✅ Added field with fallback
+      firstName: json['firstName'] ?? '',
+      lastName: json['lastName'] ?? '',
+      dateOfBirth: json['dateOfBirth'] ?? '',
+      gender: json['gender'] ?? '',
+      contactNumber: json['contactNumber'] ?? '',
+      email: json['email'] ?? '',
+      address: json['address'] ?? '',
+      studentStandard: json['studentStandard'] ?? '',
     );
   }
 
   Map<String, dynamic> toJson() {
     return {
+      'studentId': studentId, // ✅ Added field
       'firstName': firstName,
       'lastName': lastName,
       'dateOfBirth': dateOfBirth,
