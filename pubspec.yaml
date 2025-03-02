@@ -46,7 +46,7 @@ dependencies:
   share_plus: ^7.2.1
   csv: ^5.1.1
   excel: ^2.1.0
-  pluto_grid: ^7.0.0
+  pluto_grid: ^8.0.0
 
 dev_dependencies:
   flutter_test:

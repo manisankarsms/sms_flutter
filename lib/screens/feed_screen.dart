@@ -73,7 +73,6 @@ class PostWidget extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             child: Text(
               post.content,
-              style: Theme.of(context).textTheme.bodyText2,
             ),
           ),
           if (post.imageUrl != null && post.imageUrl!.isNotEmpty)

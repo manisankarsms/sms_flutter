@@ -1,8 +1,9 @@
 import 'dart:convert';
 import 'dart:io';
+import 'dart:math';
 import 'package:csv/csv.dart';
 import 'package:excel/excel.dart';
-import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:flutter/foundation.dart' show kDebugMode, kIsWeb;
 import 'package:intl/intl.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
@@ -11,13 +12,27 @@ import 'package:universal_html/html.dart' as html;
 class ExportUtil {
   static final DateFormat _dateFormatter = DateFormat('yyyyMMdd_HHmmss');
 
-  /// Generate standardized file name with optional timestamp
+  /// Generate standardized file name with optional timestamp and unique ID
   static String generateFileName({
-    String baseName = 'export',
+    required String baseName,
     bool includeTimestamp = true,
+    bool includeUniqueId = true,
   }) {
     final timestamp = includeTimestamp ? '_${_dateFormatter.format(DateTime.now())}' : '';
-    return '${baseName}_$timestamp';
+    final uniqueId = includeUniqueId ? '_${_generateUniqueId(4)}' : '';
+    final fileName = '${baseName.trim()}$timestamp$uniqueId';
+
+    if (kDebugMode) {
+      print("Generated Filename: $fileName");
+    } // Debugging
+    return fileName;
+  }
+
+  /// Generate a short random string for uniqueness
+  static String _generateUniqueId(int length) {
+    const chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    final random = Random();
+    return List.generate(length, (index) => chars[random.nextInt(chars.length)]).join();
   }
 
   /// Platform-aware file path resolution
@@ -53,22 +68,27 @@ class ExportUtil {
         await Share.shareXFiles([XFile(path)]);
       }
     } catch (e) {
-      print('Export error: $e');
+      if (kDebugMode) {
+        print('Export error: $e');
+      }
       rethrow;
     }
   }
 
   /// CSV Export with flexible parameters
   static Future<void> exportToCSV({
-    String? fileName,
+    required String fileName,
     bool includeTimestamp = true,
     required List<String> headers,
     required List<List<dynamic>> data,
   }) async {
-    final csvName = fileName ?? generateFileName(
-      baseName: 'data_export',
+    final csvName = generateFileName(
+      baseName: fileName,
       includeTimestamp: includeTimestamp,
     );
+    if (kDebugMode) {
+      print("Final CSV Filename: $csvName");
+    } // Debugging
 
     final csvData = [headers, ...data];
     final csvString = const ListToCsvConverter().convert(csvData);
@@ -84,16 +104,19 @@ class ExportUtil {
 
   /// Excel Export with styling options
   static Future<void> exportToExcel({
-    String? fileName,
+    required String fileName,
     bool includeTimestamp = true,
     required List<String> headers,
     required List<List<dynamic>> data,
     CellStyle? headerStyle,
   }) async {
-    final excelName = fileName ?? generateFileName(
-      baseName: 'data_export',
+    final excelName = generateFileName(
+      baseName: fileName,
       includeTimestamp: includeTimestamp,
     );
+    if (kDebugMode) {
+      print("Final Excel Filename: $excelName");
+    } // Debugging
 
     final excel = Excel.createExcel();
     final sheet = excel['Sheet1'];

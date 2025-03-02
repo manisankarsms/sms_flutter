@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:sms/bloc/auth/auth_bloc.dart';
-import 'package:sms/bloc/classes/classes_bloc.dart';
 import 'package:sms/bloc/feed/feed_bloc.dart';
 import 'package:sms/bloc/holiday/holiday_bloc.dart';
 import 'package:sms/bloc/post/post_bloc.dart';

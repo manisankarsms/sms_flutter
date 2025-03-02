@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:sms/models/staff.dart';
 import 'package:sms/services/web_service.dart';
 
@@ -8,15 +9,21 @@ class StaffRepository {
   StaffRepository({required this.webService});
 
   Future<List<Staff>> fetchStaff() async {
-    print("fetchStaff() called"); // Debugging
+    if (kDebugMode) {
+      print("fetchStaff() called");
+    } // Debugging
 
     try {
       final response = await webService.fetchData('admin/staffs');
-      print("API Response: $response"); // Debugging
+      if (kDebugMode) {
+        print("API Response: $response");
+      } // Debugging
       final List<dynamic> staffJson = jsonDecode(response);
       return staffJson.map((json) => Staff.fromJson(json)).toList();
     } catch (e) {
-      print("Error fetching staff: $e"); // Debugging
+      if (kDebugMode) {
+        print("Error fetching staff: $e");
+      } // Debugging
       throw Exception('Failed to fetch staff: $e');
     }
 

@@ -1,5 +1,6 @@
 // bloc/post/post_bloc.dart
 import 'package:bloc/bloc.dart';
+import 'package:flutter/foundation.dart';
 import 'package:sms/bloc/post/post_event.dart';
 import 'package:sms/bloc/post/post_state.dart';
 import '../../models/post.dart';
@@ -11,7 +12,9 @@ class PostBloc extends Bloc<PostEvent, PostState> {
   Post? _currentPost;
 
   PostBloc({required this.postRepository}) : super(PostLoading()) {
-    print("[PostBloc] Initialized.");
+    if (kDebugMode) {
+      print("[PostBloc] Initialized.");
+    }
     on<LoadPosts>(_onLoadPosts);
     on<AddPost>(_onAddPost);
     on<UpdatePost>(_onUpdatePost);
@@ -22,22 +25,30 @@ class PostBloc extends Bloc<PostEvent, PostState> {
 
   Future<void> _onLoadPosts(LoadPosts event, Emitter<PostState> emit) async {
     try {
-      print("[PostBloc] Loading posts...");
+      if (kDebugMode) {
+        print("[PostBloc] Loading posts...");
+      }
       emit(PostLoading());
 
       // Fetch posts from repository
       _posts = await postRepository.fetchPosts();
 
       if (_posts.isNotEmpty) {
-        print("[PostBloc] Posts loaded successfully. Count: ${_posts.length}");
+        if (kDebugMode) {
+          print("[PostBloc] Posts loaded successfully. Count: ${_posts.length}");
+        }
         emit(PostsLoaded(List.from(_posts), _currentPost));
       } else {
-        print("[PostBloc] No posts found.");
+        if (kDebugMode) {
+          print("[PostBloc] No posts found.");
+        }
         emit(PostOperationFailure("No posts available."));
       }
     } catch (e, stacktrace) {
-      print("[PostBloc] Error loading posts: $e");
-      print("[PostBloc] Stacktrace: $stacktrace");
+      if (kDebugMode) {
+        print("[PostBloc] Error loading posts: $e");
+        print("[PostBloc] Stacktrace: $stacktrace");
+      }
       emit(PostOperationFailure('Failed to load posts: ${e.toString()}'));
     }
   }

@@ -1,6 +1,8 @@
 // repository/class_repository.dart
 import 'dart:convert';
 
+import 'package:flutter/foundation.dart';
+
 import '../models/class.dart';
 import '../services/web_service.dart';
 
@@ -13,13 +15,17 @@ class ClassRepository {
     try {
       final requestBody = jsonEncode({'id': id});
       final String responseString = await webService.postData('classes', requestBody);
-      print("API Response: $responseString"); // Debugging
+      if (kDebugMode) {
+        print("API Response: $responseString");
+      } // Debugging
 
       final Map<String, dynamic> response = jsonDecode(responseString); // Parse JSON here
       final List<dynamic> classesJson = response['classes'];
       return classesJson.map((json) => Class.fromJson(json)).toList();
     } catch (e) {
-      print("Error fetching classes: $e"); // Debugging
+      if (kDebugMode) {
+        print("Error fetching classes: $e");
+      } // Debugging
       throw Exception('Failed to fetch classes: $e');
     }
   }

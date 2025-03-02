@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 
 class WebService {
@@ -6,7 +7,9 @@ class WebService {
   WebService({required this.baseUrl});
 
   Future<String> postData(String endpoint, String data) async {
-    print(data);
+    if (kDebugMode) {
+      print(data);
+    }
     final response = await http.post(
       Uri.parse('$baseUrl/$endpoint'),
       headers: <String, String>{
@@ -15,7 +18,9 @@ class WebService {
       body: data,
     );
     if (response.statusCode == 200) {
-      print(response.body);
+      if (kDebugMode) {
+        print(response.body);
+      }
       return response.body;
     } else {
       throw Exception('Failed to fetch data');

@@ -1,6 +1,8 @@
 // repository/post_repository.dart
 import 'dart:convert';
 
+import 'package:flutter/foundation.dart';
+
 import '../models/post.dart';
 import '../services/web_service.dart';
 
@@ -12,13 +14,17 @@ class PostRepository {
   Future<List<Post>> fetchPosts() async {
     try {
       final String responseString = await webService.fetchData('admin/posts');
-      print("API Response: $responseString"); // Debugging
+      if (kDebugMode) {
+        print("API Response: $responseString");
+      } // Debugging
 
       final Map<String, dynamic> response = jsonDecode(responseString);
       final List<dynamic> postsJson = response['posts'];
       return postsJson.map((json) => Post.fromJson(json)).toList();
     } catch (e) {
-      print("Error fetching posts: $e"); // Debugging
+      if (kDebugMode) {
+        print("Error fetching posts: $e");
+      } // Debugging
       throw Exception('Failed to fetch posts: $e');
     }
   }
