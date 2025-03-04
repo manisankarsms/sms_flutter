@@ -56,7 +56,7 @@ void main() {
         ),
       ],
       child: const MaterialApp(
-        title: 'Your App',
+        title: 'My School',
         home: LoginScreen(),
       ),
     ),

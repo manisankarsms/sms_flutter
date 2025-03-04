@@ -8,7 +8,7 @@ class ApiEndpoints {
   static const String adminDashboard = 'admin/dashboard';
   static const String login = 'login';
   static const String studentFeed = 'students/feed';
-  static const String adminHolidays = 'admin/holidays';
+  static const String adminHolidays = 'holidays';
   static const String adminPosts = 'admin/posts';
   static const String adminStaffs = 'admin/staffs';
   static const String adminStudents = 'admin/students';
