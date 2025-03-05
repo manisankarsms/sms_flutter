@@ -18,6 +18,7 @@ import 'package:sms/utils/constants.dart';
 
 import 'bloc/dashboard/dashboard_bloc.dart';
 import 'bloc/staffs/staff_bloc.dart';
+import 'bloc/theme/theme_bloc.dart';
 
 void main() {
   final WebService webService = WebService(baseUrl: Constants.baseUrl);
@@ -51,13 +52,21 @@ void main() {
         BlocProvider<FeedBloc>(
           create: (context) => FeedBloc(feedRepository: feedRepository), // Provide DashboardBloc
         ),
+        BlocProvider<ThemeBloc>(
+          create: (context) => ThemeBloc(), // Provide ThemeBloc
+        ),
         RepositoryProvider(
           create: (context) => studentsRepository,
         ),
       ],
-      child: const MaterialApp(
-        title: 'My School',
-        home: LoginScreen(),
+      child: BlocBuilder<ThemeBloc, ThemeState>(
+        builder: (context, state) {
+          return MaterialApp(
+            title: 'My School',
+            theme: state.themeData, // Apply dynamic theme
+            home: const LoginScreen(),
+          );
+        },
       ),
     ),
   );

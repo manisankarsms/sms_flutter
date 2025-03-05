@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:sms/screens/holiday_screen.dart';
 import 'package:sms/screens/profile_screen.dart';
+import 'package:sms/screens/theme_screen.dart';
 
 import '../bloc/auth/auth_bloc.dart';
 import '../bloc/auth/auth_event.dart';
@@ -30,6 +31,7 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
     MessagesScreen(),
     AttendanceScreen(),
     ProfileScreen(),
+    ThemeScreen()
   ];
 
   final List<NavigationItem> _navItems = [
@@ -57,6 +59,11 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
       name: 'Profile',
       imagePath: 'assets/images/profile.png',
       icon: Icons.person_rounded,
+    ),
+    NavigationItem(
+      name: 'Themes',
+      imagePath: 'assets/images/profile.png',
+      icon: Icons.color_lens_sharp,
     ),
   ];
 
