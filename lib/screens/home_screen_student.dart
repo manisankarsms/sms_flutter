@@ -70,7 +70,9 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final size = MediaQuery.of(context).size;
+    final size = MediaQuery
+        .of(context)
+        .size;
     final isSmallScreen = size.width < 600;
 
     return Scaffold(
@@ -87,8 +89,12 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
               child: Column(
                 children: [
                   if (!isSmallScreen) _buildTopBar(theme, size.width >= 1200),
-                  Expanded(child: _screens[_selectedIndex]),
-                ],
+                  Expanded(
+                    child: Container(
+                      padding: const EdgeInsets.all(16),
+                      child: _screens[_selectedIndex],
+                    ),
+                  ),                ],
               ),
             ),
           ],
@@ -177,7 +183,10 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
             Expanded(
               child: ListView(
                 padding: EdgeInsets.zero,
-                children: _navItems.asMap().entries.map((entry) {
+                children: _navItems
+                    .asMap()
+                    .entries
+                    .map((entry) {
                   final index = entry.key;
                   final item = entry.value;
                   final isSelected = _selectedIndex == index;
@@ -192,14 +201,16 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
                     title: Text(
                       item.name,
                       style: TextStyle(
-                        fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                        fontWeight: isSelected ? FontWeight.bold : FontWeight
+                            .normal,
                         color: isSelected
                             ? theme.colorScheme.primary
                             : theme.colorScheme.onSurface,
                       ),
                     ),
                     selected: isSelected,
-                    selectedTileColor: theme.colorScheme.primary.withOpacity(0.1),
+                    selectedTileColor: theme.colorScheme.primary.withOpacity(
+                        0.1),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(8),
                     ),
@@ -252,7 +263,8 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
             child: Row(
               children: [
                 Image.asset(
-                  'assets/images/school_logo.png', // Replace with actual logo path
+                  'assets/images/school_logo.png',
+                  // Replace with actual logo path
                   width: isExpanded ? 50 : 40,
                   height: isExpanded ? 50 : 40,
                 ),
@@ -297,7 +309,9 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
                       ? Text(
                     item.name,
                     style: TextStyle(
-                      fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                      fontWeight: isSelected
+                          ? FontWeight.bold
+                          : FontWeight.normal,
                       color: isSelected
                           ? theme.colorScheme.primary
                           : theme.colorScheme.onSurface,
@@ -305,7 +319,9 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
                   )
                       : null,
                   selected: isSelected,
-                  selectedTileColor: isSelected ? theme.colorScheme.primary.withOpacity(0.1) : null,
+                  selectedTileColor: isSelected
+                      ? theme.colorScheme.primary.withOpacity(0.1)
+                      : null,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(8),
                   ),
@@ -353,7 +369,8 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
   Widget _buildBottomNav(ThemeData theme) {
     List<BottomNavigationBarItem> visibleItems = _navItems
         .take(4) // Show only the first 4 items
-        .map((item) => BottomNavigationBarItem(icon: Icon(item.icon), label: item.name))
+        .map((item) =>
+        BottomNavigationBarItem(icon: Icon(item.icon), label: item.name))
         .toList();
 
     return Container(
@@ -382,12 +399,14 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
         backgroundColor: theme.colorScheme.surface,
         selectedItemColor: theme.colorScheme.primary,
         unselectedItemColor: theme.colorScheme.onSurface.withOpacity(0.7),
-        selectedLabelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
+        selectedLabelStyle: const TextStyle(
+            fontWeight: FontWeight.bold, fontSize: 12),
         unselectedLabelStyle: const TextStyle(fontSize: 12),
         elevation: 0,
         items: [
           ...visibleItems,
-          BottomNavigationBarItem(icon: const Icon(Icons.more_horiz), label: 'More'),
+          BottomNavigationBarItem(
+              icon: const Icon(Icons.more_horiz), label: 'More'),
         ],
       ),
     );
@@ -419,22 +438,24 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
   void _confirmLogout() {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Logout'),
-        content: const Text('Are you sure you want to log out?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context), // Close dialog
-            child: const Text('Cancel'),
+      builder: (context) =>
+          AlertDialog(
+            title: const Text('Logout'),
+            content: const Text('Are you sure you want to log out?'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context), // Close dialog
+                child: const Text('Cancel'),
+              ),
+              TextButton(
+                onPressed: () {
+                  _logout();
+                },
+                child: const Text(
+                    'Logout', style: TextStyle(color: Colors.red)),
+              ),
+            ],
           ),
-          TextButton(
-            onPressed: () {
-              _logout();
-            },
-            child: const Text('Logout', style: TextStyle(color: Colors.red)),
-          ),
-        ],
-      ),
     );
   }
 
@@ -448,22 +469,137 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
           (route) => false,
     );
   }
+
   Widget _buildTopBar(ThemeData theme, bool isLargeScreen) {
     return Container(
       height: 70,
       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
       decoration: BoxDecoration(
         color: theme.colorScheme.surface,
-        boxShadow: [/*...*/],
+        boxShadow: [
+          BoxShadow(
+            color: theme.shadowColor.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: Row(
         children: [
+          // Page title
           Text(
             _navItems[_selectedIndex].name,
-            style: theme.textTheme.titleLarge,
+            style: theme.textTheme.titleLarge?.copyWith(
+              fontWeight: FontWeight.bold,
+            ),
           ),
           const Spacer(),
-          // Notification and profile icons
+
+          // Action buttons
+          IconButton(
+            icon: Icon(
+              Icons.notifications_outlined,
+              color: theme.colorScheme.onSurface,
+            ),
+            onPressed: () {
+              // Handle notifications
+            },
+          ),
+          const SizedBox(width: 16),
+          IconButton(
+            icon: Icon(
+              Icons.help_outline_rounded,
+              color: theme.colorScheme.onSurface,
+            ),
+            onPressed: () {
+              // Handle help
+            },
+          ),
+          const SizedBox(width: 16),
+          PopupMenuButton<dynamic>(
+            offset: const Offset(0, 45),
+            child: Row(
+              children: [
+                CircleAvatar(
+                  radius: 18,
+                  backgroundColor: theme.colorScheme.primary.withOpacity(0.2),
+                  child: Text(
+                    'A',
+                    style: TextStyle(
+                      color: theme.colorScheme.primary,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+                if (isLargeScreen) ...[
+                  const SizedBox(width: 8),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        'Admin User',
+                        style: theme.textTheme.bodyLarge?.copyWith(
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      Text(
+                        'Administrator',
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: theme.colorScheme.onSurface.withOpacity(0.7),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(width: 4),
+                  Icon(
+                    Icons.arrow_drop_down,
+                    color: theme.colorScheme.onSurface,
+                  ),
+                ],
+              ],
+            ),
+            onSelected: (value) {
+              // Handle menu selection based on the value
+            },
+            itemBuilder: (context) =>
+            <PopupMenuEntry<dynamic>>[
+              PopupMenuItem<String>(
+                value: 'profile', // Add value
+                child: Row(
+                  children: [
+                    Icon(Icons.person_outline,
+                        color: theme.colorScheme.primary),
+                    const SizedBox(width: 8),
+                    const Text('Profile'),
+                  ],
+                ),
+              ),
+              PopupMenuItem<String>(
+                value: 'settings', // Add value
+                child: Row(
+                  children: [
+                    Icon(Icons.settings_outlined,
+                        color: theme.colorScheme.primary),
+                    const SizedBox(width: 8),
+                    const Text('Settings'),
+                  ],
+                ),
+              ),
+              const PopupMenuDivider(),
+              PopupMenuItem<String>(
+                onTap: _confirmLogout,
+                value: 'logout', // Add value
+                child: Row(
+                  children: [
+                    Icon(Icons.logout, color: theme.colorScheme.error),
+                    const SizedBox(width: 8),
+                    const Text('Logout'),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ],
       ),
     );

@@ -147,12 +147,12 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                       ),
                       const SizedBox(height: 40),
-                      Row(
+                      Wrap(
+                        spacing: 24, // Horizontal spacing
+                        runSpacing: 16, // Vertical spacing when wrapping
                         children: [
                           _buildFeatureItem(Icons.security, 'Secure Access'),
-                          const SizedBox(width: 24),
                           _buildFeatureItem(Icons.devices, 'Cross-Platform'),
-                          const SizedBox(width: 24),
                           _buildFeatureItem(Icons.analytics, 'Real-time Reports'),
                         ],
                       ),

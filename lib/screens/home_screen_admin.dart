@@ -86,37 +86,7 @@ class _HomeScreenAdminState extends State<HomeScreenAdmin> {
       name: 'Posts',
       imagePath: 'assets/images/attendance.png',
       icon: Icons.school_rounded,
-    ),
-    NavigationItem(
-      name: 'Holiday Calendar',
-      imagePath: 'assets/images/attendance.png',
-      icon: Icons.school_rounded,
-    ),
-    NavigationItem(
-      name: 'Holiday Calendar',
-      imagePath: 'assets/images/attendance.png',
-      icon: Icons.school_rounded,
-    ),
-    NavigationItem(
-      name: 'Holiday Calendar',
-      imagePath: 'assets/images/attendance.png',
-      icon: Icons.school_rounded,
-    ),
-    NavigationItem(
-      name: 'Holiday Calendar',
-      imagePath: 'assets/images/attendance.png',
-      icon: Icons.school_rounded,
-    ),
-    NavigationItem(
-      name: 'Holiday Calendar',
-      imagePath: 'assets/images/attendance.png',
-      icon: Icons.school_rounded,
-    ),
-    NavigationItem(
-      name: 'Holiday Calendar',
-      imagePath: 'assets/images/attendance.png',
-      icon: Icons.school_rounded,
-    ),
+    )
   ];
 
   @override
