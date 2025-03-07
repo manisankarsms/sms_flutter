@@ -7,6 +7,7 @@ import 'package:sms/bloc/auth/auth_state.dart';
 import 'package:sms/screens/home_screen_staff.dart';
 import 'package:sms/screens/home_screen_student.dart';
 import 'package:sms/screens/home_screen_admin.dart';
+import 'package:sms/utils/language_selector.dart';
 
 import '../bloc/classes/classes_bloc.dart';
 import '../bloc/dashboard/dashboard_bloc.dart';
@@ -25,6 +26,7 @@ import '../repositories/staff_repository.dart';
 import '../repositories/students_repository.dart';
 import '../services/web_service.dart';
 import '../utils/constants.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({Key? key}) : super(key: key);
@@ -63,7 +65,7 @@ class _LoginScreenState extends State<LoginScreen> {
             Navigator.pushAndRemoveUntil(
               context,
               MaterialPageRoute(builder: (context) => const LoginScreen()),
-                  (route) => false,
+              (route) => false,
             );
           }
         }
@@ -141,7 +143,8 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                       const SizedBox(height: 16),
                       Text(
-                        'Manage your educational journey efficiently with our comprehensive school management platform.',
+                        AppLocalizations.of(context)?.app_description ??
+                            'Manage your educational journey efficiently with our comprehensive school management platform.',
                         style: theme.textTheme.bodyLarge?.copyWith(
                           color: Colors.white.withOpacity(0.8),
                         ),
@@ -151,9 +154,18 @@ class _LoginScreenState extends State<LoginScreen> {
                         spacing: 24, // Horizontal spacing
                         runSpacing: 16, // Vertical spacing when wrapping
                         children: [
-                          _buildFeatureItem(Icons.security, 'Secure Access'),
-                          _buildFeatureItem(Icons.devices, 'Cross-Platform'),
-                          _buildFeatureItem(Icons.analytics, 'Real-time Reports'),
+                          _buildFeatureItem(
+                              Icons.security,
+                              AppLocalizations.of(context)?.secure_access ??
+                                  'Secure Access'),
+                          _buildFeatureItem(
+                              Icons.devices,
+                              AppLocalizations.of(context)?.cross_platform ??
+                                  'Cross-Platform'),
+                          _buildFeatureItem(
+                              Icons.analytics,
+                              AppLocalizations.of(context)?.real_time_reports ??
+                                  'Real-time Reports'),
                         ],
                       ),
                     ],
@@ -165,7 +177,8 @@ class _LoginScreenState extends State<LoginScreen> {
               Expanded(
                 flex: 4,
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 32),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 40, vertical: 32),
                   child: _buildLoginForm(theme, authBloc, isWeb: true),
                 ),
               ),
@@ -183,7 +196,8 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
-  Widget _buildLoginForm(ThemeData theme, AuthBloc authBloc, {required bool isWeb}) {
+  Widget _buildLoginForm(ThemeData theme, AuthBloc authBloc,
+      {required bool isWeb}) {
     return Form(
       key: _formKey,
       child: Column(
@@ -220,21 +234,24 @@ class _LoginScreenState extends State<LoginScreen> {
           ],
 
           Text(
-            'Welcome Back',
+            AppLocalizations.of(context)?.welcome ?? "Welcome",
             style: theme.textTheme.headlineMedium?.copyWith(
               fontWeight: FontWeight.bold,
-              color: isWeb ? theme.colorScheme.primary : theme.colorScheme.onBackground,
+              color: isWeb
+                  ? theme.colorScheme.primary
+                  : theme.colorScheme.onBackground,
             ),
             textAlign: TextAlign.center,
           ),
           Text(
+            AppLocalizations.of(context)?.sign_in_to_continue ??
             'Sign in to continue',
             style: theme.textTheme.bodyLarge?.copyWith(
               color: theme.colorScheme.onBackground.withOpacity(0.7),
             ),
             textAlign: TextAlign.center,
           ),
-          const SizedBox(height: 32),
+          const SizedBox(height: 16),
 
           // User type selection
           Card(
@@ -265,21 +282,21 @@ class _LoginScreenState extends State<LoginScreen> {
                         child: _buildUserTypeOption(
                           value: 'Student',
                           icon: Icons.school,
-                          label: 'Student',
+                          label: AppLocalizations.of(context)?.student ??'Student',
                         ),
                       ),
                       Expanded(
                         child: _buildUserTypeOption(
                           value: 'Staff',
                           icon: Icons.business_center,
-                          label: 'Staff',
+                          label: AppLocalizations.of(context)?.staff ?? 'Staff',
                         ),
                       ),
                       Expanded(
                         child: _buildUserTypeOption(
                           value: 'Admin',
                           icon: Icons.admin_panel_settings,
-                          label: 'Admin',
+                          label: AppLocalizations.of(context)?.admin ?? 'Admin',
                         ),
                       ),
                     ],
@@ -288,7 +305,7 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
             ),
           ),
-          const SizedBox(height: 24),
+          const SizedBox(height: 12),
 
           // Email field
           _buildTextField(
@@ -306,7 +323,7 @@ class _LoginScreenState extends State<LoginScreen> {
             },
             keyboardType: TextInputType.emailAddress,
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 12),
 
           // Password field
           _buildTextField(
@@ -322,7 +339,9 @@ class _LoginScreenState extends State<LoginScreen> {
             },
             suffixIcon: IconButton(
               icon: Icon(
-                _obscurePassword ? Icons.visibility_outlined : Icons.visibility_off_outlined,
+                _obscurePassword
+                    ? Icons.visibility_outlined
+                    : Icons.visibility_off_outlined,
                 color: theme.colorScheme.primary,
               ),
               onPressed: () {
@@ -341,6 +360,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 // Handle forgot password
               },
               child: Text(
+                AppLocalizations.of(context)?.forgot_password ??
                 'Forgot Password?',
                 style: TextStyle(
                   color: theme.colorScheme.primary,
@@ -355,10 +375,10 @@ class _LoginScreenState extends State<LoginScreen> {
             onPressed: _isLoading
                 ? null
                 : () {
-              if (_formKey.currentState!.validate()) {
-                _login(authBloc);
-              }
-            },
+                    if (_formKey.currentState!.validate()) {
+                      _login(authBloc);
+                    }
+                  },
             style: ElevatedButton.styleFrom(
               backgroundColor: theme.colorScheme.primary,
               foregroundColor: theme.colorScheme.onPrimary,
@@ -370,23 +390,33 @@ class _LoginScreenState extends State<LoginScreen> {
             ),
             child: _isLoading
                 ? const SizedBox(
-              height: 20,
-              width: 20,
-              child: CircularProgressIndicator(
-                strokeWidth: 2,
-                color: Colors.white,
-              ),
-            )
-                : const Text(
-              'Log In',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
+                    height: 20,
+                    width: 20,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: Colors.white,
+                    ),
+                  )
+                : Text(
+                    AppLocalizations.of(context)?.login ??
+                    'Log In',
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
           ),
 
           const SizedBox(height: 24),
+
+          // Language Selection Dropdown (Using Bloc)
+          Container(
+            color: theme.colorScheme.surface,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+              child: LanguageSelector(), // Updated class now looks better!
+            ),
+          ),
         ],
       ),
     );
@@ -553,14 +583,22 @@ class _LoginScreenState extends State<LoginScreen> {
   void _navigateToHomeScreen(BuildContext context, User user) {
     Widget homeScreen;
     final WebService webService = WebService(baseUrl: Constants.baseUrl);
-    final AuthRepository authRepository = AuthRepository(webService: webService);
-    final DashboardRepository dashboardRepository = DashboardRepository(webService: webService);
-    final ClassRepository classRepository = ClassRepository(webService: webService);
-    final StudentsRepository studentsRepository = StudentsRepository(webService: webService);
-    final StaffRepository staffRepository = StaffRepository(webService: webService);
-    final HolidayRepository holidayRepository = HolidayRepository(webService: webService);
-    final PostRepository postRepository = PostRepository(webService: webService);
-    final FeedRepository feedRepository = FeedRepository(webService: webService);
+    final AuthRepository authRepository =
+        AuthRepository(webService: webService);
+    final DashboardRepository dashboardRepository =
+        DashboardRepository(webService: webService);
+    final ClassRepository classRepository =
+        ClassRepository(webService: webService);
+    final StudentsRepository studentsRepository =
+        StudentsRepository(webService: webService);
+    final StaffRepository staffRepository =
+        StaffRepository(webService: webService);
+    final HolidayRepository holidayRepository =
+        HolidayRepository(webService: webService);
+    final PostRepository postRepository =
+        PostRepository(webService: webService);
+    final FeedRepository feedRepository =
+        FeedRepository(webService: webService);
 
     switch (user.userType) {
       case 'Student':
@@ -570,7 +608,8 @@ class _LoginScreenState extends State<LoginScreen> {
         homeScreen = MultiBlocProvider(
           providers: [
             BlocProvider<ClassesBloc>(
-              create: (context) => ClassesBloc(repository: classRepository, user: user),
+              create: (context) =>
+                  ClassesBloc(repository: classRepository, user: user),
             ),
             // Add other Blocs here if needed
           ],
@@ -581,10 +620,12 @@ class _LoginScreenState extends State<LoginScreen> {
         homeScreen = MultiBlocProvider(
           providers: [
             BlocProvider<DashboardBloc>(
-              create: (context) => DashboardBloc(repository: dashboardRepository),
+              create: (context) =>
+                  DashboardBloc(repository: dashboardRepository),
             ),
             BlocProvider<ClassesBloc>(
-              create: (context) => ClassesBloc(repository: classRepository, user: user),
+              create: (context) =>
+                  ClassesBloc(repository: classRepository, user: user),
             ),
             BlocProvider<StaffsBloc>(
               create: (context) => StaffsBloc(repository: staffRepository),
@@ -612,5 +653,4 @@ class _LoginScreenState extends State<LoginScreen> {
       MaterialPageRoute(builder: (context) => homeScreen),
     );
   }
-
 }

@@ -3,51 +3,51 @@ import 'package:google_fonts/google_fonts.dart';
 
 class AppTextStyles {
   static final TextTheme textTheme = TextTheme(
-    displayLarge: GoogleFonts.poppins(
+    displayLarge: GoogleFonts.play(
       fontSize: 32,
       fontWeight: FontWeight.bold,
     ),
-    displayMedium: GoogleFonts.poppins(
+    displayMedium: GoogleFonts.play(
       fontSize: 28,
       fontWeight: FontWeight.w600,
     ),
-    displaySmall: GoogleFonts.poppins(
+    displaySmall: GoogleFonts.play(
       fontSize: 24,
       fontWeight: FontWeight.w500,
     ),
-    titleLarge: GoogleFonts.poppins(
+    titleLarge: GoogleFonts.play(
       fontSize: 22,
       fontWeight: FontWeight.bold,
     ),
-    titleMedium: GoogleFonts.poppins(
+    titleMedium: GoogleFonts.play(
       fontSize: 20,
       fontWeight: FontWeight.w600,
     ),
-    titleSmall: GoogleFonts.poppins(
+    titleSmall: GoogleFonts.play(
       fontSize: 18,
       fontWeight: FontWeight.w500,
     ),
-    bodyLarge: GoogleFonts.poppins(
+    bodyLarge: GoogleFonts.play(
       fontSize: 16,
       fontWeight: FontWeight.normal,
     ),
-    bodyMedium: GoogleFonts.poppins(
+    bodyMedium: GoogleFonts.play(
       fontSize: 14,
       fontWeight: FontWeight.normal,
     ),
-    bodySmall: GoogleFonts.poppins(
+    bodySmall: GoogleFonts.play(
       fontSize: 12,
       fontWeight: FontWeight.normal,
     ),
-    labelLarge: GoogleFonts.poppins(
+    labelLarge: GoogleFonts.play(
       fontSize: 14,
       fontWeight: FontWeight.bold,
     ),
-    labelMedium: GoogleFonts.poppins(
+    labelMedium: GoogleFonts.play(
       fontSize: 12,
       fontWeight: FontWeight.bold,
     ),
-    labelSmall: GoogleFonts.poppins(
+    labelSmall: GoogleFonts.play(
       fontSize: 10,
       fontWeight: FontWeight.bold,
     ),
