@@ -5,6 +5,7 @@ import '../bloc/dashboard/dashboard_bloc.dart';
 import '../bloc/dashboard/dashboard_event.dart';
 import '../bloc/dashboard/dashboard_state.dart';
 import '../models/dashboard_model.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 class DashboardCard {
   final String title;
@@ -57,7 +58,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
             } else if (state is DashboardLoaded) {
               return _buildDashboardContent(state.data);
             }
-            return Center(child: Text('No data available'));
+            return Center(child: Text(AppLocalizations.of(context)?.no_data_available ?? 'No data available'));
           },
         ),
       ),
@@ -68,28 +69,28 @@ class _DashboardScreenState extends State<DashboardScreen> {
     // Create dashboard cards from the API data
     final List<DashboardCard> overviewCards = [
       DashboardCard(
-        title: 'Total Students',
+        title: AppLocalizations.of(context)?.total_students ?? 'Total Students',
         value: data.students.totalCount,
         icon: Icons.people,
         color: Colors.blue.shade700,
         description: '${data.students.newAdmissionsThisMonth} new this month',
       ),
       DashboardCard(
-        title: 'Active Students',
+        title: AppLocalizations.of(context)?.active_students ?? 'Active Students',
         value: data.students.activeCount,
         icon: Icons.person,
         color: Colors.green.shade700,
         description: '${data.students.activeCount} of ${data.students.totalCount}',
       ),
       DashboardCard(
-        title: 'Total Teachers',
+        title: AppLocalizations.of(context)?.total_teachers ?? 'Total Teachers',
         value: data.staff.totalTeachers,
         icon: Icons.school,
         color: Colors.purple.shade700,
         description: '${data.staff.onLeaveToday} on leave today',
       ),
       DashboardCard(
-        title: 'Admin Staff',
+        title: AppLocalizations.of(context)?.admin_staff ?? 'Admin Staff',
         value: data.staff.totalAdminStaff,
         icon: Icons.admin_panel_settings,
         color: Colors.orange.shade700,
@@ -103,19 +104,19 @@ class _DashboardScreenState extends State<DashboardScreen> {
       PieChartSectionData(
         color: Colors.blue.shade600,
         value: double.parse(genderDistribution.boys),
-        title: 'Boys',
+        title: AppLocalizations.of(context)?.boys ?? 'Boys',
         radius: 80,
       ),
       PieChartSectionData(
         color: Colors.pink.shade600,
         value: double.parse(genderDistribution.girls),
-        title: 'Girls',
+        title: AppLocalizations.of(context)?.girls ?? 'Girls',
         radius: 80,
       ),
       PieChartSectionData(
         color: Colors.purple.shade600,
         value: double.parse(genderDistribution.other),
-        title: 'Other',
+        title: AppLocalizations.of(context)?.other ?? 'Other',
         radius: 80,
       ),
     ];
@@ -127,7 +128,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Overview Cards Section
-            _buildSectionHeader('Overview'),
+            _buildSectionHeader(AppLocalizations.of(context)?.overview ?? 'Overview'),
             const SizedBox(height: 16),
             SingleChildScrollView(
               scrollDirection: Axis.horizontal,
@@ -143,7 +144,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
             // Quick Actions Section
             const SizedBox(height: 32),
-            _buildSectionHeader('Quick Actions'),
+            _buildSectionHeader(AppLocalizations.of(context)?.quick_actions ?? 'Quick Actions'),
             const SizedBox(height: 16),
             SingleChildScrollView(
               scrollDirection: Axis.horizontal,
@@ -151,7 +152,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 children: [
                   _buildQuickActionButton(
                     icon: Icons.person_add,
-                    label: 'Add Student',
+                    label: AppLocalizations.of(context)?.add_student ?? 'Add Student',
                     onPressed: () {
                       // TODO: Navigate to add student screen
                     },
@@ -159,7 +160,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   const SizedBox(width: 16),
                   _buildQuickActionButton(
                     icon: Icons.add_box,
-                    label: 'Create Class',
+                    label: AppLocalizations.of(context)?.add_new_class ?? 'Create Class',
                     onPressed: () {
                       // TODO: Navigate to create class screen
                     },
@@ -167,7 +168,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   const SizedBox(width: 16),
                   _buildQuickActionButton(
                     icon: Icons.people,
-                    label: 'Manage Staff',
+                    label: AppLocalizations.of(context)?.manage_staff ?? 'Manage Staff',
                     onPressed: () {
                       // TODO: Navigate to staff management
                     },
@@ -178,7 +179,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
             // Analytics Charts Section
             const SizedBox(height: 32),
-            _buildSectionHeader('Analytics'),
+            _buildSectionHeader(AppLocalizations.of(context)?.analytics ?? 'Analytics'),
             const SizedBox(height: 16),
 
             // Pie Chart for Gender Distribution
@@ -190,7 +191,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   sectionsSpace: 4,
                 ),
               ),
-              title: 'Gender Distribution',
+              title: AppLocalizations.of(context)?.gender_distribution ?? 'Gender Distribution',
             ),
           ],
         ),

@@ -5,6 +5,7 @@ import '../bloc/complaint/complaint_bloc.dart';
 import '../bloc/complaint/complaint_event.dart';
 import '../bloc/complaint/complaint_state.dart';
 import '../models/complaint.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 class ComplaintListScreen extends StatelessWidget {
   @override
@@ -12,7 +13,7 @@ class ComplaintListScreen extends StatelessWidget {
     context.read<ComplaintBloc>().add(LoadComplaints());
 
     return Scaffold(
-      appBar: AppBar(title: Text("Complaints")),
+      appBar: AppBar(title: Text(AppLocalizations.of(context)?.complaints ?? "Complaints")),
       body: BlocBuilder<ComplaintBloc, ComplaintState>(
         builder: (context, state) {
           if (state is ComplaintLoading) {
@@ -30,14 +31,14 @@ class ComplaintListScreen extends StatelessWidget {
                     subtitle: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text("Category: ${complaint.category}",
-                            style: TextStyle(
+                        Text("${AppLocalizations.of(context)?.category} : ${complaint.category}",
+                            style: const TextStyle(
                                 fontSize: 14, fontWeight: FontWeight.w500)),
-                        Text("Status: ${complaint.status}",
+                        Text("${AppLocalizations.of(context)?.status} : ${complaint.status}",
                             style: TextStyle(
                                 fontSize: 14, color: Colors.grey[700])),
                         if (complaint.isAnonymous)
-                          Text("(Anonymous Complaint)",
+                          Text(AppLocalizations.of(context)?.complaint_anonymous ?? "(Anonymous Complaint)",
                               style:
                               TextStyle(fontSize: 12, color: Colors.red)),
                       ],
@@ -52,7 +53,7 @@ class ComplaintListScreen extends StatelessWidget {
           } else if (state is ComplaintError) {
             return Center(child: Text(state.message));
           } else {
-            return Center(child: Text("No complaints found"));
+            return Center(child: Text(AppLocalizations.of(context)?.no_complaints_found ?? "No complaints found"));
           }
         },
       ),
@@ -75,10 +76,10 @@ class ComplaintListScreen extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text("Category: ${complaint.category}",
+                    Text("${AppLocalizations.of(context)?.category} : ${complaint.category}",
                         style: TextStyle(fontWeight: FontWeight.bold)),
                     SizedBox(height: 8),
-                    Text("Status:", style: TextStyle(fontWeight: FontWeight.bold)),
+                    Text(AppLocalizations.of(context)?.status ?? "Status:", style: TextStyle(fontWeight: FontWeight.bold)),
                     DropdownButton<String>(
                       value: _selectedStatus,
                       items: ["Pending", "In Progress", "Resolved"]
@@ -97,16 +98,16 @@ class ComplaintListScreen extends StatelessWidget {
                       },
                     ),
                     SizedBox(height: 8),
-                    Text("Description:", style: TextStyle(fontWeight: FontWeight.bold)),
+                    Text(AppLocalizations.of(context)?.complaint_description ?? "Description:", style: TextStyle(fontWeight: FontWeight.bold)),
                     SizedBox(height: 4),
                     Text(complaint.description),
                     if (complaint.isAnonymous)
-                      Text("(Anonymous Complaint)",
+                      Text(AppLocalizations.of(context)?.complaint_anonymous ?? "(Anonymous Complaint)",
                           style: TextStyle(fontSize: 12, color: Colors.red)),
                     SizedBox(height: 16),
-                    Text("Comments:", style: TextStyle(fontWeight: FontWeight.bold)),
+                    Text(AppLocalizations.of(context)?.comments ?? "Comments:", style: TextStyle(fontWeight: FontWeight.bold)),
                     if (complaint.comments.isEmpty)
-                      Text("No comments yet")
+                      Text(AppLocalizations.of(context)?.no_comments_yet ?? "No comments yet")
                     else
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -118,7 +119,7 @@ class ComplaintListScreen extends StatelessWidget {
                               children: [
                                 Text("- ${comment.comment}",
                                     style: TextStyle(fontSize: 14)),
-                                Text("By: ${comment.commentedBy} • ${comment.commentedAt}",
+                                Text(AppLocalizations.of(context)?.by ?? "By: ${comment.commentedBy} • ${comment.commentedAt}",
                                     style: TextStyle(fontSize: 12, color: Colors.grey)),
                               ],
                             ),
@@ -130,7 +131,7 @@ class ComplaintListScreen extends StatelessWidget {
                       controller: _commentController,
                       enabled: _isCommentEnabled, // Comment field is enabled only when status changes
                       decoration: InputDecoration(
-                        hintText: "Enter a comment (required for status change)",
+                        hintText: AppLocalizations.of(context)?.enter_a_comment ?? "Enter a comment (required for status change)",
                         border: OutlineInputBorder(),
                       ),
                     ),
@@ -143,7 +144,7 @@ class ComplaintListScreen extends StatelessWidget {
                     if (_selectedStatus != complaint.status) {
                       if (_commentController.text.isEmpty) {
                         ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text("Please enter a comment for status change.")),
+                          SnackBar(content: Text(AppLocalizations.of(context)?.please_enter_a_comment ?? "Please enter a comment for status change.")),
                         );
                         return;
                       }
@@ -154,11 +155,11 @@ class ComplaintListScreen extends StatelessWidget {
                     }
                     Navigator.pop(context);
                   },
-                  child: Text("Update Status"),
+                  child: Text(AppLocalizations.of(context)?.update_status ?? "Update Status"),
                 ),
                 TextButton(
                   onPressed: () => Navigator.pop(context),
-                  child: Text("Close"),
+                  child: Text(AppLocalizations.of(context)?.close ?? "Close"),
                 ),
               ],
             );

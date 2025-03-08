@@ -7,6 +7,7 @@ import 'package:table_calendar/table_calendar.dart';
 import '../bloc/attendance/attendance_bloc.dart';
 import '../bloc/attendance/attendance_event.dart';
 import '../bloc/attendance/attendance_state.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 class AttendanceScreen extends StatelessWidget {
   final MockAuthRepository authRepository = MockAuthRepository(); // Create an instance of AuthRepository
@@ -58,7 +59,7 @@ class _AttendanceViewState extends State<AttendanceView> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Attendance'),
+        title: Text(AppLocalizations.of(context)?.attendance ?? 'Attendance'),
       ),
       body: BlocBuilder<AttendanceBloc, AttendanceState>(
         builder: (context, state) {

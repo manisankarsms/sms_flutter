@@ -10,6 +10,7 @@ import '../bloc/students/students_event.dart';
 import '../models/class.dart';
 import '../models/user.dart';
 import '../repositories/students_repository.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 class ClassesScreen extends StatefulWidget {
 
@@ -43,9 +44,8 @@ class _ClassesScreenState extends State<ClassesScreen> {
               }
 
               if (state.filteredClasses.isEmpty) {
-                return const Center(
-                  child: Text(
-                    'No classes found',
+                return Center(
+                  child: Text(AppLocalizations.of(context)?.no_classes_found ?? 'No classes found',
                     style: TextStyle(fontSize: 18, color: Colors.grey),
                   ),
                 );
@@ -75,21 +75,21 @@ class _ClassesScreenState extends State<ClassesScreen> {
       context: context,
       builder: (context) {
         return AlertDialog(
-          title: const Text('Add New Class'),
+          title: Text(AppLocalizations.of(context)?.add_new_class ?? 'Add New Class'),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              _buildTextField(nameController, 'Class Name', 'Enter class name'),
+              _buildTextField(nameController, AppLocalizations.of(context)?.class_name ?? 'Class Name', AppLocalizations.of(context)?.enter_class_name ?? 'Enter class name'),
               const SizedBox(height: 10),
               _buildTextField(subjectsController, 'Subjects', 'Math, Science'),
               const SizedBox(height: 10),
-              _buildTextField(instructorController, 'Instructor (Optional)', ''),
+              _buildTextField(instructorController, AppLocalizations.of(context)?.instructor ?? 'Instructor (Optional)', ''),
             ],
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Cancel'),
+              child: Text(AppLocalizations.of(context)?.cancel ?? 'Cancel'),
             ),
             ElevatedButton(
               onPressed: () {
@@ -104,11 +104,11 @@ class _ClassesScreenState extends State<ClassesScreen> {
                   Navigator.of(context).pop();
                 } else {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Please fill in required fields')),
+                    SnackBar(content: Text(AppLocalizations.of(context)?.please_fill_in_required_fields ?? 'Please fill in required fields')),
                   );
                 }
               },
-              child: const Text('Add'),
+              child: Text(AppLocalizations.of(context)?.add ?? 'Add'),
             ),
           ],
         );
@@ -145,7 +145,7 @@ class ClassCard extends StatelessWidget {
           style: const TextStyle(fontWeight: FontWeight.bold),
         ),
         subtitle: classData.staff != null
-            ? Text('Instructor: ${classData.staff!}')
+            ? Text(AppLocalizations.of(context)?.instructor ?? 'Instructor: ${classData.staff!}')
             : null,
         trailing: Row(
           mainAxisSize: MainAxisSize.min,
@@ -153,7 +153,7 @@ class ClassCard extends StatelessWidget {
             IconButton(
               icon: const Icon(Icons.people, color: Colors.blue),
               onPressed: () => _navigateToStudents(context),
-              tooltip: 'View Students',
+              tooltip: AppLocalizations.of(context)?.view_students ?? 'View Students',
             ),
             IconButton(
               icon: const Icon(Icons.delete, color: Colors.red),
