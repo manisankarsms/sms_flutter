@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:sms/screens/complaint_screen.dart';
 import 'package:sms/screens/holiday_screen.dart';
 import 'package:sms/screens/profile_screen.dart';
 import 'package:sms/screens/rules_screen.dart';
@@ -33,7 +34,8 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
     AttendanceScreen(),
     ProfileScreen(),
     ThemeScreen(),
-    RulesScreen()
+    RulesScreen(),
+    ComplaintScreen()
   ];
 
   final List<NavigationItem> _navItems = [
@@ -71,6 +73,11 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
       name: 'Rules',
       imagePath: 'assets/images/profile.png',
       icon: Icons.rule,
+    ),
+    NavigationItem(
+      name: 'Complaint',
+      imagePath: 'assets/images/profile.png',
+      icon: Icons.comment,
     ),
   ];
 

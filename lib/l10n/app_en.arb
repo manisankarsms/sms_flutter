@@ -31,5 +31,16 @@
   "try_again": "Try Again",
   "no_internet": "No internet connection",
   "school_management_system": "School Management System",
-  "app_description": "Manage your educational journey efficiently with our comprehensive school management platform."
+  "app_description": "Manage your educational journey efficiently with our comprehensive school management platform.",
+
+  "complaint_title": "Register Complaint",
+  "complaint_subject": "Subject",
+  "complaint_subject_hint": "Please enter subject",
+  "complaint_description": "Description",
+  "complaint_description_hint": "Please enter description",
+  "complaint_about": "Complaint About",
+  "complaint_other_specify": "Specify Other",
+  "complaint_other_hint": "Please specify the complaint",
+  "complaint_anonymous": "Submit as Anonymous",
+  "complaint_submitted": "Complaint Submitted"
 }

@@ -5,6 +5,7 @@ class CustomTextFormField extends StatelessWidget {
   final String? Function(String?)? validator;
   final void Function(String)? onChanged;
   final bool obscureText;
+  final int maxLines; // Add maxLines parameter
 
   const CustomTextFormField({
     Key? key,
@@ -12,6 +13,7 @@ class CustomTextFormField extends StatelessWidget {
     this.validator,
     this.onChanged,
     this.obscureText = false,
+    this.maxLines = 1, // Default to 1 for single-line input
   }) : super(key: key);
 
   @override
@@ -24,6 +26,7 @@ class CustomTextFormField extends StatelessWidget {
       validator: validator,
       onChanged: onChanged,
       obscureText: obscureText,
+      maxLines: maxLines, // Allow multi-line input
     );
   }
 }

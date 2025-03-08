@@ -8,6 +8,7 @@ import 'package:sms/bloc/language/language_bloc.dart';
 import 'package:sms/bloc/post/post_bloc.dart';
 import 'package:sms/repositories/auth_repository.dart';
 import 'package:sms/repositories/class_repository.dart';
+import 'package:sms/repositories/complaint_repository.dart';
 import 'package:sms/repositories/dashboard_repository.dart';
 import 'package:sms/repositories/feed_repository.dart';
 import 'package:sms/repositories/holiday_repository.dart';
@@ -19,6 +20,7 @@ import 'package:sms/services/web_service.dart';
 import 'package:sms/utils/constants.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
+import 'bloc/complaint/complaint_bloc.dart';
 import 'bloc/dashboard/dashboard_bloc.dart';
 import 'bloc/language/language_state.dart';
 import 'bloc/staffs/staff_bloc.dart';
@@ -61,6 +63,9 @@ void main() {
         ),
         BlocProvider<LanguageBloc>(
           create: (context) => LanguageBloc(),
+        ),
+        BlocProvider(
+          create: (context) => ComplaintBloc(ComplaintRepository()),
         ),
         RepositoryProvider(
           create: (context) => studentsRepository,
