@@ -36,6 +36,7 @@ void main() {
   final HolidayRepository holidayRepository = HolidayRepository(webService: webService);
   final PostRepository postRepository = PostRepository(webService: webService);
   final FeedRepository feedRepository = FeedRepository(webService: webService);
+  final ComplaintRepository complaintRepository = ComplaintRepository(webService: webService);
 
   runApp(
     MultiBlocProvider(
@@ -65,7 +66,7 @@ void main() {
           create: (context) => LanguageBloc(),
         ),
         BlocProvider(
-          create: (context) => ComplaintBloc(ComplaintRepository()),
+          create: (context) => ComplaintBloc(complaintRepository),
         ),
         RepositoryProvider(
           create: (context) => studentsRepository,

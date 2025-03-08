@@ -23,9 +23,14 @@ class ComplaintBloc extends Bloc<ComplaintEvent, ComplaintState> {
       add(LoadComplaints());
     });
 
+    // Handle status update with comment in Bloc
     on<UpdateComplaintStatus>((event, emit) async {
-      await complaintRepository.updateComplaintStatus(event.id, event.status);
-      add(LoadComplaints());
+      try {
+        await complaintRepository.updateComplaintStatus(event.id, event.status, event.comment);
+        add(LoadComplaints()); // Refresh complaints after update
+      } catch (e) {
+        emit(ComplaintError("Failed to update status: ${e.toString()}"));
+      }
     });
   }
 }

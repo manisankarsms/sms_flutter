@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:sms/screens/classes_screen.dart';
+import 'package:sms/screens/complaint_list_screen.dart';
 import 'package:sms/screens/dashboard_screen.dart';
 import 'package:sms/screens/holiday_screen.dart';
 import 'package:sms/screens/new_student_screen.dart';
 import 'package:sms/screens/posts_screen.dart';
 import 'package:sms/screens/staffs_screen.dart';
+import 'package:sms/screens/theme_screen.dart';
 
 import '../bloc/auth/auth_bloc.dart';
 import '../bloc/auth/auth_event.dart';
@@ -47,7 +49,9 @@ class _HomeScreenAdminState extends State<HomeScreenAdmin> {
       StaffsScreen(),
       const Center(child: Text('Students - Development In Progress')),
       HolidayScreen(),
-      PostsScreen()
+      PostsScreen(),
+      ThemeScreen(),
+      ComplaintListScreen()
     ];
   }
 
@@ -86,6 +90,16 @@ class _HomeScreenAdminState extends State<HomeScreenAdmin> {
       name: 'Posts',
       imagePath: 'assets/images/attendance.png',
       icon: Icons.school_rounded,
+    ),
+    NavigationItem(
+      name: 'Themes',
+      imagePath: 'assets/images/attendance.png',
+      icon: Icons.color_lens_sharp,
+    ),
+    NavigationItem(
+      name: 'Complaints',
+      imagePath: 'assets/images/attendance.png',
+      icon: Icons.comment,
     )
   ];
 

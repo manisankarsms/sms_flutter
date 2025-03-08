@@ -15,5 +15,7 @@ class AddComplaint extends ComplaintEvent {
 class UpdateComplaintStatus extends ComplaintEvent {
   final String id;
   final String status;
-  UpdateComplaintStatus(this.id, this.status);
+  final String comment; // New comment field
+
+  UpdateComplaintStatus(this.id, this.status, this.comment);
 }

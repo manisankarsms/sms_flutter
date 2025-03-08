@@ -13,4 +13,9 @@ class ApiEndpoints {
   static const String adminStaffs = 'admin/staffs';
   static const String adminStudents = 'admin/students';
   static const String staffAttendance = 'staff/attendance';
+
+  static const String complaints = "admin/complaints";
+  static const String addComplaint = "api/complaints";
+  static const String updateComplaintStatus = "api/complaints/update-status";
+  static const String addComplaintComment = "api/complaints/comment";
 }

@@ -1,3 +1,5 @@
+import 'comment.dart';
+
 class Complaint {
   final String id;
   final String subject;
@@ -5,6 +7,7 @@ class Complaint {
   final String category;
   final String status;
   final bool isAnonymous;
+  final List<Comment> comments; // Updated to store `Comment` objects
 
   Complaint({
     required this.id,
@@ -13,6 +16,7 @@ class Complaint {
     required this.category,
     this.status = "Pending",
     this.isAnonymous = false,
+    this.comments = const [],
   });
 
   factory Complaint.fromJson(Map<String, dynamic> json) {
@@ -23,6 +27,10 @@ class Complaint {
       category: json['category'],
       status: json['status'],
       isAnonymous: json['isAnonymous'] ?? false,
+      comments: (json['comments'] as List<dynamic>?)
+          ?.map((commentJson) => Comment.fromJson(commentJson))
+          .toList() ??
+          [],
     );
   }
 
@@ -34,10 +42,11 @@ class Complaint {
       'category': category,
       'status': status,
       'isAnonymous': isAnonymous,
+      'comments': comments.map((comment) => comment.toJson()).toList(),
     };
   }
 
-  Complaint copyWith({String? status}) {
+  Complaint copyWith({String? status, List<Comment>? comments}) {
     return Complaint(
       id: id,
       subject: subject,
@@ -45,6 +54,7 @@ class Complaint {
       category: category,
       status: status ?? this.status,
       isAnonymous: isAnonymous,
+      comments: comments ?? this.comments,
     );
   }
 }
