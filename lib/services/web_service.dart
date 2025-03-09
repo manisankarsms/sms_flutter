@@ -1,5 +1,9 @@
+import 'dart:convert';
+
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
+
+import '../cryptography/aes.dart';
 
 class WebService {
   final String baseUrl;
@@ -7,8 +11,13 @@ class WebService {
   WebService({required this.baseUrl});
 
   Future<String> postData(String endpoint, String data) async {
+    try {
+    String aesKey = AESUtil.generateKey();
+    final encryptedBody = AESUtil.encrypt(jsonEncode(data), aesKey);
     if (kDebugMode) {
       print(data);
+      print(encryptedBody);
+      print(aesKey);
     }
     final response = await http.post(
       Uri.parse('$baseUrl/$endpoint'),
@@ -24,6 +33,12 @@ class WebService {
       return response.body;
     } else {
       throw Exception('Failed to fetch data');
+    }
+  } catch(e){
+      if (kDebugMode) {
+        print("Error in postData: $e");
+      }
+      throw Exception('Network error: $e');
     }
   }
 
