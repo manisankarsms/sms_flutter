@@ -1,13 +1,13 @@
 class DashboardModel {
   final Students students;
-  final Staff staff;
+  final Staffs staff;
 
   DashboardModel({required this.students, required this.staff});
 
   factory DashboardModel.fromJson(Map<String, dynamic> json) {
     return DashboardModel(
       students: Students.fromJson(json['students']),
-      staff: Staff.fromJson(json['staff']),
+      staff: Staffs.fromJson(json['staff']),
     );
   }
 }
@@ -55,19 +55,19 @@ class GenderDistribution {
   }
 }
 
-class Staff {
+class Staffs {
   final String totalTeachers;
   final String totalAdminStaff;
   final String onLeaveToday;
 
-  Staff({
+  Staffs({
     required this.totalTeachers,
     required this.totalAdminStaff,
     required this.onLeaveToday,
   });
 
-  factory Staff.fromJson(Map<String, dynamic> json) {
-    return Staff(
+  factory Staffs.fromJson(Map<String, dynamic> json) {
+    return Staffs(
       totalTeachers: json['totalTeachers'],
       totalAdminStaff: json['totalAdminStaff'],
       onLeaveToday: json['onLeaveToday'],

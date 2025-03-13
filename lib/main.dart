@@ -12,7 +12,7 @@ import 'package:sms/repositories/class_repository.dart';
 import 'package:sms/repositories/complaint_repository.dart';
 import 'package:sms/repositories/dashboard_repository.dart';
 import 'package:sms/repositories/feed_repository.dart';
-import 'package:sms/repositories/fess_repository.dart';
+import 'package:sms/repositories/fees_repository.dart';
 import 'package:sms/repositories/holiday_repository.dart';
 import 'package:sms/repositories/post_repository.dart';
 import 'package:sms/repositories/staff_repository.dart';

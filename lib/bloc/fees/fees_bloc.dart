@@ -1,7 +1,7 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../models/fees.dart';
-import '../../repositories/fess_repository.dart';
+import '../../repositories/fees_repository.dart';
 
 part 'fees_event.dart';
 part 'fees_state.dart';

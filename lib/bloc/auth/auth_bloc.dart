@@ -26,11 +26,9 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
 
       if (users != null && users.isNotEmpty) {
         if (users.length == 1) {
-          // Directly authenticate if only one user is available
-          emit(AuthAuthenticated(users[0]));
+          emit(AuthAuthenticated(users, users[0])); // Pass full list + selected user
         } else {
-          // Emit state with multiple users to allow user selection
-          emit(AuthMultipleUsers(users));
+          emit(AuthMultipleUsers(users)); // Let user pick one
         }
       } else {
         emit(AuthFailure(error: "No users found."));
@@ -41,8 +39,9 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
   }
 
   void _onUserSelected(UserSelected event, Emitter<AuthState> emit) {
-    emit(AuthAuthenticated(event.selectedUser));
+    emit(AuthAuthenticated(event.users, event.selectedUser)); // Keep full user list
   }
+
 
   void _onLogoutRequested(LogoutRequested event, Emitter<AuthState> emit) async {
     await authRepository.logout(); // Ensure logout clears session/token

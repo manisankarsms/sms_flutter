@@ -17,7 +17,9 @@ class LoginButtonPressed extends AuthEvent {
 
 class UserSelected extends AuthEvent {
   final User selectedUser;
-  UserSelected(this.selectedUser);
+  final List<User> users;  // Keep all users
+
+  UserSelected(this.selectedUser, this.users);
 }
 
 

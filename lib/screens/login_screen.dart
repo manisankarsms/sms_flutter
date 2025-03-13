@@ -57,10 +57,10 @@ class _LoginScreenState extends State<LoginScreen> {
 
         if (state is AuthFailure) {
           _showErrorSnackbar(state.error);
-        } else if (state is AuthAuthenticated) {
-          _navigateToHomeScreen(context, state.user);
+        } if (state is AuthAuthenticated) {
+          _navigateToHomeScreen(context, state.users, state.activeUser);
         } else if (state is AuthMultipleUsers) {
-          _showUserSelectionDialog(context, state.users);
+          _navigateToHomeScreen(context, state.users, null); // Call user selection dialog
         } else if (state is AuthUnauthenticated) {
           if (ModalRoute.of(context)?.settings.name != '/login') {
             Navigator.pushAndRemoveUntil(
@@ -581,40 +581,42 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
-  void _navigateToHomeScreen(BuildContext context, User user) {
+  /*void _navigateToHomeScreen(BuildContext context, List<User> users) {
     Widget homeScreen;
     final WebService webService = WebService(baseUrl: Constants.baseUrl);
     final AuthRepository authRepository =
-        AuthRepository(webService: webService);
+    AuthRepository(webService: webService);
     final DashboardRepository dashboardRepository =
-        DashboardRepository(webService: webService);
+    DashboardRepository(webService: webService);
     final ClassRepository classRepository =
-        ClassRepository(webService: webService);
+    ClassRepository(webService: webService);
     final StudentsRepository studentsRepository =
-        StudentsRepository(webService: webService);
+    StudentsRepository(webService: webService);
     final StaffRepository staffRepository =
-        StaffRepository(webService: webService);
+    StaffRepository(webService: webService);
     final HolidayRepository holidayRepository =
-        HolidayRepository(webService: webService);
+    HolidayRepository(webService: webService);
     final PostRepository postRepository =
-        PostRepository(webService: webService);
+    PostRepository(webService: webService);
     final FeedRepository feedRepository =
-        FeedRepository(webService: webService);
+    FeedRepository(webService: webService);
 
-    switch (user.userType) {
+    // Default to first user
+    User activeUser = users.first;
+
+    switch (activeUser.userType) {
       case 'Student':
-        homeScreen = StudentHomeScreen(user: user);
+        homeScreen = StudentHomeScreen(users: users, selectedUser: activeUser);
         break;
       case 'Staff':
         homeScreen = MultiBlocProvider(
           providers: [
             BlocProvider<ClassesBloc>(
               create: (context) =>
-                  ClassesBloc(repository: classRepository, user: user),
+                  ClassesBloc(repository: classRepository, user: activeUser),
             ),
-            // Add other Blocs here if needed
           ],
-          child: StaffHomeScreen(user: user),
+          child: StaffHomeScreen(user: activeUser),
         );
         break;
       case 'Admin':
@@ -626,7 +628,7 @@ class _LoginScreenState extends State<LoginScreen> {
             ),
             BlocProvider<ClassesBloc>(
               create: (context) =>
-                  ClassesBloc(repository: classRepository, user: user),
+                  ClassesBloc(repository: classRepository, user: activeUser),
             ),
             BlocProvider<StaffsBloc>(
               create: (context) => StaffsBloc(repository: staffRepository),
@@ -640,13 +642,85 @@ class _LoginScreenState extends State<LoginScreen> {
             BlocProvider<FeedBloc>(
               create: (context) => FeedBloc(feedRepository: feedRepository),
             ),
-            // Add other Blocs here if needed
           ],
-          child: HomeScreenAdmin(user: user),
+          child: HomeScreenAdmin(user: activeUser),
         );
         break;
       default:
-        homeScreen = StudentHomeScreen(user: user);
+        homeScreen = StudentHomeScreen(users: users, selectedUser: activeUser);
+    }
+
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(builder: (context) => homeScreen),
+    );
+  }*/
+
+  void _navigateToHomeScreen(BuildContext context, List<User> users, User? activeUser) {
+    if (activeUser != null) {
+      // If an active user is already selected, navigate directly
+      _navigateBasedOnUserType(context, activeUser, users);
+    } else {
+      // Otherwise, show user selection dialog
+      _showUserSelectionDialog(context, users);
+    }
+  }
+
+
+// Navigate based on user type
+  void _navigateBasedOnUserType(BuildContext context, User selectedUser, List<User> users) {
+    Widget homeScreen;
+    final WebService webService = WebService(baseUrl: Constants.baseUrl);
+    final AuthRepository authRepository = AuthRepository(webService: webService);
+    final DashboardRepository dashboardRepository = DashboardRepository(webService: webService);
+    final ClassRepository classRepository = ClassRepository(webService: webService);
+    final StudentsRepository studentsRepository = StudentsRepository(webService: webService);
+    final StaffRepository staffRepository = StaffRepository(webService: webService);
+    final HolidayRepository holidayRepository = HolidayRepository(webService: webService);
+    final PostRepository postRepository = PostRepository(webService: webService);
+    final FeedRepository feedRepository = FeedRepository(webService: webService);
+
+    switch (selectedUser.userType) {
+      case 'Student':
+        homeScreen = StudentHomeScreen(users: users, selectedUser: selectedUser);
+        break;
+      case 'Staff':
+        homeScreen = MultiBlocProvider(
+          providers: [
+            BlocProvider<ClassesBloc>(
+              create: (context) => ClassesBloc(repository: classRepository, user: selectedUser),
+            ),
+          ],
+          child: StaffHomeScreen(user: selectedUser),
+        );
+        break;
+      case 'Admin':
+        homeScreen = MultiBlocProvider(
+          providers: [
+            BlocProvider<DashboardBloc>(
+              create: (context) => DashboardBloc(repository: dashboardRepository),
+            ),
+            BlocProvider<ClassesBloc>(
+              create: (context) => ClassesBloc(repository: classRepository, user: selectedUser),
+            ),
+            BlocProvider<StaffsBloc>(
+              create: (context) => StaffsBloc(repository: staffRepository),
+            ),
+            BlocProvider<HolidayBloc>(
+              create: (context) => HolidayBloc(repository: holidayRepository),
+            ),
+            BlocProvider<PostBloc>(
+              create: (context) => PostBloc(postRepository: postRepository),
+            ),
+            BlocProvider<FeedBloc>(
+              create: (context) => FeedBloc(feedRepository: feedRepository),
+            ),
+          ],
+          child: HomeScreenAdmin(user: selectedUser),
+        );
+        break;
+      default:
+        homeScreen = StudentHomeScreen(users: users, selectedUser: selectedUser);
     }
 
     Navigator.pushReplacement(
@@ -654,6 +728,7 @@ class _LoginScreenState extends State<LoginScreen> {
       MaterialPageRoute(builder: (context) => homeScreen),
     );
   }
+
 
   void _showUserSelectionDialog(BuildContext context, List<User> users) {
     showDialog(
@@ -670,7 +745,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 subtitle: Text(user.userType),
                 onTap: () {
                   Navigator.pop(context); // Close dialog
-                  context.read<AuthBloc>().add(UserSelected(user));
+                  context.read<AuthBloc>().add(UserSelected(user, users)); // Pass all users
                 },
               );
             }).toList(),

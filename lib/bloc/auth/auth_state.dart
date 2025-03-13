@@ -15,10 +15,12 @@ class AuthInitial extends AuthState {}
 class AuthLoading extends AuthState {}
 
 class AuthAuthenticated extends AuthState {
-  final User user;
+  final List<User> users;  // Keep all users
+  final User activeUser;   // The selected user
 
-  AuthAuthenticated(this.user);
+  AuthAuthenticated(this.users, this.activeUser);
 }
+
 
 class AuthMultipleUsers extends AuthState {
   final List<User> users;

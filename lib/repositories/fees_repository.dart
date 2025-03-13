@@ -57,14 +57,14 @@ class FeesRepository {
 
     final Map<String, dynamic> sampleResponse = {
       "2024": {
-        "10th Grade": {
+        "9th Grade": {
           "totalFees": 18000,
           "breakdown": [
             { "feeType": "Tuition", "amount": 14000 },
             { "feeType": "Transport", "amount": 4000 }
           ]
         },
-        "12th Grade": {
+        "10th Grade": {
           "totalFees": 25000,
           "breakdown": [
             { "feeType": "Tuition", "amount": 17000 },
@@ -73,14 +73,14 @@ class FeesRepository {
         }
       },
       "2025": {
-        "10th Grade": {
+        "9th Grade": {
           "totalFees": 20000,
           "breakdown": [
             { "feeType": "Tuition", "amount": 15000 },
             { "feeType": "Transport", "amount": 5000 }
           ]
         },
-        "12th Grade": {
+        "10th Grade": {
           "totalFees": 30000,
           "breakdown": [
             { "feeType": "Tuition", "amount": 18000 },

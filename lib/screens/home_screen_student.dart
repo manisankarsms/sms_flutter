@@ -6,6 +6,7 @@ import 'package:sms/screens/holiday_screen.dart';
 import 'package:sms/screens/profile_screen.dart';
 import 'package:sms/screens/rules_screen.dart';
 import 'package:sms/screens/theme_screen.dart';
+import 'package:sms/utils/constants.dart';
 
 import '../bloc/auth/auth_bloc.dart';
 import '../bloc/auth/auth_event.dart';
@@ -17,28 +18,43 @@ import 'login_screen.dart';
 import 'messages_screen.dart';
 
 class StudentHomeScreen extends StatefulWidget {
-  final User user;
+  final List<User> users; // List of users for switching
+  final User selectedUser; // Currently active user
 
-  const StudentHomeScreen({Key? key, required this.user}) : super(key: key);
+  const StudentHomeScreen({
+    Key? key,
+    required this.users,
+    required this.selectedUser,
+  }) : super(key: key);
+
   @override
   _StudentHomeScreenState createState() => _StudentHomeScreenState();
 }
 
 class _StudentHomeScreenState extends State<StudentHomeScreen> {
   int _selectedIndex = 0;
+  late User _activeUser; // Track active user
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 
-  final List<Widget> _screens = [
-    const StudentFeedScreen(),
-    HolidayScreen(),
-    MessagesScreen(),
-    AttendanceScreen(),
-    ProfileScreen(),
-    UserFeesScreen(studentClass: "10th Grade"),
-    ThemeScreen(),
-    RulesScreen(),
-    ComplaintScreen()
-  ];
+  @override
+  void initState() {
+    super.initState();
+    _activeUser = widget.selectedUser; // Initialize with selected user
+  }
+
+  List<Widget> get _screens {
+    return [
+      const StudentFeedScreen(),
+      HolidayScreen(),
+      MessagesScreen(),
+      AttendanceScreen(),
+      ProfileScreen(),
+      UserFeesScreen(studentClass: _activeUser.studentData!.studentStandard), // Pass active user type
+      ThemeScreen(),
+      RulesScreen(),
+      ComplaintScreen(),
+    ];
+  }
 
   final List<NavigationItem> _navItems = [
     NavigationItem(
@@ -132,7 +148,7 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
       backgroundColor: theme.colorScheme.surface,
       elevation: 0,
       title: Text(
-        'School Management',
+        "Welcome, ${_activeUser.displayName}",
         style: TextStyle(
           color: theme.colorScheme.onSurface,
           fontWeight: FontWeight.bold,
@@ -149,6 +165,36 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
         },
       ),
       actions: [
+        // If multiple student users exist, show Switch User option
+        if (widget.users.where((user) => user.userType == Constants.student).length > 1)
+          PopupMenuButton<User>(
+            icon: const Icon(Icons.swap_horiz, color: Colors.blue),
+            tooltip: "Switch User",
+            onSelected: (User newUser) {
+              setState(() {
+                _activeUser = newUser;
+                _screens[5] = UserFeesScreen(studentClass: _activeUser.userType);
+                _screens[4] = ProfileScreen(); // Refresh profile screen
+              });
+            },
+            itemBuilder: (BuildContext context) {
+              // Filter only Student users
+              List<User> studentUsers = widget.users.where((user) => user.userType == Constants.student).toList();
+
+              return studentUsers.map((User user) {
+                return PopupMenuItem<User>(
+                  value: user,
+                  child: Row(
+                    children: [
+                      Icon(Icons.person, color: theme.colorScheme.primary),
+                      const SizedBox(width: 8),
+                      Text(user.displayName),
+                    ],
+                  ),
+                );
+              }).toList();
+            },
+          ),
         IconButton(
           icon: Icon(
             Icons.notifications_outlined,
@@ -172,6 +218,7 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
       ],
     );
   }
+
 
   Widget _buildDrawer(ThemeData theme) {
     return Drawer(
@@ -522,9 +569,7 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
               Icons.notifications_outlined,
               color: theme.colorScheme.onSurface,
             ),
-            onPressed: () {
-              // Handle notifications
-            },
+            onPressed: () {},
           ),
           const SizedBox(width: 16),
           IconButton(
@@ -532,11 +577,11 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
               Icons.help_outline_rounded,
               color: theme.colorScheme.onSurface,
             ),
-            onPressed: () {
-              // Handle help
-            },
+            onPressed: () {},
           ),
           const SizedBox(width: 16),
+
+          // User Profile & Switch User Menu
           PopupMenuButton<dynamic>(
             offset: const Offset(0, 45),
             child: Row(
@@ -545,7 +590,9 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
                   radius: 18,
                   backgroundColor: theme.colorScheme.primary.withOpacity(0.2),
                   child: Text(
-                    'A',
+                    _activeUser.displayName.isNotEmpty
+                        ? _activeUser.displayName[0] // First letter of name
+                        : "?",
                     style: TextStyle(
                       color: theme.colorScheme.primary,
                       fontWeight: FontWeight.bold,
@@ -559,13 +606,13 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Text(
-                        'Admin User',
+                        _activeUser.displayName,
                         style: theme.textTheme.bodyLarge?.copyWith(
                           fontWeight: FontWeight.bold,
                         ),
                       ),
                       Text(
-                        'Administrator',
+                        _activeUser.userType,
                         style: theme.textTheme.bodySmall?.copyWith(
                           color: theme.colorScheme.onSurface.withOpacity(0.7),
                         ),
@@ -581,45 +628,80 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
               ],
             ),
             onSelected: (value) {
-              // Handle menu selection based on the value
+              if (value is User) {
+                print("Switching to user: ${value.displayName}"); // Debugging
+                setState(() {
+                  _activeUser = value;
+                  _screens[5] = UserFeesScreen(studentClass: _activeUser.userType);
+                  _screens[4] = ProfileScreen(); // Refresh profile screen
+                });
+              } else if (value == 'logout') {
+                _confirmLogout();
+              }
             },
-            itemBuilder: (context) =>
-            <PopupMenuEntry<dynamic>>[
-              PopupMenuItem<String>(
-                value: 'profile', // Add value
-                child: Row(
-                  children: [
-                    Icon(Icons.person_outline,
-                        color: theme.colorScheme.primary),
-                    const SizedBox(width: 8),
-                    const Text('Profile'),
-                  ],
-                ),
-              ),
-              PopupMenuItem<String>(
-                value: 'settings', // Add value
-                child: Row(
-                  children: [
-                    Icon(Icons.settings_outlined,
-                        color: theme.colorScheme.primary),
-                    const SizedBox(width: 8),
-                    const Text('Settings'),
-                  ],
-                ),
-              ),
-              const PopupMenuDivider(),
-              PopupMenuItem<String>(
-                onTap: _confirmLogout,
-                value: 'logout', // Add value
-                child: Row(
-                  children: [
-                    Icon(Icons.logout, color: theme.colorScheme.error),
-                    const SizedBox(width: 8),
-                    const Text('Logout'),
-                  ],
-                ),
-              ),
-            ],
+              itemBuilder: (context) {
+                List<User> studentUsers = widget.users.where((user) => user.userType == Constants.student).toList();
+
+                List<PopupMenuEntry<dynamic>> items = [
+                  PopupMenuItem<String>(
+                    value: 'profile',
+                    child: Row(
+                      children: [
+                        Icon(Icons.person_outline, color: theme.colorScheme.primary),
+                        const SizedBox(width: 8),
+                        const Text('Profile'),
+                      ],
+                    ),
+                  ),
+                  PopupMenuItem<String>(
+                    value: 'settings',
+                    child: Row(
+                      children: [
+                        Icon(Icons.settings_outlined, color: theme.colorScheme.primary),
+                        const SizedBox(width: 8),
+                        const Text('Settings'),
+                      ],
+                    ),
+                  ),
+                  const PopupMenuDivider(),
+                ];
+
+                // Add Switch User option only if multiple students exist
+                if (studentUsers.length > 1) {
+                  print("Multiple student users detected, showing switch option.");
+                  items.addAll(studentUsers.map((User user) {
+                    return PopupMenuItem<User>(
+                      value: user,
+                      child: Row(
+                        children: [
+                          Icon(Icons.swap_horiz, color: theme.colorScheme.primary),
+                          const SizedBox(width: 8),
+                          Text(user.displayName),
+                        ],
+                      ),
+                    );
+                  }).toList());
+                  items.add(const PopupMenuDivider());
+                } else {
+                  print("Only one student found, switch user option will not appear.");
+                }
+
+                // Add logout option
+                items.add(
+                  PopupMenuItem<String>(
+                    value: 'logout',
+                    child: Row(
+                      children: [
+                        Icon(Icons.logout, color: theme.colorScheme.error),
+                        const SizedBox(width: 8),
+                        const Text('Logout'),
+                      ],
+                    ),
+                  ),
+                );
+
+                return items;
+              }
           ),
         ],
       ),
