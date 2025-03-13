@@ -59,13 +59,14 @@ class _LoginScreenState extends State<LoginScreen> {
           _showErrorSnackbar(state.error);
         } else if (state is AuthAuthenticated) {
           _navigateToHomeScreen(context, state.user);
+        } else if (state is AuthMultipleUsers) {
+          _showUserSelectionDialog(context, state.users);
         } else if (state is AuthUnauthenticated) {
-          // Instead of navigating to "Login", just ensure we're already on login
           if (ModalRoute.of(context)?.settings.name != '/login') {
             Navigator.pushAndRemoveUntil(
               context,
               MaterialPageRoute(builder: (context) => const LoginScreen()),
-              (route) => false,
+                  (route) => false,
             );
           }
         }
@@ -653,4 +654,30 @@ class _LoginScreenState extends State<LoginScreen> {
       MaterialPageRoute(builder: (context) => homeScreen),
     );
   }
+
+  void _showUserSelectionDialog(BuildContext context, List<User> users) {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: Text("Select User"),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: users.map((user) {
+              return ListTile(
+                leading: Icon(Icons.account_circle, size: 40),
+                title: Text(user.displayName),
+                subtitle: Text(user.userType),
+                onTap: () {
+                  Navigator.pop(context); // Close dialog
+                  context.read<AuthBloc>().add(UserSelected(user));
+                },
+              );
+            }).toList(),
+          ),
+        );
+      },
+    );
+  }
+
 }

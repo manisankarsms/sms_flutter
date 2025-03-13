@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:sms/screens/complaint_screen.dart';
+import 'package:sms/screens/fees_screen_user.dart';
 import 'package:sms/screens/holiday_screen.dart';
 import 'package:sms/screens/profile_screen.dart';
 import 'package:sms/screens/rules_screen.dart';
@@ -33,6 +34,7 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
     MessagesScreen(),
     AttendanceScreen(),
     ProfileScreen(),
+    UserFeesScreen(studentClass: "10th Grade"),
     ThemeScreen(),
     RulesScreen(),
     ComplaintScreen()
@@ -61,6 +63,11 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
     ),
     NavigationItem(
       name: 'Profile',
+      imagePath: 'assets/images/profile.png',
+      icon: Icons.person_rounded,
+    ),
+    NavigationItem(
+      name: 'Fees',
       imagePath: 'assets/images/profile.png',
       icon: Icons.person_rounded,
     ),

@@ -2,6 +2,8 @@
 
 import 'package:flutter/cupertino.dart';
 
+import '../../models/user.dart';
+
 @immutable
 abstract class AuthEvent {}
 
@@ -12,5 +14,11 @@ class LoginButtonPressed extends AuthEvent {
 
   LoginButtonPressed({required this.email, required this.password, required this.userType});
 }
+
+class UserSelected extends AuthEvent {
+  final User selectedUser;
+  UserSelected(this.selectedUser);
+}
+
 
 class LogoutRequested extends AuthEvent {} // New Logout Event

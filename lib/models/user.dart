@@ -3,14 +3,12 @@ class User {
   final String email;
   final String displayName;
   final String userType;
-  // Add more properties as needed
 
   User({
     required this.id,
     required this.email,
     required this.displayName,
     required this.userType,
-    // Initialize additional properties here
   });
 
   factory User.fromJson(Map<String, dynamic> json) {
@@ -19,17 +17,10 @@ class User {
       email: json['email'],
       displayName: json['displayName'],
       userType: json['userType'],
-      // Parse additional properties from JSON here
     );
   }
 
-  Map<String, dynamic> toJson() {
-    return {
-      'id': id,
-      'email': email,
-      'displayName': displayName,
-      'userType': userType,
-      // Convert additional properties to JSON here
-    };
+  static List<User> fromJsonList(List<dynamic> jsonList) {
+    return jsonList.map((user) => User.fromJson(user)).toList();
   }
 }

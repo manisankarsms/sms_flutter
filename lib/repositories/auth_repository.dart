@@ -13,14 +13,16 @@ class AuthRepository {
 
   AuthRepository({required this.webService});
 
-  Future<User?> signInWithMobileAndPassword(String mobile, String password) async {
+  Future<List<User>?> signInWithMobileAndPassword(String mobile, String password) async {
     try {
       String request = frameLoginRequest(mobile, password);
       if (kDebugMode) {
         print(request);
       }
       final data = await webService.postData(ApiEndpoints.login, request);
-      return User.fromJson(jsonDecode(data.toString()));
+      final List<dynamic> jsonResponse = jsonDecode(data.toString());
+
+      return User.fromJsonList(jsonResponse);
     } catch (error) {
       if (kDebugMode) {
         print("Error signing in: $error");
@@ -28,6 +30,7 @@ class AuthRepository {
       rethrow;
     }
   }
+
 
   Future<void> logout() async {
     try {

@@ -12,22 +12,36 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
   AuthBloc({required this.authRepository}) : super(AuthInitial()) {
     on<LoginButtonPressed>(_onLoginButtonPressed);
     on<LogoutRequested>(_onLogoutRequested);
+    on<UserSelected>(_onUserSelected);
   }
 
   void _onLoginButtonPressed(LoginButtonPressed event, Emitter<AuthState> emit) async {
     emit(AuthLoading());
 
     try {
-      final user = await authRepository.signInWithMobileAndPassword(
+      final users = await authRepository.signInWithMobileAndPassword(
         event.email,
         event.password,
       );
-      if (user != null) {
-        emit(AuthAuthenticated(user)); // Pass user information
+
+      if (users != null && users.isNotEmpty) {
+        if (users.length == 1) {
+          // Directly authenticate if only one user is available
+          emit(AuthAuthenticated(users[0]));
+        } else {
+          // Emit state with multiple users to allow user selection
+          emit(AuthMultipleUsers(users));
+        }
+      } else {
+        emit(AuthFailure(error: "No users found."));
       }
     } catch (error) {
       emit(AuthFailure(error: error.toString()));
     }
+  }
+
+  void _onUserSelected(UserSelected event, Emitter<AuthState> emit) {
+    emit(AuthAuthenticated(event.selectedUser));
   }
 
   void _onLogoutRequested(LogoutRequested event, Emitter<AuthState> emit) async {

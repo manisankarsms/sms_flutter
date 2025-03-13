@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:sms/bloc/auth/auth_bloc.dart';
 import 'package:sms/bloc/feed/feed_bloc.dart';
+import 'package:sms/bloc/fees/fees_bloc.dart';
 import 'package:sms/bloc/holiday/holiday_bloc.dart';
 import 'package:sms/bloc/language/language_bloc.dart';
 import 'package:sms/bloc/post/post_bloc.dart';
@@ -11,6 +12,7 @@ import 'package:sms/repositories/class_repository.dart';
 import 'package:sms/repositories/complaint_repository.dart';
 import 'package:sms/repositories/dashboard_repository.dart';
 import 'package:sms/repositories/feed_repository.dart';
+import 'package:sms/repositories/fess_repository.dart';
 import 'package:sms/repositories/holiday_repository.dart';
 import 'package:sms/repositories/post_repository.dart';
 import 'package:sms/repositories/staff_repository.dart';
@@ -37,6 +39,7 @@ void main() {
   final PostRepository postRepository = PostRepository(webService: webService);
   final FeedRepository feedRepository = FeedRepository(webService: webService);
   final ComplaintRepository complaintRepository = ComplaintRepository(webService: webService);
+  final FeesRepository feesRepository = FeesRepository(/*webService: webService*/);
 
   runApp(
     MultiBlocProvider(
@@ -67,6 +70,9 @@ void main() {
         ),
         BlocProvider(
           create: (context) => ComplaintBloc(complaintRepository),
+        ),
+        BlocProvider(
+          create: (context) => FeesBloc(feesRepository),
         ),
         RepositoryProvider(
           create: (context) => studentsRepository,

@@ -17,11 +17,15 @@ class AuthLoading extends AuthState {}
 class AuthAuthenticated extends AuthState {
   final User user;
 
-  const AuthAuthenticated(this.user);
-
-  @override
-  List<Object> get props => [user];
+  AuthAuthenticated(this.user);
 }
+
+class AuthMultipleUsers extends AuthState {
+  final List<User> users;
+
+  AuthMultipleUsers(this.users);
+}
+
 
 class AuthFailure extends AuthState {
   final String error;
