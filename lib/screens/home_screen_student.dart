@@ -13,6 +13,7 @@ import '../bloc/auth/auth_event.dart';
 import '../models/user.dart';
 import 'attendance_screen.dart';
 import 'feed_screen.dart';
+import 'games_screen.dart';
 import 'home_screen_admin.dart';
 import 'login_screen.dart';
 import 'messages_screen.dart';
@@ -52,6 +53,7 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
       UserFeesScreen(studentClass: _activeUser.studentData!.studentStandard), // Pass active user type
       ThemeScreen(),
       RulesScreen(),
+      GamesScreen(),
       ComplaintScreen(),
     ];
   }
@@ -96,6 +98,11 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
       name: 'Rules',
       imagePath: 'assets/images/profile.png',
       icon: Icons.rule,
+    ),
+    NavigationItem(
+      name: 'Games',
+      imagePath: 'assets/images/profile.png',
+      icon: Icons.videogame_asset,
     ),
     NavigationItem(
       name: 'Complaint',

@@ -55,6 +55,9 @@ dependencies:
   pointycastle: ^3.9.1
   asn1lib: ^1.4.0
   flutter_secure_storage: ^9.0.0 # Use the latest version
+  vibration: ^3.1.3
+  audioplayers: ^6.4.0
+  shared_preferences: ^2.5.2
     
 
 dev_dependencies:
@@ -93,6 +96,9 @@ flutter:
     - assets/images/school_logo.png
     - assets/images/exam_schedule.png
     - assets/images/school_banner.png
+
+    - assets/audio/correct.mp3
+    - assets/audio/wrong.mp3
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/assets-and-images/#resolution-aware
