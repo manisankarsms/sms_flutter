@@ -729,7 +729,6 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
-
   void _showUserSelectionDialog(BuildContext context, List<User> users) {
     showDialog(
       context: context,
@@ -740,7 +739,17 @@ class _LoginScreenState extends State<LoginScreen> {
             mainAxisSize: MainAxisSize.min,
             children: users.map((user) {
               return ListTile(
-                leading: Icon(Icons.account_circle, size: 40),
+                leading: CircleAvatar(
+                  radius: 18,
+                  backgroundColor: Theme.of(context).colorScheme.primary.withOpacity(0.2),
+                  child: Text(
+                    user.displayName.isNotEmpty ? user.displayName[0] : "?",
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.primary,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
                 title: Text(user.displayName),
                 subtitle: Text(user.userType),
                 onTap: () {
@@ -754,5 +763,6 @@ class _LoginScreenState extends State<LoginScreen> {
       },
     );
   }
+
 
 }
