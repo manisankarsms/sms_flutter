@@ -1,16 +1,16 @@
-import 'dart:async';
-import 'dart:math';
-import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
+import 'dart:math';
+import 'dart:async';
+import 'package:audioplayers/audioplayers.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:vibration/vibration.dart';
 
-class MathQuizApp extends StatelessWidget {
+class AlphabetSequencingGame extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      title: 'Math Quiz',
+      title: 'Alphabet Sequencing',
       theme: ThemeData(
         brightness: Brightness.dark,
         primaryColor: Colors.indigo,
@@ -30,19 +30,37 @@ class MathQuizApp extends StatelessWidget {
           ),
         ),
       ),
-      home: MathQuizScreen(),
+      home: AlphabetSequenceScreen(),
     );
   }
 }
 
-class MathQuizScreen extends StatefulWidget {
+class AlphabetSequenceScreen extends StatefulWidget {
   @override
-  _MathQuizScreenState createState() => _MathQuizScreenState();
+  _AlphabetSequenceScreenState createState() => _AlphabetSequenceScreenState();
 }
 
-class _MathQuizScreenState extends State<MathQuizScreen> with SingleTickerProviderStateMixin {
-  int num1 = 0, num2 = 0, correctAnswer = 0;
-  List<int> options = [];
+class _AlphabetSequenceScreenState extends State<AlphabetSequenceScreen>
+    with SingleTickerProviderStateMixin {
+  final List<String> englishAlphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
+  final List<String> tamilAlphabet = [
+    'அ',
+    'ஆ',
+    'இ',
+    'ஈ',
+    'உ',
+    'ஊ',
+    'எ',
+    'ஏ',
+    'ஐ',
+    'ஒ',
+    'ஓ',
+    'ஔ'
+  ];
+  List<String> sequence = [];
+  String missingLetter = '';
+  List<String> options = [];
+  String selectedLanguage = "English";
   int score = 0, highScore = 0;
   double timeLeft = 10;
   Timer? timer;
@@ -51,7 +69,6 @@ class _MathQuizScreenState extends State<MathQuizScreen> with SingleTickerProvid
   final AudioPlayer player = AudioPlayer();
   bool soundOn = true, vibrationOn = true;
   String difficulty = "Easy";
-  String operation = "Addition";
 
   late AnimationController _animationController;
   late Animation<double> _animation;
@@ -60,13 +77,6 @@ class _MathQuizScreenState extends State<MathQuizScreen> with SingleTickerProvid
     "Easy": Colors.green,
     "Medium": Colors.orange,
     "Hard": Colors.red,
-  };
-
-  final Map<String, IconData> operationIcons = {
-    "Addition": Icons.add,
-    "Subtraction": Icons.remove,
-    "Multiplication": Icons.close,
-    "Division": Icons.percent,
   };
 
   @override
@@ -81,7 +91,7 @@ class _MathQuizScreenState extends State<MathQuizScreen> with SingleTickerProvid
       curve: Curves.easeInOut,
     );
     loadHighScore();
-    generateQuestion();
+    generateSequence();
   }
 
   @override
@@ -94,13 +104,22 @@ class _MathQuizScreenState extends State<MathQuizScreen> with SingleTickerProvid
 
   void startTimer() {
     timer?.cancel();
-    timeLeft = difficulty == "Easy" ? 15 : difficulty == "Medium" ? 10 : 7;
+    timeLeft = difficulty == "Easy"
+        ? 15
+        : difficulty == "Medium"
+        ? 10
+        : 7;
     progress = 1.0;
     timer = Timer.periodic(Duration(milliseconds: 100), (timer) {
       if (timeLeft > 0) {
         setState(() {
           timeLeft -= 0.1;
-          progress = timeLeft / (difficulty == "Easy" ? 15.0 : difficulty == "Medium" ? 10.0 : 7.0);
+          progress = timeLeft /
+              (difficulty == "Easy"
+                  ? 15.0
+                  : difficulty == "Medium"
+                  ? 10.0
+                  : 7.0);
         });
       } else {
         timer.cancel();
@@ -109,69 +128,63 @@ class _MathQuizScreenState extends State<MathQuizScreen> with SingleTickerProvid
     });
   }
 
-  void generateQuestion() {
+  void generateSequence() {
     final random = Random();
-    int maxNum = difficulty == "Easy" ? 20 : difficulty == "Medium" ? 100 : 500;
+    List<String> alphabet =
+    selectedLanguage == "English" ? englishAlphabet : tamilAlphabet;
 
-    if (operation == "Division") {
-      num2 = random.nextInt(maxNum ~/ 2) + 2; // Ensure denominator is at least 2
+    // Adjust length based on difficulty
+    int sequenceLength = difficulty == "Easy"
+        ? 3
+        : difficulty == "Medium"
+        ? 5
+        : 7;
 
-      // Generate a valid dividend (num1) that results in an integer quotient
-      List<int> validDividends = [];
-      for (int i = num2 * 2; i <= maxNum; i++) {
-        if (i % num2 == 0) {
-          validDividends.add(i);
-        }
-      }
-
-      if (validDividends.isNotEmpty) {
-        num1 = validDividends[random.nextInt(validDividends.length)];
-      } else {
-        num1 = num2 * (random.nextInt(5) + 2); // Backup logic
-      }
-    } else {
-      num1 = random.nextInt(maxNum) + 1;
-      num2 = random.nextInt(maxNum) + 1;
-
-      if (operation == "Subtraction" && num2 > num1) {
-        int temp = num1;
-        num1 = num2;
-        num2 = temp;
-      }
+    // Make sure we have enough letters for the sequence
+    if (alphabet.length < sequenceLength) {
+      sequenceLength = alphabet.length;
     }
 
-    switch (operation) {
-      case "Addition":
-        correctAnswer = num1 + num2;
-        break;
-      case "Subtraction":
-        correctAnswer = num1 - num2;
-        break;
-      case "Multiplication":
-        correctAnswer = num1 * num2;
-        break;
-      case "Division":
-        correctAnswer = num1 ~/ num2;
-        break;
-    }
+    int startIndex = random.nextInt(alphabet.length - sequenceLength);
+    sequence = alphabet.sublist(startIndex, startIndex + sequenceLength);
+    int missingIndex = random.nextInt(sequenceLength);
+    missingLetter = sequence[missingIndex];
+    sequence[missingIndex] = '_';
 
-    // Generate plausible wrong answers
-    Set<int> uniqueOptions = {correctAnswer};
-    while (uniqueOptions.length < 4) {
-      int incorrect = correctAnswer + (random.nextInt(3) + 1) * (random.nextBool() ? num2 : 1);
-      if (incorrect != correctAnswer && incorrect > 0) {
-        uniqueOptions.add(incorrect);
+    // Generate options based on difficulty
+    int optionsCount = difficulty == "Easy" ? 3 : 4;
+    options = [missingLetter];
+
+    // Add plausible but incorrect options
+    while (options.length < optionsCount) {
+      int randomIndex = random.nextInt(alphabet.length);
+      String randomLetter = alphabet[randomIndex];
+
+      // For harder difficulties, make wrong answers closer to the correct one
+      if (difficulty == "Hard" && selectedLanguage == "English") {
+        // Get letters that are somewhat close to the correct answer
+        int correctIndex = alphabet.indexOf(missingLetter);
+        int offset = random.nextInt(5) + 1;
+        int newIndex = (correctIndex + (random.nextBool() ? offset : -offset)) %
+            alphabet.length;
+        if (newIndex < 0) newIndex += alphabet.length;
+        randomLetter = alphabet[newIndex];
+      }
+
+      if (!options.contains(randomLetter)) {
+        options.add(randomLetter);
       }
     }
+    options.shuffle();
 
-    options = uniqueOptions.toList()..shuffle();
+    // Reset animation and timer
+    _animationController.reset();
     startTimer();
+
     setState(() {
       isCorrect = false;
       isWrong = false;
     });
-
-    _animationController.reset();
   }
 
   void vibrateOnWrongAnswer() async {
@@ -181,16 +194,16 @@ class _MathQuizScreenState extends State<MathQuizScreen> with SingleTickerProvid
     }
   }
 
-  void checkAnswer(int selected) {
+  void checkAnswer(String selectedLetter) {
     timer?.cancel();
-    if (selected == correctAnswer) {
+    if (selectedLetter == missingLetter) {
       if (soundOn) player.play(AssetSource("audio/correct.mp3"));
       _animationController.forward();
       setState(() {
         isCorrect = true;
         score++;
       });
-      Future.delayed(Duration(milliseconds: 700), generateQuestion);
+      Future.delayed(Duration(milliseconds: 700), generateSequence);
     } else {
       if (soundOn) player.play(AssetSource("audio/wrong.mp3"));
       vibrateOnWrongAnswer();
@@ -210,19 +223,17 @@ class _MathQuizScreenState extends State<MathQuizScreen> with SingleTickerProvid
       builder: (context) => AlertDialog(
         backgroundColor: Theme.of(context).colorScheme.surface,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Text(
-            "Game Over",
+        title: Text("Game Over",
             style: TextStyle(
                 fontWeight: FontWeight.bold,
-                color: Theme.of(context).colorScheme.secondary
-            )
-        ),
+                color: Theme.of(context).colorScheme.secondary)),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             Text("Your final score is:", style: TextStyle(fontSize: 18)),
             SizedBox(height: 12),
-            Text("$score", style: TextStyle(fontSize: 48, fontWeight: FontWeight.bold)),
+            Text("$score",
+                style: TextStyle(fontSize: 48, fontWeight: FontWeight.bold)),
             SizedBox(height: 16),
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -251,7 +262,7 @@ class _MathQuizScreenState extends State<MathQuizScreen> with SingleTickerProvid
     setState(() {
       score = 0;
     });
-    generateQuestion();
+    generateSequence();
   }
 
   void saveHighScore() async {
@@ -260,14 +271,14 @@ class _MathQuizScreenState extends State<MathQuizScreen> with SingleTickerProvid
       setState(() {
         highScore = score;
       });
-      prefs.setInt("highScore-math-quiz-01", highScore);
+      prefs.setInt("highScore-alphabet-game", highScore);
     }
   }
 
   void loadHighScore() async {
     final prefs = await SharedPreferences.getInstance();
     setState(() {
-      highScore = prefs.getInt("highScore-math-quiz-01") ?? 0;
+      highScore = prefs.getInt("highScore-alphabet-game") ?? 0;
     });
   }
 
@@ -285,15 +296,17 @@ class _MathQuizScreenState extends State<MathQuizScreen> with SingleTickerProvid
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text("Game Settings", style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
+              Text("Game Settings",
+                  style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
               SizedBox(height: 20),
-
-              Text("Difficulty", style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500)),
+              Text("Difficulty",
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500)),
               SizedBox(height: 8),
               SingleChildScrollView(
                 scrollDirection: Axis.horizontal,
                 child: Row(
-                  children: ["Easy", "Medium", "Hard"].map((level) => Padding(
+                  children: ["Easy", "Medium", "Hard"]
+                      .map((level) => Padding(
                     padding: const EdgeInsets.only(right: 10.0),
                     child: ChoiceChip(
                       label: Text(level),
@@ -311,39 +324,42 @@ class _MathQuizScreenState extends State<MathQuizScreen> with SingleTickerProvid
                         }
                       },
                     ),
-                  )).toList(),
+                  ))
+                      .toList(),
                 ),
               ),
-
               SizedBox(height: 20),
-              Text("Operation", style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500)),
+              Text("Language",
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500)),
               SizedBox(height: 8),
               SingleChildScrollView(
                 scrollDirection: Axis.horizontal,
                 child: Row(
-                  children: ["Addition", "Subtraction", "Multiplication", "Division"].map((op) => Padding(
+                  children: ["English", "Tamil"]
+                      .map((lang) => Padding(
                     padding: const EdgeInsets.only(right: 10.0),
                     child: ChoiceChip(
-                      avatar: Icon(operationIcons[op], size: 18),
-                      label: Text(op),
-                      selected: operation == op,
-                      selectedColor: Theme.of(context).colorScheme.primary,
+                      avatar: Text(lang == "English" ? "🇬🇧" : "🇮🇳"),
+                      label: Text(lang),
+                      selected: selectedLanguage == lang,
+                      selectedColor:
+                      Theme.of(context).colorScheme.primary,
                       onSelected: (selected) {
                         if (selected) {
                           setModalState(() {
-                            operation = op;
+                            selectedLanguage = lang;
                           });
                           setState(() {
-                            operation = op;
+                            selectedLanguage = lang;
                             resetGame();
                           });
                         }
                       },
                     ),
-                  )).toList(),
+                  ))
+                      .toList(),
                 ),
               ),
-
               SizedBox(height: 20),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -369,13 +385,13 @@ class _MathQuizScreenState extends State<MathQuizScreen> with SingleTickerProvid
                   ),
                 ],
               ),
-
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Row(
                     children: [
-                      Icon(vibrationOn ? Icons.vibration : Icons.do_not_disturb),
+                      Icon(
+                          vibrationOn ? Icons.vibration : Icons.do_not_disturb),
                       SizedBox(width: 8),
                       Text("Vibration"),
                     ],
@@ -394,7 +410,6 @@ class _MathQuizScreenState extends State<MathQuizScreen> with SingleTickerProvid
                   ),
                 ],
               ),
-
               SizedBox(height: 10),
             ],
           ),
@@ -403,25 +418,15 @@ class _MathQuizScreenState extends State<MathQuizScreen> with SingleTickerProvid
     );
   }
 
-  String getOperationSymbol() {
-    switch (operation) {
-      case "Addition": return "+";
-      case "Subtraction": return "-";
-      case "Multiplication": return "×";
-      case "Division": return "÷";
-      default: return "+";
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: Row(
           children: [
-            Icon(Icons.functions, size: 24),
+            Icon(Icons.text_fields, size: 24),
             SizedBox(width: 8),
-            Text('Math Quiz'),
+            Text('Alphabet Sequencing'),
           ],
         ),
         actions: [
@@ -446,6 +451,7 @@ class _MathQuizScreenState extends State<MathQuizScreen> with SingleTickerProvid
         child: Column(
           children: [
             // Top status bar
+            // Top status bar
             Container(
               padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               decoration: BoxDecoration(
@@ -465,7 +471,9 @@ class _MathQuizScreenState extends State<MathQuizScreen> with SingleTickerProvid
                     children: [
                       Icon(Icons.star, color: Colors.amber),
                       SizedBox(width: 8),
-                      Text('Score: $score', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                      Text('Score: $score',
+                          style: TextStyle(
+                              fontSize: 16, fontWeight: FontWeight.bold)),
                     ],
                   ),
                   Row(
@@ -483,7 +491,8 @@ class _MathQuizScreenState extends State<MathQuizScreen> with SingleTickerProvid
                     ),
                     child: Text(
                       difficulty,
-                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                      style:
+                      TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
                     ),
                   ),
                 ],
@@ -496,10 +505,11 @@ class _MathQuizScreenState extends State<MathQuizScreen> with SingleTickerProvid
               child: LinearProgressIndicator(
                 value: progress,
                 backgroundColor: Colors.grey.shade800,
-                valueColor: AlwaysStoppedAnimation<Color>(
-                    progress > 0.6 ? Colors.green :
-                    progress > 0.3 ? Colors.orange : Colors.red
-                ),
+                valueColor: AlwaysStoppedAnimation<Color>(progress > 0.6
+                    ? Colors.green
+                    : progress > 0.3
+                    ? Colors.orange
+                    : Colors.red),
               ),
             ),
 
@@ -509,7 +519,8 @@ class _MathQuizScreenState extends State<MathQuizScreen> with SingleTickerProvid
                 builder: (context, child) {
                   return Container(
                     color: isCorrect
-                        ? Color.lerp(Colors.transparent, Colors.green.withOpacity(0.2), _animation.value)
+                        ? Color.lerp(Colors.transparent,
+                        Colors.green.withOpacity(0.2), _animation.value)
                         : isWrong
                         ? Colors.red.withOpacity(0.2)
                         : Colors.transparent,
@@ -521,7 +532,7 @@ class _MathQuizScreenState extends State<MathQuizScreen> with SingleTickerProvid
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      // Question card
+                      // Sequence card
                       Card(
                         elevation: 8,
                         shape: RoundedRectangleBorder(
@@ -533,43 +544,53 @@ class _MathQuizScreenState extends State<MathQuizScreen> with SingleTickerProvid
                           child: Column(
                             children: [
                               Text(
-                                'Solve',
-                                style: TextStyle(fontSize: 16, color: Colors.grey),
+                                'Complete the Sequence',
+                                style:
+                                TextStyle(fontSize: 16, color: Colors.grey),
                               ),
-                              SizedBox(height: 16),
+                              SizedBox(height: 24),
                               Row(
                                 mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Container(
-                                    padding: EdgeInsets.all(12),
+                                children: sequence.map((letter) {
+                                  return Container(
+                                    margin: EdgeInsets.symmetric(horizontal: 4),
+                                    width: 50,
+                                    height: 60,
                                     decoration: BoxDecoration(
-                                      color: Theme.of(context).colorScheme.surface.withOpacity(0.7),
+                                      color: letter == '_'
+                                          ? Theme.of(context)
+                                          .colorScheme
+                                          .primary
+                                          .withOpacity(0.2)
+                                          : Theme.of(context)
+                                          .colorScheme
+                                          .surface
+                                          .withOpacity(0.7),
                                       borderRadius: BorderRadius.circular(12),
+                                      border: letter == '_'
+                                          ? Border.all(
+                                          color: Theme.of(context)
+                                              .colorScheme
+                                              .secondary,
+                                          width: 2)
+                                          : null,
                                     ),
-                                    child: Text(
-                                      '$num1',
-                                      style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold),
+                                    child: Center(
+                                      child: Text(
+                                        letter,
+                                        style: TextStyle(
+                                          fontSize: 32,
+                                          fontWeight: FontWeight.bold,
+                                          color: letter == '_'
+                                              ? Theme.of(context)
+                                              .colorScheme
+                                              .secondary
+                                              : null,
+                                        ),
+                                      ),
                                     ),
-                                  ),
-                                  Padding(
-                                    padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                                    child: Text(
-                                      getOperationSymbol(),
-                                      style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold),
-                                    ),
-                                  ),
-                                  Container(
-                                    padding: EdgeInsets.all(12),
-                                    decoration: BoxDecoration(
-                                      color: Theme.of(context).colorScheme.surface.withOpacity(0.7),
-                                      borderRadius: BorderRadius.circular(12),
-                                    ),
-                                    child: Text(
-                                      '$num2',
-                                      style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold),
-                                    ),
-                                  ),
-                                ],
+                                  );
+                                }).toList(),
                               ),
                             ],
                           ),
@@ -577,7 +598,8 @@ class _MathQuizScreenState extends State<MathQuizScreen> with SingleTickerProvid
                       ),
 
                       SizedBox(height: 40),
-                      Text('Select the correct answer:', style: TextStyle(fontSize: 16)),
+                      Text('Select the missing letter:',
+                          style: TextStyle(fontSize: 16)),
                       SizedBox(height: 16),
 
                       // Options grid
@@ -588,20 +610,25 @@ class _MathQuizScreenState extends State<MathQuizScreen> with SingleTickerProvid
                           crossAxisSpacing: 16,
                           mainAxisSpacing: 16,
                           padding: EdgeInsets.symmetric(horizontal: 8),
-                          children: options.map((option) => ElevatedButton(
+                          children: options
+                              .map((option) => ElevatedButton(
                             onPressed: () => checkAnswer(option),
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: Theme.of(context).colorScheme.surface,
+                              backgroundColor:
+                              Theme.of(context).colorScheme.surface,
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(16),
                               ),
                               padding: EdgeInsets.all(8),
                             ),
                             child: Text(
-                              option.toString(),
-                              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                              option,
+                              style: TextStyle(
+                                  fontSize: 24,
+                                  fontWeight: FontWeight.bold),
                             ),
-                          )).toList(),
+                          ))
+                              .toList(),
                         ),
                       ),
                     ],

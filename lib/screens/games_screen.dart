@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:sms/screens/games/alphabet_matching.dart';
+import 'games/alphabet_sequence.dart';
 import 'games/math_quiz.dart';
 
 class GamesScreen extends StatelessWidget {
@@ -57,6 +58,7 @@ final List<Map<String, dynamic>> games = [
   {'title': 'Math Quiz', 'icon': Icons.calculate, 'screen': MathQuizScreen()},
   {'title': 'Puzzle Game', 'icon': Icons.extension, 'screen': PuzzleGameScreen()},
   {'title': 'Letters Match', 'icon': Icons.abc, 'screen': AlphabetMatchScreen()},
+  {'title': 'Alphabets Sequence', 'icon': Icons.sort_by_alpha, 'screen': AlphabetSequenceScreen()},
 ];
 
 // Dummy Game Screens
