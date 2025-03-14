@@ -268,14 +268,14 @@ class _MathQuizScreenState extends State<MathQuizScreen> with SingleTickerProvid
       setState(() {
         highScore = score;
       });
-      prefs.setInt("highScore", highScore);
+      prefs.setInt("highScore-math-quiz-01", highScore);
     }
   }
 
   void loadHighScore() async {
     final prefs = await SharedPreferences.getInstance();
     setState(() {
-      highScore = prefs.getInt("highScore") ?? 0;
+      highScore = prefs.getInt("highScore-math-quiz-01") ?? 0;
     });
   }
 
