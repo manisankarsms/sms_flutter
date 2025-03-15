@@ -17,6 +17,9 @@ import 'package:sms/repositories/holiday_repository.dart';
 import 'package:sms/repositories/post_repository.dart';
 import 'package:sms/repositories/staff_repository.dart';
 import 'package:sms/repositories/students_repository.dart';
+import 'package:sms/screens/games/alphabet_order.dart';
+import 'package:sms/screens/games/balloon_pop.dart';
+import 'package:sms/screens/games/number_sequence.dart';
 import 'package:sms/screens/login_screen.dart';
 import 'package:sms/services/web_service.dart';
 import 'package:sms/utils/constants.dart';
@@ -104,7 +107,7 @@ class MyApp extends StatelessWidget {
                 GlobalWidgetsLocalizations.delegate,
                 GlobalCupertinoLocalizations.delegate,
               ],
-              home: const LoginScreen(),
+              home: LoginScreen(),
             );
           },
         );
