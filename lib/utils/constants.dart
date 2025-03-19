@@ -23,4 +23,10 @@ class ApiEndpoints {
   static const String addComplaint = "api/complaints";
   static const String updateComplaintStatus = "api/complaints/update-status";
   static const String addComplaintComment = "api/complaints/comment";
+
+  static const String books = 'books';
+  static const String addBook = 'books/add';
+  static const String issueBook = 'books/issue';
+  static const String returnBook = 'books/return';
+  static const String issuedBooks = 'books/issued';
 }

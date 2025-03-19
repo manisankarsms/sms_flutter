@@ -5,6 +5,8 @@ import 'package:sms/screens/complaint_list_screen.dart';
 import 'package:sms/screens/dashboard_screen.dart';
 import 'package:sms/screens/fees_screen.dart';
 import 'package:sms/screens/holiday_screen.dart';
+import 'package:sms/screens/library/library_home_screen.dart';
+import 'package:sms/screens/library/library_screen.dart';
 import 'package:sms/screens/new_student_screen.dart';
 import 'package:sms/screens/posts_screen.dart';
 import 'package:sms/screens/staffs_screen.dart';
@@ -53,7 +55,8 @@ class _HomeScreenAdminState extends State<HomeScreenAdmin> {
       PostsScreen(),
       AdminFeesScreen(),
       ThemeScreen(),
-      ComplaintListScreen()
+      ComplaintListScreen(),
+      LibraryHomeScreen()
     ];
   }
 
@@ -107,6 +110,11 @@ class _HomeScreenAdminState extends State<HomeScreenAdmin> {
       name: 'Complaints',
       imagePath: 'assets/images/attendance.png',
       icon: Icons.comment,
+    ),
+    NavigationItem(
+      name: 'Library',
+      imagePath: 'assets/images/attendance.png',
+      icon: Icons.menu_book_sharp,
     )
   ];
 
