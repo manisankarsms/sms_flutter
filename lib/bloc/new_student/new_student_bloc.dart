@@ -4,6 +4,12 @@ import '../../repositories/student_repository.dart';
 import 'new_student_event.dart';
 import 'new_student_state.dart';
 
+import 'package:bloc/bloc.dart';
+
+import '../../repositories/student_repository.dart';
+import 'new_student_event.dart';
+import 'new_student_state.dart';
+
 class StudentBloc extends Bloc<StudentEvent, StudentState> {
   final StudentRepository studentRepository;
 
@@ -17,8 +23,12 @@ class StudentBloc extends Bloc<StudentEvent, StudentState> {
       ) async {
     emit(StudentSaving());
     try {
-      await studentRepository.saveStudent(event.student);
-      emit(StudentSaved());
+      final success = await studentRepository.submitStudentAdmission(event.formData);
+      if (success) {
+        emit(StudentSaved());
+      } else {
+        emit(StudentError("Failed to save student: Server returned unsuccessful response"));
+      }
     } catch (error) {
       emit(StudentError("Failed to save student: ${error.toString()}"));
     }

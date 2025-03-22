@@ -64,7 +64,7 @@ class _HomeScreenAdminState extends State<HomeScreenAdmin> {
     NavigationItem(
       name: 'Dashboard',
       imagePath: 'assets/images/students.png',
-      icon: Icons.dashboard_rounded,
+      icon: Icons.pie_chart,
     ),
     NavigationItem(
       name: 'New Admission',
@@ -79,7 +79,7 @@ class _HomeScreenAdminState extends State<HomeScreenAdmin> {
     NavigationItem(
       name: 'Staff',
       imagePath: 'assets/images/messages.png',
-      icon: Icons.groups_rounded,
+      icon: Icons.badge_rounded, // Changed to badge icon representing staff
     ),
     NavigationItem(
       name: 'Students',
@@ -88,33 +88,33 @@ class _HomeScreenAdminState extends State<HomeScreenAdmin> {
     ),
     NavigationItem(
       name: 'Holiday Calendar',
-      imagePath: 'assets/images/attendance.png',
-      icon: Icons.school_rounded,
+      imagePath: 'assets/images/calendar.png',
+      icon: Icons.event_rounded, // Changed to event icon for a calendar
     ),
     NavigationItem(
       name: 'Posts',
-      imagePath: 'assets/images/attendance.png',
-      icon: Icons.school_rounded,
+      imagePath: 'assets/images/posts.png',
+      icon: Icons.article_rounded, // Changed to article icon for posts
     ),
     NavigationItem(
       name: 'Fees',
-      imagePath: 'assets/images/attendance.png',
-      icon: Icons.payments,
+      imagePath: 'assets/images/fees.png',
+      icon: Icons.payments_rounded,
     ),
     NavigationItem(
       name: 'Themes',
-      imagePath: 'assets/images/attendance.png',
-      icon: Icons.color_lens_sharp,
+      imagePath: 'assets/images/themes.png',
+      icon: Icons.color_lens_rounded,
     ),
     NavigationItem(
       name: 'Complaints',
-      imagePath: 'assets/images/attendance.png',
-      icon: Icons.comment,
+      imagePath: 'assets/images/complaints.png',
+      icon: Icons.report_problem_rounded, // Changed to report problem for complaints
     ),
     NavigationItem(
       name: 'Library',
-      imagePath: 'assets/images/attendance.png',
-      icon: Icons.menu_book_sharp,
+      imagePath: 'assets/images/library.png',
+      icon: Icons.menu_book_rounded,
     )
   ];
 
@@ -435,6 +435,7 @@ class _HomeScreenAdminState extends State<HomeScreenAdmin> {
     );
   }
 
+  // Replace the _buildSideNavigation method with this improved version
   Widget _buildSideNavigation(ThemeData theme, bool isExpanded) {
     return AnimatedContainer(
       duration: const Duration(milliseconds: 200),
@@ -442,23 +443,30 @@ class _HomeScreenAdminState extends State<HomeScreenAdmin> {
       color: theme.colorScheme.surface,
       child: Column(
         children: [
-          // Branding Space
-          Container(
-            height: 100, // Adjust height as needed
-            padding: const EdgeInsets.all(16),
-            child: Row(
-              children: [
-                Image.asset(
-                  'assets/images/school_logo.png',
-                  // Replace with actual logo path
-                  width: isExpanded ? 50 : 40,
-                  height: isExpanded ? 50 : 40,
-                ),
-                if (isExpanded) ...[
+          // Branding Space - This is likely where the issue is
+          // Branding Space at top of sidebar
+          AnimatedSwitcher(
+            duration: const Duration(milliseconds: 200),
+            transitionBuilder: (Widget child, Animation<double> animation) {
+              return FadeTransition(opacity: animation, child: child);
+            },
+            child: isExpanded
+                ? Container(
+              key: const ValueKey('expanded-header'),
+              height: 100,
+              padding: const EdgeInsets.all(16),
+              child: Row(
+                children: [
+                  Image.asset(
+                    'assets/images/school_logo.png',
+                    width: 50,
+                    height: 50,
+                    fit: BoxFit.contain,
+                  ),
                   const SizedBox(width: 12),
                   Expanded(
                     child: Text(
-                      'XYZ School', // Replace with actual school name
+                      'XYZ School',
                       style: theme.textTheme.titleMedium?.copyWith(
                         fontWeight: FontWeight.bold,
                       ),
@@ -466,7 +474,20 @@ class _HomeScreenAdminState extends State<HomeScreenAdmin> {
                     ),
                   ),
                 ],
-              ],
+              ),
+            )
+                : Container(
+              key: const ValueKey('collapsed-header'),
+              height: 100,
+              width: 80,
+              padding: const EdgeInsets.all(16),
+              alignment: Alignment.center,
+              child: Image.asset(
+                'assets/images/school_logo.png',
+                width: 40,
+                height: 40,
+                fit: BoxFit.contain,
+              ),
             ),
           ),
           const Divider(height: 1),
@@ -480,43 +501,64 @@ class _HomeScreenAdminState extends State<HomeScreenAdmin> {
                 final item = entry.value;
                 final isSelected = _selectedIndex == index;
 
-                return ListTile(
-                  contentPadding: EdgeInsets.symmetric(
-                    horizontal: isExpanded ? 16 : 0,
-                    vertical: 4,
-                  ),
-                  leading: Icon(
-                    item.icon,
-                    color: isSelected
-                        ? theme.colorScheme.primary
-                        : theme.colorScheme.onSurface.withOpacity(0.7),
-                  ),
-                  title: isExpanded
-                      ? Text(
-                          item.name,
-                          style: TextStyle(
-                            fontWeight: isSelected
-                                ? FontWeight.bold
-                                : FontWeight.normal,
-                            color: isSelected
-                                ? theme.colorScheme.primary
-                                : theme.colorScheme.onSurface,
-                          ),
-                        )
-                      : null,
-                  selected: isSelected,
-                  selectedTileColor: isSelected
-                      ? theme.colorScheme.primary.withOpacity(0.1)
-                      : null,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  onTap: () {
-                    setState(() {
-                      _selectedIndex = index;
-                    });
-                  },
-                );
+                // Completely different widgets for expanded vs collapsed states
+                if (isExpanded) {
+                  // Full ListTile for expanded state
+                  return ListTile(
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 4,
+                    ),
+                    leading: Icon(
+                      item.icon,
+                      color: isSelected
+                          ? theme.colorScheme.primary
+                          : theme.colorScheme.onSurface.withOpacity(0.7),
+                    ),
+                    title: Text(
+                      item.name,
+                      style: TextStyle(
+                        fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                        color: isSelected
+                            ? theme.colorScheme.primary
+                            : theme.colorScheme.onSurface,
+                      ),
+                    ),
+                    selected: isSelected,
+                    selectedTileColor: isSelected
+                        ? theme.colorScheme.primary.withOpacity(0.1)
+                        : null,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    onTap: () {
+                      setState(() {
+                        _selectedIndex = index;
+                      });
+                    },
+                  );
+                } else {
+                  // Icon-only for collapsed state (NO ROW WIDGET)
+                  return IconButton(
+                    padding: const EdgeInsets.symmetric(vertical: 8),
+                    icon: Icon(
+                      item.icon,
+                      color: isSelected
+                          ? theme.colorScheme.primary
+                          : theme.colorScheme.onSurface.withOpacity(0.7),
+                    ),
+                    onPressed: () {
+                      setState(() {
+                        _selectedIndex = index;
+                      });
+                    },
+                    isSelected: isSelected,
+                    selectedIcon: Icon(
+                      item.icon,
+                      color: theme.colorScheme.primary,
+                    ),
+                  );
+                }
               }).toList(),
             ),
           ),
@@ -524,26 +566,31 @@ class _HomeScreenAdminState extends State<HomeScreenAdmin> {
           const Divider(height: 1),
 
           // Logout Option
-          ListTile(
-            contentPadding: EdgeInsets.symmetric(
-              horizontal: isExpanded ? 16 : 0,
+          isExpanded
+              ? ListTile(
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 16,
               vertical: 4,
             ),
             leading: Icon(
               Icons.logout,
               color: theme.colorScheme.error,
             ),
-            title: isExpanded
-                ? Text(
-                    'Logout',
-                    style: TextStyle(
-                      color: theme.colorScheme.error,
-                    ),
-                  )
-                : null,
-            onTap: () {
-              _confirmLogout();
-            },
+            title: Text(
+              'Logout',
+              style: TextStyle(
+                color: theme.colorScheme.error,
+              ),
+            ),
+            onTap: _confirmLogout,
+          )
+              : IconButton(
+            padding: const EdgeInsets.symmetric(vertical: 8),
+            icon: Icon(
+              Icons.logout,
+              color: theme.colorScheme.error,
+            ),
+            onPressed: _confirmLogout,
           ),
           const SizedBox(height: 16),
         ],

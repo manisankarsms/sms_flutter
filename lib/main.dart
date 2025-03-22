@@ -7,6 +7,7 @@ import 'package:sms/bloc/fees/fees_bloc.dart';
 import 'package:sms/bloc/holiday/holiday_bloc.dart';
 import 'package:sms/bloc/language/language_bloc.dart';
 import 'package:sms/bloc/library/library_bloc.dart';
+import 'package:sms/bloc/new_student/new_student_bloc.dart';
 import 'package:sms/bloc/post/post_bloc.dart';
 import 'package:sms/repositories/auth_repository.dart';
 import 'package:sms/repositories/class_repository.dart';
@@ -18,6 +19,7 @@ import 'package:sms/repositories/holiday_repository.dart';
 import 'package:sms/repositories/library_repository.dart';
 import 'package:sms/repositories/post_repository.dart';
 import 'package:sms/repositories/staff_repository.dart';
+import 'package:sms/repositories/student_repository.dart';
 import 'package:sms/repositories/students_repository.dart';
 import 'package:sms/screens/games/alphabet_order.dart';
 import 'package:sms/screens/games/balloon_pop.dart';
@@ -39,6 +41,7 @@ void main() {
   final DashboardRepository dashboardRepository = DashboardRepository(webService: webService);
   final ClassRepository classRepository = ClassRepository(webService: webService);
   final StudentsRepository studentsRepository = StudentsRepository(webService: webService);
+  final StudentRepository studentRepository = StudentRepository(webService: webService);
   final StaffRepository staffRepository = StaffRepository(webService: webService);
   final HolidayRepository holidayRepository = HolidayRepository(webService: webService);
   final PostRepository postRepository = PostRepository(webService: webService);
@@ -82,6 +85,9 @@ void main() {
         ),
         BlocProvider(
           create: (context) => LibraryBloc(libraryRepository: libraryRepository),
+        ),
+        BlocProvider(
+          create: (context) => StudentBloc(studentRepository: studentRepository),
         ),
         RepositoryProvider(
           create: (context) => studentsRepository,

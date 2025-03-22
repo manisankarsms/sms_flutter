@@ -8,10 +8,10 @@ abstract class StudentEvent extends Equatable {
 }
 
 class SaveStudentEvent extends StudentEvent {
-  final Student student;
+  final Map<String, dynamic> formData;
 
-  SaveStudentEvent(this.student);
+  SaveStudentEvent(this.formData);
 
   @override
-  List<Object?> get props => [student];
+  List<Object?> get props => [formData];
 }

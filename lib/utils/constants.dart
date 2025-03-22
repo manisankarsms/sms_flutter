@@ -29,4 +29,6 @@ class ApiEndpoints {
   static const String issueBook = 'books/issue';
   static const String returnBook = 'books/return';
   static const String issuedBooks = 'books/issued';
+
+  static const String studentAdmission = '/api/student/admission';
 }

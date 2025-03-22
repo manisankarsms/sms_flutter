@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
+
+import '../bloc/new_student/new_student_bloc.dart';
+import '../bloc/new_student/new_student_event.dart';
 
 class NewStudentScreen extends StatefulWidget {
   const NewStudentScreen({super.key});
@@ -699,17 +703,8 @@ class _NewStudentScreenState extends State<NewStudentScreen> {
         },
       };
 
-      // Show loading indicator
-      _showLoadingDialog();
-
-      // Simulate API call
-      Future.delayed(const Duration(seconds: 2), () {
-        // Hide loading indicator
-        Navigator.pop(context);
-
-        // Show success dialog
-        _showSuccessDialog();
-      });
+      // Dispatch event to the bloc
+      BlocProvider.of<StudentBloc>(context).add(SaveStudentEvent(formData));
     }
   }
 
