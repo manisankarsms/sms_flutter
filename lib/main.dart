@@ -1,3 +1,7 @@
+import 'dart:ui';
+
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
@@ -34,8 +38,9 @@ import 'bloc/dashboard/dashboard_bloc.dart';
 import 'bloc/language/language_state.dart';
 import 'bloc/staffs/staff_bloc.dart';
 import 'bloc/theme/theme_bloc.dart';
+import 'firebase_options.dart';
 
-void main() {
+void main() async{
   final WebService webService = WebService(baseUrl: Constants.baseUrl);
   final AuthRepository authRepository = AuthRepository(webService: webService);
   final DashboardRepository dashboardRepository = DashboardRepository(webService: webService);

@@ -10,6 +10,7 @@ class ThemeScreen extends StatelessWidget {
     final currentTheme = context.watch<ThemeBloc>().state.themeData;
 
     return Scaffold(
+      backgroundColor: Colors.grey.shade100,
       appBar: AppBar(
         title: const Text("Select Theme", style: TextStyle(fontWeight: FontWeight.bold)),
         centerTitle: true,

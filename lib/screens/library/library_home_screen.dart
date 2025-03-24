@@ -10,6 +10,7 @@ class LibraryHomeScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.grey.shade100,
       appBar: AppBar(title: Text("Library Management")),
       body: Padding(
         padding: EdgeInsets.all(16.0),

@@ -11,6 +11,7 @@ class PostsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.grey.shade100,
       appBar: AppBar(
         title: const Text('Manage Posts'),
         actions: [

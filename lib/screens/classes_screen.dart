@@ -37,6 +37,7 @@ class _ClassesScreenState extends State<ClassesScreen> {
       key: _navigatorKey,
       onGenerateRoute: (settings) => MaterialPageRoute(
         builder: (context) => Scaffold(
+          backgroundColor: Colors.grey.shade100,
           body: BlocBuilder<ClassesBloc, ClassesState>(
             builder: (context, state) {
               if (state.status == ClassesStatus.loading) {

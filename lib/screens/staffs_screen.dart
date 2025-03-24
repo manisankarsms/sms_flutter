@@ -22,6 +22,7 @@ class _StaffsScreenState extends State<StaffsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.grey.shade100,
       appBar: AppBar(
         title: const Text(
           'Staffs',

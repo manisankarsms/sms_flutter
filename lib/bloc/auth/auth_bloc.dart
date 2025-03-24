@@ -24,7 +24,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
         event.password,
       );
 
-      if (users != null && users.isNotEmpty) {
+      if (users.isNotEmpty) {
         if (users.length == 1) {
           emit(AuthAuthenticated(users, users[0])); // Pass full list + selected user
         } else {

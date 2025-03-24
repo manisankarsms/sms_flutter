@@ -303,6 +303,7 @@ class _NewStudentScreenState extends State<NewStudentScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.grey.shade100,
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(16),

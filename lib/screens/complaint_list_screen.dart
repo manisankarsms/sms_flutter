@@ -13,6 +13,7 @@ class ComplaintListScreen extends StatelessWidget {
     context.read<ComplaintBloc>().add(LoadComplaints());
 
     return Scaffold(
+      backgroundColor: Colors.grey.shade100,
       appBar: AppBar(title: Text(AppLocalizations.of(context)?.complaints ?? "Complaints")),
       body: BlocBuilder<ComplaintBloc, ComplaintState>(
         builder: (context, state) {

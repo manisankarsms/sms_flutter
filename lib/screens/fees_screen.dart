@@ -18,6 +18,7 @@ class _AdminFeesScreenState extends State<AdminFeesScreen> {
     context.read<FeesBloc>().add(LoadFees());
 
     return Scaffold(
+      backgroundColor: Colors.grey.shade100,
       appBar: AppBar(title: Text("Manage Fees Structure")),
       body: Column(
         children: [

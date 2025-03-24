@@ -11,6 +11,7 @@ class RulesScreen extends StatelessWidget {
     return BlocProvider(
       create: (context) => RulesBloc(RulesRepository())..add(LoadRulesEvent()),
       child: Scaffold(
+        backgroundColor: Colors.grey.shade100,
         appBar: AppBar(
           title: const Text("School Rules & Regulations", style: TextStyle(fontWeight: FontWeight.bold)),
           centerTitle: true,
