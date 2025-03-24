@@ -142,22 +142,28 @@ class _StudentsScreenState extends State<StudentsScreen> {
                         : _buildStaffGridRows(state.students),
                     configuration: const PlutoGridConfiguration(
                       style: PlutoGridStyleConfig(
-                        rowHeight: 60,
-                        oddRowColor: Colors.white,
-                        evenRowColor: Colors.white,
+                        gridBorderColor: Colors.grey,
+                        gridBackgroundColor: Colors.white,
+                        rowColor: Colors.white,
+                        gridBorderRadius: BorderRadius.all(Radius.circular(8.0)),
                       ),
                       columnSize: PlutoGridColumnSizeConfig(
-                          autoSizeMode: PlutoAutoSizeMode.scale),
+                        autoSizeMode: PlutoAutoSizeMode.scale,
+                        resizeMode: PlutoResizeMode.pushAndPull,
+                      ),
+                      scrollbar: PlutoGridScrollbarConfig(
+                        isAlwaysShown: true,
+                      ),
                     ),
-                    onLoaded: (event) {
-                      _stateManager =
-                          event.stateManager; // ✅ Store PlutoGridStateManager
+                    onLoaded: (PlutoGridOnLoadedEvent event) {
+                      _stateManager = event.stateManager;
                       event.stateManager.setShowColumnFilter(true);
                       event.stateManager.setPageSize(10);
                     },
+                    createFooter: (stateManager) => PlutoPagination(stateManager),
                     mode: PlutoGridMode.normal,
                   ),
-                ),
+                )
               ],
             );
           }
