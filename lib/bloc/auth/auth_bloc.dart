@@ -22,6 +22,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       final users = await authRepository.signInWithMobileAndPassword(
         event.email,
         event.password,
+        event.userType
       );
 
       if (users.isNotEmpty) {
