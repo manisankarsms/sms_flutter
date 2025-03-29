@@ -43,6 +43,9 @@ class WebService {
   }
 
   Future<String> fetchData(String endpoint) async {
+    if (kDebugMode) {
+      print(endpoint);
+    }
     final response = await http.get(
       Uri.parse('$baseUrl/$endpoint'),
       headers: <String, String>{
@@ -50,9 +53,16 @@ class WebService {
       },
     );
 
-    if (response.statusCode == 200) {
+    if (response.statusCode == 200)
+    {
+      if (kDebugMode) {
+        print(response.body);
+      }
       return response.body; // Return raw JSON string instead of decoding
     } else {
+      if (kDebugMode) {
+        print(response.body);
+      }
       throw Exception('Failed to fetch data');
     }
   }

@@ -11,6 +11,7 @@ import 'package:sms/screens/new_staff_screen.dart';
 import 'package:sms/screens/new_student_screen.dart';
 import 'package:sms/screens/posts_screen.dart';
 import 'package:sms/screens/staffs_screen.dart';
+import 'package:sms/screens/subjects_screen.dart';
 import 'package:sms/screens/theme_screen.dart';
 
 import '../bloc/auth/auth_bloc.dart';
@@ -51,6 +52,7 @@ class _HomeScreenAdminState extends State<HomeScreenAdmin> {
           builder: (context) => ClassesScreen(user: user),
         ),
       ),
+      SubjectsScreen(),
       StaffsScreen(),
       const Center(child: Text('Students - Development In Progress')),
       HolidayScreen(),
@@ -82,6 +84,11 @@ class _HomeScreenAdminState extends State<HomeScreenAdmin> {
       name: 'Classes',
       imagePath: 'assets/images/calendar.png',
       icon: Icons.class_rounded,
+    ),
+    NavigationItem(
+      name: 'Subject',
+      imagePath: 'assets/images/calendar.png',
+      icon: Icons.subject,
     ),
     NavigationItem(
       name: 'Staff',

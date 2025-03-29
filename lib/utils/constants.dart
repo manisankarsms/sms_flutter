@@ -34,4 +34,6 @@ class ApiEndpoints {
   static const String studentAdmission = '/api/student/admission';
   static const String staffRegistration = '/admin/staff/register';
   static const String staffDelete = '/admin/staff/delete';
+
+  static const String subjects = 'subjects';
 }
