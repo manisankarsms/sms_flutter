@@ -7,6 +7,7 @@ import 'package:sms/screens/fees_screen.dart';
 import 'package:sms/screens/holiday_screen.dart';
 import 'package:sms/screens/library/library_home_screen.dart';
 import 'package:sms/screens/library/library_screen.dart';
+import 'package:sms/screens/new_staff_screen.dart';
 import 'package:sms/screens/new_student_screen.dart';
 import 'package:sms/screens/posts_screen.dart';
 import 'package:sms/screens/staffs_screen.dart';
@@ -44,6 +45,7 @@ class _HomeScreenAdminState extends State<HomeScreenAdmin> {
     return [
       const DashboardScreen(),
       const NewStudentScreen(),
+      const StaffRegistrationScreen(),
       Navigator(
         onGenerateRoute: (settings) => MaterialPageRoute(
           builder: (context) => ClassesScreen(user: user),
@@ -70,6 +72,11 @@ class _HomeScreenAdminState extends State<HomeScreenAdmin> {
       name: 'New Admission',
       imagePath: 'assets/images/students.png',
       icon: Icons.person_add_rounded,
+    ),
+    NavigationItem(
+      name: 'New Staff',
+      imagePath: 'assets/images/students.png',
+      icon: Icons.person_pin_outlined,
     ),
     NavigationItem(
       name: 'Classes',

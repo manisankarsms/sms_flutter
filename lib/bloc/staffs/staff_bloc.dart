@@ -13,7 +13,7 @@ class StaffsBloc extends Bloc<StaffsEvent, StaffsState> {
   /// Automatically triggers `LoadStaff` event on initialization.
   StaffsBloc({required this.repository}) : super(StaffsState()) {
     on<LoadStaff>(_onLoadStaff);
-    on<AddStaff>(_onAddStaff);
+    // on<AddStaff>(_onAddStaff);
     on<DeleteStaff>(_onDeleteStaff);
 
     if (kDebugMode) {
@@ -47,7 +47,7 @@ class StaffsBloc extends Bloc<StaffsEvent, StaffsState> {
 
   /// Handles adding a new staff member.
   /// Updates the repository and then emits the updated staff list.
-  Future<void> _onAddStaff(AddStaff event, Emitter<StaffsState> emit) async {
+  /*Future<void> _onAddStaff(AddStaff event, Emitter<StaffsState> emit) async {
     if (kDebugMode) {
       print('Adding staff: ${event.staff.name}');
     }
@@ -59,7 +59,7 @@ class StaffsBloc extends Bloc<StaffsEvent, StaffsState> {
     }
 
     emit(state.copyWith(staff: updatedStaff)); // Emit new state with updated staff list
-  }
+  }*/
 
   /// Handles deleting a staff member.
   /// Updates the repository and emits a new state with the staff removed.

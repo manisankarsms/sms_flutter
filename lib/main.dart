@@ -11,6 +11,7 @@ import 'package:sms/bloc/fees/fees_bloc.dart';
 import 'package:sms/bloc/holiday/holiday_bloc.dart';
 import 'package:sms/bloc/language/language_bloc.dart';
 import 'package:sms/bloc/library/library_bloc.dart';
+import 'package:sms/bloc/new_staff/new_staff_bloc.dart';
 import 'package:sms/bloc/new_student/new_student_bloc.dart';
 import 'package:sms/bloc/post/post_bloc.dart';
 import 'package:sms/repositories/auth_repository.dart';
@@ -93,6 +94,9 @@ void main() async{
         ),
         BlocProvider(
           create: (context) => StudentBloc(studentRepository: studentRepository),
+        ),
+        BlocProvider(
+          create: (context) => StaffRegistrationBloc(repository: staffRepository),
         ),
         RepositoryProvider(
           create: (context) => studentsRepository,
