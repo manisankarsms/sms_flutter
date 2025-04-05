@@ -1,4 +1,3 @@
-// repository/class_repository.dart
 import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
@@ -17,7 +16,7 @@ class ClassRepository {
       final String responseString = await webService.postData('classes', requestBody);
       if (kDebugMode) {
         print("API Response: $responseString");
-      } // Debugging
+      }
 
       final Map<String, dynamic> response = jsonDecode(responseString); // Parse JSON here
       final List<dynamic> classesJson = response['classes'];
@@ -25,36 +24,70 @@ class ClassRepository {
     } catch (e) {
       if (kDebugMode) {
         print("Error fetching classes: $e");
-      } // Debugging
+      }
       throw Exception('Failed to fetch classes: $e');
     }
   }
 
-
-  /*Future<void> addClass(Class newClass) async {
+  Future<void> addClass(Class newClass) async {
     try {
-      await webService.postData('classes', newClass.toJson());
+      final requestBody = jsonEncode(newClass.toJson());
+      await webService.postData('add_class', requestBody);
     } catch (e) {
+      if (kDebugMode) {
+        print("Error adding class: $e");
+      }
       throw Exception('Failed to add class: $e');
     }
   }
 
   Future<void> deleteClass(String classId) async {
     try {
-      await webService.deleteData('classes/$classId');
+      final requestBody = jsonEncode({'class_id': classId});
+      await webService.postData('delete_class', requestBody);
     } catch (e) {
+      if (kDebugMode) {
+        print("Error deleting class: $e");
+      }
       throw Exception('Failed to delete class: $e');
     }
   }
-}*/
 
-  Future<void> addClass(Class newClass) async {
-    // Simulate adding a class to a database
-    await Future.delayed(Duration(seconds: 1));
+  Future<void> updateClass(Class updatedClass) async {
+    try {
+      final requestBody = jsonEncode(updatedClass.toJson());
+      await webService.postData('update_class', requestBody);
+    } catch (e) {
+      if (kDebugMode) {
+        print("Error updating class: $e");
+      }
+      throw Exception('Failed to update class: $e');
+    }
   }
 
-  Future<void> deleteClass(String classId) async {
-    // Simulate deleting a class from a database
-    await Future.delayed(Duration(seconds: 1));
+  // Add new methods to fetch staff and subjects
+  Future<List<Map<String, dynamic>>> fetchStaff() async {
+    try {
+      final String responseString = await webService.fetchData('admin/staffs');
+      return List<Map<String, dynamic>>.from(jsonDecode(responseString));
+    } catch (e) {
+      if (kDebugMode) {
+        print("Error fetching staff: $e");
+      }
+      throw Exception('Failed to fetch staff: $e');
+    }
+  }
+
+  Future<List<Map<String, dynamic>>> fetchSubjects() async {
+    try {
+      final String responseString = await webService.fetchData('subjects');
+      final Map<String, dynamic> response = jsonDecode(responseString);
+      return List<Map<String, dynamic>>.from(response['subjects']);
+    } catch (e) {
+      if (kDebugMode) {
+        print("Error fetching subjects: $e");
+      }
+      throw Exception('Failed to fetch subjects: $e');
+    }
   }
 }

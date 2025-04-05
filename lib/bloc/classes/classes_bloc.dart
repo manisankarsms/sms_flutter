@@ -14,8 +14,9 @@ class ClassesBloc extends Bloc<ClassesEvent, ClassesState> {
     on<LoadClasses>(_onLoadClasses);
     on<AddClass>(_onAddClass);
     on<DeleteClass>(_onDeleteClass);
+    on<UpdateClass>(_onUpdateClass); // Added handler for UpdateClass event
     on<SearchClasses>(_onSearchClasses);
-
+    on<FetchStaffAndSubjects>(_onFetchStaffAndSubjects);
     // Initial load of classes
     add(LoadClasses());
   }
@@ -37,7 +38,6 @@ class ClassesBloc extends Bloc<ClassesEvent, ClassesState> {
     }
   }
 
-
   Future<void> _onAddClass(AddClass event, Emitter<ClassesState> emit) async {
     await repository.addClass(event.newClass);
     final updatedClasses = List<Class>.from(state.classes)..add(event.newClass);
@@ -45,6 +45,26 @@ class ClassesBloc extends Bloc<ClassesEvent, ClassesState> {
       classes: updatedClasses,
       filteredClasses: _filterClasses(updatedClasses, state.searchQuery),
     ));
+  }
+
+  Future<void> _onUpdateClass(UpdateClass event, Emitter<ClassesState> emit) async {
+    try {
+      // Update class in repository
+      await repository.updateClass(event.updatedClass);
+
+      // Update in-memory state
+      final updatedClasses = state.classes.map((cls) {
+        return cls.id == event.updatedClass.id ? event.updatedClass : cls;
+      }).toList();
+
+      emit(state.copyWith(
+        classes: updatedClasses,
+        filteredClasses: _filterClasses(updatedClasses, state.searchQuery),
+      ));
+    } catch (e) {
+      print("Error updating class: $e"); // Debugging
+      // You could emit a failure state here if needed
+    }
   }
 
   Future<void> _onDeleteClass(DeleteClass event, Emitter<ClassesState> emit) async {
@@ -72,5 +92,25 @@ class ClassesBloc extends Bloc<ClassesEvent, ClassesState> {
       return cls.name.toLowerCase().contains(lowercaseQuery) ||
           (cls.staff?.toLowerCase().contains(lowercaseQuery) ?? false);
     }).toList();
+  }
+
+  Future<void> _onFetchStaffAndSubjects(
+      FetchStaffAndSubjects event,
+      Emitter<ClassesState> emit
+      ) async {
+    try {
+      emit(StaffAndSubjectsLoading());
+
+      // Fetch both staff and subjects in parallel
+      final staffFuture = repository.fetchStaff();
+      final subjectsFuture = repository.fetchSubjects();
+
+      final staff = await staffFuture;
+      final subjects = await subjectsFuture;
+
+      emit(StaffAndSubjectsLoaded(staff: staff, subjects: subjects));
+    } catch (e) {
+      emit(ClassesError(e.toString()));
+    }
   }
 }

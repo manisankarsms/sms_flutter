@@ -11,6 +11,10 @@ class Constants {
 }
 
 class ApiEndpoints {
+  static const String adminLogin = 'login/admin';
+  static const String studentLogin = 'login/student';
+  static const String staffLogin = 'login/staff';
+
   static const String adminDashboard = 'admin/dashboard';
   static const String login = 'login';
   static const String studentFeed = 'students/feed';
@@ -31,8 +35,8 @@ class ApiEndpoints {
   static const String returnBook = 'books/return';
   static const String issuedBooks = 'books/issued';
 
-  static const String studentAdmission = '/api/student/admission';
-  static const String staffRegistration = '/admin/staff/register';
+  static const String studentAdmission = 'student/admission';
+  static const String staffRegistration = 'admin/staff/register';
   static const String staffDelete = '/admin/staff/delete';
 
   static const String subjects = 'subjects';

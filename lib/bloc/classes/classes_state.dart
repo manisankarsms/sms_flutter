@@ -29,3 +29,27 @@ class ClassesState {
     );
   }
 }
+
+class StaffAndSubjectsLoading extends ClassesState {}
+
+class StaffAndSubjectsLoaded extends ClassesState {
+  final List<Map<String, dynamic>> staff;
+  final List<Map<String, dynamic>> subjects;
+
+  const StaffAndSubjectsLoaded({
+    required this.staff,
+    required this.subjects
+  });
+
+  @override
+  List<Object> get props => [staff, subjects];
+}
+
+class ClassesError extends ClassesState {
+  final String message;
+
+  const ClassesError(this.message);
+
+  @override
+  List<Object> get props => [message];
+}

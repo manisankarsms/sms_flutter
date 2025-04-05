@@ -1,23 +1,54 @@
+import 'package:equatable/equatable.dart';
+
 import '../../models/class.dart';
 
-abstract class  ClassesEvent {}
+abstract class ClassesEvent extends Equatable {
+  const ClassesEvent();
 
-class LoadClasses extends ClassesEvent {}
+  @override
+  List<Object?> get props => [];
+}
+
+class LoadClasses extends ClassesEvent {
+  const LoadClasses();
+}
 
 class AddClass extends ClassesEvent {
   final Class newClass;
 
-  AddClass(this.newClass);
+  const AddClass(this.newClass);
+
+  @override
+  List<Object?> get props => [newClass];
+}
+
+class UpdateClass extends ClassesEvent {
+  final Class updatedClass;
+
+  const UpdateClass(this.updatedClass);
+
+  @override
+  List<Object?> get props => [updatedClass];
 }
 
 class DeleteClass extends ClassesEvent {
   final String classId;
 
-  DeleteClass(this.classId);
+  const DeleteClass(this.classId);
+
+  @override
+  List<Object?> get props => [classId];
 }
 
 class SearchClasses extends ClassesEvent {
   final String query;
 
-  SearchClasses(this.query);
+  const SearchClasses(this.query);
+
+  @override
+  List<Object?> get props => [query];
+}
+
+class FetchStaffAndSubjects extends ClassesEvent {
+  const FetchStaffAndSubjects();
 }

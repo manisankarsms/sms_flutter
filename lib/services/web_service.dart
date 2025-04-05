@@ -22,6 +22,8 @@ class WebService {
     final response = await http.post(
       Uri.parse('$baseUrl/$endpoint'),
       headers: <String, String>{
+        "Access-Control-Allow-Origin": "*",
+        'mode': 'no-cors',
         'Content-Type': 'application/json; charset=UTF-8',
       },
       body: data,

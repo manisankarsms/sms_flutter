@@ -281,21 +281,21 @@ class _LoginScreenState extends State<LoginScreen> {
                     children: [
                       Expanded(
                         child: _buildUserTypeOption(
-                          value: 'Student',
+                          value: Constants.student,
                           icon: Icons.school,
                           label: AppLocalizations.of(context)?.student ??'Student',
                         ),
                       ),
                       Expanded(
                         child: _buildUserTypeOption(
-                          value: 'Staff',
+                          value: Constants.staff,
                           icon: Icons.business_center,
                           label: AppLocalizations.of(context)?.staff ?? 'Staff',
                         ),
                       ),
                       Expanded(
                         child: _buildUserTypeOption(
-                          value: 'Admin',
+                          value: Constants.admin,
                           icon: Icons.admin_panel_settings,
                           label: AppLocalizations.of(context)?.admin ?? 'Admin',
                         ),

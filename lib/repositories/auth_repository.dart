@@ -13,13 +13,38 @@ class AuthRepository {
 
   AuthRepository({required this.webService});
 
-  Future<List<User>> signInWithMobileAndPassword(String mobile, String password) async {
+  // Future<List<User>> signInWithMobileAndPassword(String mobile, String password) async {
+  //   try {
+  //     String request = frameLoginRequest(mobile, password);
+  //     if (kDebugMode) {
+  //       print(request);
+  //     }
+  //     final data = await webService.postData(ApiEndpoints.login, request);
+  //     final List<dynamic> jsonResponse = jsonDecode(data.toString());
+  //
+  //     return jsonResponse.map((user) => User.fromJson(user)).toList();
+  //   } catch (error) {
+  //     if (kDebugMode) {
+  //       print("Error signing in: $error");
+  //     }
+  //     rethrow;
+  //   }
+  // }
+
+  Future<List<User>> signInWithMobileAndPassword(String mobile, String password, String userType) async {
     try {
       String request = frameLoginRequest(mobile, password);
       if (kDebugMode) {
         print(request);
       }
-      final data = await webService.postData(ApiEndpoints.login, request);
+      final endpointMap = {
+        Constants.student: ApiEndpoints.studentLogin,
+        Constants.staff: ApiEndpoints.staffLogin,
+        Constants.admin: ApiEndpoints.adminLogin,
+      };
+
+      final endPoint = endpointMap[userType] ?? ApiEndpoints.adminLogin;
+      final data = await webService.postData(endPoint, request);
       final List<dynamic> jsonResponse = jsonDecode(data.toString());
 
       return jsonResponse.map((user) => User.fromJson(user)).toList();
@@ -30,7 +55,6 @@ class AuthRepository {
       rethrow;
     }
   }
-
 
   Future<void> logout() async {
     try {
