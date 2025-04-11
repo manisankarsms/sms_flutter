@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:sms/screens/classes_screen.dart';
 import 'package:sms/screens/complaint_list_screen.dart';
 import 'package:sms/screens/dashboard_screen.dart';
+import 'package:sms/screens/exam/exam_list_screen.dart';
 import 'package:sms/screens/fees_screen.dart';
 import 'package:sms/screens/holiday_screen.dart';
 import 'package:sms/screens/library/library_home_screen.dart';
@@ -55,6 +56,7 @@ class _HomeScreenAdminState extends State<HomeScreenAdmin> {
       SubjectsScreen(),
       StaffsScreen(),
       const Center(child: Text('Students - Development In Progress')),
+      ExamsListScreen(),
       HolidayScreen(),
       PostsScreen(),
       AdminFeesScreen(),
@@ -99,6 +101,11 @@ class _HomeScreenAdminState extends State<HomeScreenAdmin> {
       name: 'Students',
       imagePath: 'assets/images/attendance.png',
       icon: Icons.school_rounded,
+    ),
+    NavigationItem(
+      name: 'Exams',
+      imagePath: 'assets/images/attendance.png',
+      icon: Icons.assessment_outlined,
     ),
     NavigationItem(
       name: 'Holiday Calendar',
