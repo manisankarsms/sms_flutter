@@ -1,13 +1,19 @@
 class DashboardModel {
   final Students students;
-  final Staffs staff;
+  final Staff staff;
+  final Complaints complaints;
 
-  DashboardModel({required this.students, required this.staff});
+  DashboardModel({
+    required this.students,
+    required this.staff,
+    required this.complaints,
+  });
 
   factory DashboardModel.fromJson(Map<String, dynamic> json) {
     return DashboardModel(
       students: Students.fromJson(json['students']),
-      staff: Staffs.fromJson(json['staff']),
+      staff: Staff.fromJson(json['staff']),
+      complaints: Complaints.fromJson(json['complaints']),
     );
   }
 }
@@ -55,22 +61,62 @@ class GenderDistribution {
   }
 }
 
-class Staffs {
+class Staff {
   final String totalTeachers;
   final String totalAdminStaff;
   final String onLeaveToday;
 
-  Staffs({
+  Staff({
     required this.totalTeachers,
     required this.totalAdminStaff,
     required this.onLeaveToday,
   });
 
-  factory Staffs.fromJson(Map<String, dynamic> json) {
-    return Staffs(
+  factory Staff.fromJson(Map<String, dynamic> json) {
+    return Staff(
       totalTeachers: json['totalTeachers'],
       totalAdminStaff: json['totalAdminStaff'],
       onLeaveToday: json['onLeaveToday'],
+    );
+  }
+}
+
+class Complaints {
+  final String totalCount;
+  final ComplaintsByStatus byStatus;
+  final String resolutionRate;
+
+  Complaints({
+    required this.totalCount,
+    required this.byStatus,
+    required this.resolutionRate,
+  });
+
+  factory Complaints.fromJson(Map<String, dynamic> json) {
+    return Complaints(
+      totalCount: json['totalCount'],
+      byStatus: ComplaintsByStatus.fromJson(json['byStatus']),
+      resolutionRate: json['resolutionRate'],
+    );
+  }
+}
+
+class ComplaintsByStatus {
+  final String open;
+  final String pending;
+  final String resolved;
+
+  ComplaintsByStatus({
+    required this.open,
+    required this.pending,
+    required this.resolved,
+  });
+
+  factory ComplaintsByStatus.fromJson(Map<String, dynamic> json) {
+    return ComplaintsByStatus(
+      open: json['open'],
+      pending: json['pending'],
+      resolved: json['resolved'],
     );
   }
 }
