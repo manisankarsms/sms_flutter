@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../bloc/exam/exam_bloc.dart';
@@ -58,12 +59,65 @@ class _ExamsListScreenState extends State<ExamsListScreen> {
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
+          if (kIsWeb && MediaQuery.of(context).size.width > 800) {
+            // Show right-side drawer for web
+            showGeneralDialog(
+              context: context,
+              barrierDismissible: true,
+              barrierLabel: "Right Drawer",
+              transitionDuration: const Duration(milliseconds: 300),
+              pageBuilder: (context, animation, secondaryAnimation) {
+                return Align(
+                  alignment: Alignment.centerRight,
+                  child: Material(
+                    color: Colors.white,
+                    elevation: 16,
+                    child: SizedBox(
+                      width: 400,
+                      height: MediaQuery.of(context).size.height,
+                      child: Stack(
+                        children: [
+                          const Padding(
+                            padding: EdgeInsets.only(top: 56.0), // space for the close button
+                            child: ExamFormScreen(),
+                          ),
+                          Positioned(
+                            top: 8,
+                            right: 8,
+                            child: IconButton(
+                              icon: const Icon(Icons.close),
+                              onPressed: () => Navigator.of(context).pop(),
+                              tooltip: 'Close',
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                );
+              },
+              transitionBuilder: (context, animation, secondaryAnimation, child) {
+                final tween = Tween<Offset>(
+                  begin: const Offset(1, 0),
+                  end: Offset.zero,
+                );
+                return SlideTransition(
+                  position: tween.animate(animation),
+                  child: child,
+                );
+              },
+            );
+          } else {
+            // Show bottom sheet for mobile
+            showModalBottomSheet(
+              context: context,
+              shape: const RoundedRectangleBorder(
+                borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+              ),
+              isScrollControlled: true,
               builder: (_) => const ExamFormScreen(),
-            ),
-          );
+            );
+          }
         },
         child: const Icon(Icons.add),
         tooltip: 'Create new exam',

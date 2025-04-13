@@ -11,7 +11,7 @@ class SubjectRepository {
 
   Future<List<Subject>> fetchSubjects() async {
     try {
-      final responseString = await webService.fetchData('subjects');
+      final responseString = await webService.fetchData(ApiEndpoints.subjects);
       final Map<String, dynamic> response = jsonDecode(responseString); // Decode as Map
       final List<dynamic> subjectsJson = response['subjects']; // Extract subjects list
       return subjectsJson.map((json) => Subject.fromJson(json)).toList();
@@ -26,7 +26,7 @@ class SubjectRepository {
 
   Future<bool> addSubject(Subject subject) async {
     try {
-      final responseString = await webService.postData('subjects', jsonEncode(subject.toJson()));
+      final responseString = await webService.postData(ApiEndpoints.subjects, jsonEncode(subject.toJson()));
       return responseString.isNotEmpty;
     } catch (e) {
       if (kDebugMode) {
@@ -38,7 +38,7 @@ class SubjectRepository {
 
   Future<bool> updateSubject(Subject subject) async {
     try {
-      final responseString = await webService.putData('subjects/${subject.id}', jsonEncode(subject.toJson()));
+      final responseString = await webService.putData('${ApiEndpoints.subjects}/${subject.id}', jsonEncode(subject.toJson()));
       return responseString.isNotEmpty;
     } catch (e) {
       if (kDebugMode) {

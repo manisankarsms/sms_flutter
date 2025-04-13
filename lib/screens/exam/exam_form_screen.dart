@@ -1,5 +1,6 @@
 // lib/screens/exams/exam_form_screen.dart
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
@@ -67,11 +68,14 @@ class _ExamFormScreenState extends State<ExamFormScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(widget.exam == null ? 'Create Exam' : 'Edit Exam'),
+    return Padding(
+      padding: EdgeInsets.only(
+        left: 16,
+        right: 16,
+        top: 16,
+        bottom: MediaQuery.of(context).viewInsets.bottom + 16,
       ),
-      body: BlocConsumer<ExamBloc, ExamState>(
+      child: BlocConsumer<ExamBloc, ExamState>(
         listener: (context, state) {
           if (state is ExamError) {
             ScaffoldMessenger.of(context).showSnackBar(
@@ -89,53 +93,83 @@ class _ExamFormScreenState extends State<ExamFormScreen> {
             return const Center(child: CircularProgressIndicator());
           }
 
-          return SingleChildScrollView(
-            padding: const EdgeInsets.all(16.0),
-            child: Form(
-              key: _formKey,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _buildTitleField(),
-                  const SizedBox(height: 16),
-                  _buildDescriptionField(),
-                  const SizedBox(height: 16),
-                  _buildDateField(),
-                  const SizedBox(height: 16),
-                  _buildClassField(),
-                  const SizedBox(height: 16),
-                  _buildSubjectField(),
-                  const SizedBox(height: 16),
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Expanded(child: _buildDurationField()),
-                      const SizedBox(width: 16),
-                      Expanded(child: _buildTotalMarksField()),
-                    ],
-                  ),
-                  const SizedBox(height: 24),
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton(
-                      onPressed: _submitForm,
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 16.0),
-                        child: Text(
-                          widget.exam == null ? 'Create Exam' : 'Update Exam',
-                          style: const TextStyle(fontSize: 16),
-                        ),
+          return LayoutBuilder(
+            builder: (context, constraints) {
+              if (kIsWeb && constraints.maxWidth > 800) {
+                // Web layout: show form on the right side
+                return Row(
+                  children: [
+                    Expanded(
+                      flex: 1,
+                      child: Container(), // You can add a left panel here if needed
+                    ),
+                    Expanded(
+                      flex: 2,
+                      child: SingleChildScrollView(
+                        padding: const EdgeInsets.all(24.0),
+                        child: _buildForm(),
                       ),
                     ),
-                  ),
-                ],
-              ),
-            ),
+                  ],
+                );
+              } else {
+                // Mobile or narrow screen
+                return SingleChildScrollView(
+                  padding: const EdgeInsets.all(16.0),
+                  child: _buildForm(),
+                );
+              }
+            },
           );
+
         },
       ),
     );
   }
+
+  Widget _buildForm() {
+    return Form(
+      key: _formKey,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _buildTitleField(),
+          const SizedBox(height: 16),
+          _buildDescriptionField(),
+          const SizedBox(height: 16),
+          _buildDateField(),
+          const SizedBox(height: 16),
+          _buildClassField(),
+          const SizedBox(height: 16),
+          _buildSubjectField(),
+          const SizedBox(height: 16),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(child: _buildDurationField()),
+              const SizedBox(width: 16),
+              Expanded(child: _buildTotalMarksField()),
+            ],
+          ),
+          const SizedBox(height: 24),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              onPressed: _submitForm,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 16.0),
+                child: Text(
+                  widget.exam == null ? 'Create Exam' : 'Update Exam',
+                  style: const TextStyle(fontSize: 16),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
 
   Widget _buildTitleField() {
     return TextFormField(
