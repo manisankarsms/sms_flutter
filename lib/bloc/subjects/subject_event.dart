@@ -26,7 +26,7 @@ class UpdateSubject extends SubjectEvent {
 }
 
 class DeleteSubject extends SubjectEvent {
-  final String id;
+  final int id;
   DeleteSubject(this.id);
 
   @override

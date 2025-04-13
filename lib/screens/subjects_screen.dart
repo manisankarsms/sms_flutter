@@ -280,7 +280,7 @@ class _SubjectDialogState extends State<SubjectDialog> {
       final description = _descController.text.trim();
 
       final subject = Subject(
-        id: widget.subject?.id ?? DateTime.now().toString(),
+        id: 1,
         name: name,
         code: code,
         description: description,

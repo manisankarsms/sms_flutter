@@ -1,5 +1,5 @@
 class Subject {
-  final String id;
+  final int id;
   final String name;
   final String code;
   final String description;

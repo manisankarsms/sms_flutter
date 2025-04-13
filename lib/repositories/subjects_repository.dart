@@ -48,7 +48,7 @@ class SubjectRepository {
     }
   }
 
-  Future<bool> deleteSubject(String id) async {
+  Future<bool> deleteSubject(int id) async {
     try {
       final responseString = await webService.deleteData('subjects/$id');
       return responseString.isEmpty;
