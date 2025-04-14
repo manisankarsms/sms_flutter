@@ -10,6 +10,7 @@ import 'package:sms/screens/home_screen_admin.dart';
 import 'package:sms/utils/language_selector.dart';
 
 import '../bloc/classes/classes_bloc.dart';
+import '../bloc/classes_staff/staff_classes_bloc.dart';
 import '../bloc/dashboard/dashboard_bloc.dart';
 import '../bloc/feed/feed_bloc.dart';
 import '../bloc/holiday/holiday_bloc.dart';
@@ -689,6 +690,9 @@ class _LoginScreenState extends State<LoginScreen> {
           providers: [
             BlocProvider<ClassesBloc>(
               create: (context) => ClassesBloc(repository: classRepository, user: selectedUser),
+            ),
+            BlocProvider<StaffClassesBloc>(
+              create: (context) => StaffClassesBloc(repository: classRepository, user: selectedUser),
             ),
           ],
           child: StaffHomeScreen(user: selectedUser),

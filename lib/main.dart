@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:sms/bloc/auth/auth_bloc.dart';
+import 'package:sms/bloc/classes_staff/staff_classes_bloc.dart';
 import 'package:sms/bloc/exam/exam_bloc.dart';
 import 'package:sms/bloc/feed/feed_bloc.dart';
 import 'package:sms/bloc/fees/fees_bloc.dart';
@@ -102,9 +103,6 @@ void main() async{
         ),
         BlocProvider(
           create: (context) => StaffRegistrationBloc(repository: staffRepository),
-        ),
-        BlocProvider(
-          create: (context) => SubjectBloc(subjectRepository: subjectRepository),
         ),
         BlocProvider(
           create: (context) => SubjectBloc(subjectRepository: subjectRepository),

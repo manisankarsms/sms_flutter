@@ -90,4 +90,28 @@ class ClassRepository {
       throw Exception('Failed to fetch subjects: $e');
     }
   }
+
+  //staff part
+
+  Future<Map<String, dynamic>> fetchStaffClasses(String userId) async {
+    try {
+      final requestBody = jsonEncode({'id': userId});
+      final String responseString = await webService.postData('staff/classes', requestBody);
+
+      if (kDebugMode) {
+        print("Staff classes API response: $responseString");
+      }
+
+      final Map<String, dynamic> response = jsonDecode(responseString);
+
+      // You can validate or transform here if needed
+      return response;
+    } catch (e) {
+      if (kDebugMode) {
+        print("Error fetching staff classes: $e");
+      }
+      throw Exception('Failed to fetch staff classes: $e');
+    }
+  }
+
 }

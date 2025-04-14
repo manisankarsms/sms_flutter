@@ -8,6 +8,7 @@ import 'package:sms/screens/profile_screen.dart';
 import '../bloc/auth/auth_bloc.dart';
 import '../bloc/auth/auth_event.dart';
 import '../models/user.dart';
+import 'classes_screen_staff.dart';
 import 'home_screen_admin.dart';
 import 'login_screen.dart';
 import 'messages_screen.dart';
@@ -36,7 +37,7 @@ class _StaffHomeScreenState extends State<StaffHomeScreen> {
 
   List<Widget> _buildScreens(User user) {
     return [
-      ClassesScreen(user: user),
+      ClassesScreenStaff(user: user),
       // StaffTasksScreen(),
       MessagesScreen(),
       ProfileScreen(),
