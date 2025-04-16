@@ -125,14 +125,11 @@ class _ExamDetailScreenState extends State<ExamDetailScreen> {
           ]),
           const SizedBox(height: 16),
           _buildInfoCard('Exam Details', [
-            _buildInfoRow('Date', _formatDate(exam.examDate)),
             _buildInfoRow('Duration', '${exam.duration} minutes'),
             _buildInfoRow('Total Marks', exam.totalMarks.toString()),
           ]),
           const SizedBox(height: 16),
           _buildInfoCard('Class & Subject', [
-            _buildInfoRow('Class ID', exam.classId),
-            _buildInfoRow('Subject ID', exam.subjectId),
           ]),
           if (exam.createdAt != null) ...[
             const SizedBox(height: 16),

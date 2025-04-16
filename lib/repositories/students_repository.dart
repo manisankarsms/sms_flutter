@@ -1,7 +1,9 @@
 // repository/class_repository.dart
 import 'dart:convert';
 
+import '../models/exams.dart';
 import '../models/student.dart';
+import '../models/student_marks.dart';
 import '../services/web_service.dart';
 import '../utils/constants.dart';
 
@@ -51,6 +53,41 @@ class StudentsRepository {
     }
   }
 
+  Future<List<Exam>> getExams() async {
+    final response = await webService.fetchData(ApiEndpoints.exams);
+    final List<dynamic> data = jsonDecode(response);
+    return data.map((json) => Exam.fromJson(json)).toList();
+  }
+
+  // Add these new methods
+  Future<List<StudentMark>> getStudentMarks(
+      String classId,
+      String examId,
+      String subjectId) async {
+    try {
+      final requestBody = jsonEncode({
+        'classId': classId,
+        'examId': examId,
+        'subjectId': subjectId,
+      });
+
+      final response = await webService.postData('students/marks', requestBody);
+
+      final Map<String, dynamic> responseData = jsonDecode(response);
+      final List<dynamic> marksJson = responseData['marks'] ?? [];
+
+      return marksJson.map((json) => StudentMark.fromJson(json)).toList();
+    } catch (error) {
+      throw Exception('Failed to fetch student marks: ${error.toString()}');
+    }
+  }
+
+  /*Future<void> saveStudentMarks(Map<String, dynamic> payload) async {
+    try {
+      final requestBody = jsonEncode(payload);
+      await webService.postData(ApiEndpoints.saveMarks, requestBody);
+    } catch (error) {
+      throw Exception('Failed to save student marks: ${error.toString()}');
+    }
+  }*/
 }
-
-

@@ -1,5 +1,7 @@
 import 'package:equatable/equatable.dart';
+import '../../models/exams.dart';
 import '../../models/student.dart';
+import '../../models/student_marks.dart';
 
 abstract class StudentsState extends Equatable {
   const StudentsState();
@@ -29,3 +31,20 @@ class StudentsError extends StudentsState {
   @override
   List<Object> get props => [message];
 }
+
+class ExamsLoaded extends StudentsState {
+  final List<Exam> exams;
+
+  ExamsLoaded(this.exams);
+}
+
+class MarksLoaded extends StudentsState {
+  final String examId;
+  final List<StudentMark> marks;
+
+  MarksLoaded(this.examId, this.marks);
+}
+
+class NoStudentsFound extends StudentsState {}
+
+class MarksSaved extends StudentsState {}

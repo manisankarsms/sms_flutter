@@ -2,9 +2,13 @@ class Class {
   final String id;
   final String name;
   final String? staff;
-  final String? staffId;  // Added field to store instructor ID
-  final List<String>? subjectIds;  // Added field to store subject IDs
-  final List<String>? subjectNames; // Added field to store subject names
+  final String? staffId;
+  final List<String>? subjectIds;
+  final List<String>? subjectNames;
+
+  // Newly added fields
+  final String? subjectId;
+  final String? subjectName;
 
   Class({
     required this.id,
@@ -13,6 +17,8 @@ class Class {
     this.staffId,
     this.subjectIds,
     this.subjectNames,
+    this.subjectId,
+    this.subjectName,
   });
 
   factory Class.fromJson(Map<String, dynamic> json) {
@@ -27,6 +33,8 @@ class Class {
       subjectNames: json['subjectNames'] != null
           ? List<String>.from(json['subjectNames'])
           : null,
+      subjectId: json['subjectId'],
+      subjectName: json['subjectName'],
     );
   }
 
@@ -38,6 +46,15 @@ class Class {
       'staffId': staffId,
       'subjectIds': subjectIds,
       'subjectNames': subjectNames,
+      'subjectId': subjectId,
+      'subjectName': subjectName,
     };
+  }
+
+  @override
+  String toString() {
+    return 'Class(id: $id, name: $name, staff: $staff, staffId: $staffId, '
+        'subjectIds: $subjectIds, subjectNames: $subjectNames, '
+        'subjectId: $subjectId, subjectName: $subjectName)';
   }
 }

@@ -51,9 +51,6 @@ class _ExamFormScreenState extends State<ExamFormScreen> {
       _descriptionController.text = widget.exam!.description;
       _durationController.text = widget.exam!.duration.toString();
       _totalMarksController.text = widget.exam!.totalMarks.toString();
-      _selectedClassId = widget.exam!.classId;
-      _selectedSubjectId = widget.exam!.subjectId;
-      _selectedDate = widget.exam!.examDate;
     }
   }
 

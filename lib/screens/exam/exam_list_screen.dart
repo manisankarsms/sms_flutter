@@ -281,10 +281,6 @@ class _ExamsListScreenState extends State<ExamsListScreen> {
               children: [
                 const SizedBox(height: 4),
                 Text(
-                  'Date: ${_formatDate(exam.examDate)}',
-                  style: const TextStyle(fontSize: 12),
-                ),
-                Text(
                   'Duration: ${exam.duration} minutes',
                   style: const TextStyle(fontSize: 12),
                 ),

@@ -1,12 +1,15 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:sms/screens/students_marks_screen.dart';
 import '../bloc/classes_staff/staff_classes_bloc.dart';
 import '../bloc/classes_staff/staff_classes_event.dart';
 import '../bloc/classes_staff/staff_classes_state.dart';
+import '../bloc/students/students_bloc.dart';
 import '../models/class.dart';
 import '../models/user.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import '../repositories/students_repository.dart';
 import '../widgets/section_header.dart';
 
 class ClassesScreenStaff extends StatefulWidget {
@@ -19,43 +22,58 @@ class ClassesScreenStaff extends StatefulWidget {
 }
 
 class _ClassesScreenStaffState extends State<ClassesScreenStaff> {
+  final GlobalKey<NavigatorState> _navigatorKey = GlobalKey<NavigatorState>();
+
   @override
   void initState() {
     super.initState();
-    context.read<StaffClassesBloc>().add(LoadStaffClasses(staffId: widget.user.id));
+    context
+        .read<StaffClassesBloc>()
+        .add(LoadStaffClasses(staffId: widget.user.id));
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.grey.shade100,
-      body: BlocBuilder<StaffClassesBloc, StaffClassesState>(
-        builder: (context, state) {
-          if (state.status == StaffClassesStatus.loading) {
-            return const Center(child: CircularProgressIndicator());
-          }
+    return Navigator(
+        key: _navigatorKey,
+        onGenerateRoute: (settings) => MaterialPageRoute(
+            builder: (context) => Scaffold(
+                  backgroundColor: Colors.grey.shade100,
+                  body: BlocBuilder<StaffClassesBloc, StaffClassesState>(
+                    builder: (context, state) {
+                      if (state.status == StaffClassesStatus.loading) {
+                        return const Center(child: CircularProgressIndicator());
+                      }
 
-          if (state.myClasses.isEmpty && state.teachingClasses.isEmpty) {
-            return Center(
-              child: Text(AppLocalizations.of(context)?.no_classes_found ?? 'No classes found'),
-            );
-          }
+                      if (state.myClasses.isEmpty &&
+                          state.teachingClasses.isEmpty) {
+                        return Center(
+                          child: Text(
+                              AppLocalizations.of(context)?.no_classes_found ??
+                                  'No classes found'),
+                        );
+                      }
 
-          return ListView(
-            padding: const EdgeInsets.all(10),
-            children: [
-              if (state.myClasses.isNotEmpty) ...[
-                const SectionHeader(title: "MyClass"),
-                ContentBasedClassGrid(classes: state.myClasses, user: widget.user),
-              ],
-              if (state.teachingClasses.isNotEmpty) ...[
-                const SectionHeader(title: "Teaching Classes"),
-                ContentBasedClassGrid(classes: state.teachingClasses, user: widget.user),
-              ],
-            ],
-          );
-        },
-      ),
+                      return ListView(
+                        padding: const EdgeInsets.all(10),
+                        children: [
+                          if (state.myClasses.isNotEmpty) ...[
+                            const SectionHeader(title: "MyClass"),
+                            ContentBasedClassGrid(
+                                classes: state.myClasses, user: widget.user),
+                          ],
+                          if (state.teachingClasses.isNotEmpty) ...[
+                            const SectionHeader(title: "Teaching Classes"),
+                            ContentBasedClassGrid(
+                                classes: state.teachingClasses,
+                                user: widget.user),
+                          ],
+                        ],
+                      );
+                    },
+                  ),
+                )
+        )
     );
   }
 }
@@ -159,18 +177,25 @@ class ContentSizedClassCard extends StatelessWidget {
                         children: [
                           Text(
                             classData.name ?? 'Unnamed Class',
-                            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                              fontWeight: FontWeight.bold,
-                            ),
+                            style: Theme.of(context)
+                                .textTheme
+                                .titleMedium
+                                ?.copyWith(
+                                  fontWeight: FontWeight.bold,
+                                ),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                           ),
-                          if (classData.staff != null && classData.staff!.isNotEmpty)
+                          if (classData.staff != null &&
+                              classData.staff!.isNotEmpty)
                             Text(
                               classData.staff!,
-                              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                color: Colors.grey[600],
-                              ),
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .bodySmall
+                                  ?.copyWith(
+                                    color: Colors.grey[600],
+                                  ),
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                             ),
@@ -214,6 +239,7 @@ class ContentSizedClassCard extends StatelessWidget {
                       primary: true,
                       onPressed: () {
                         // Navigate to marks update page
+                        _navigateToStudents(context);
                       },
                     ),
                   ],
@@ -227,12 +253,12 @@ class ContentSizedClassCard extends StatelessWidget {
   }
 
   Widget _buildActionButton(
-      BuildContext context, {
-        required String label,
-        required IconData icon,
-        required VoidCallback onPressed,
-        bool primary = false,
-      }) {
+    BuildContext context, {
+    required String label,
+    required IconData icon,
+    required VoidCallback onPressed,
+    bool primary = false,
+  }) {
     final colorScheme = Theme.of(context).colorScheme;
 
     return ElevatedButton.icon(
@@ -246,11 +272,27 @@ class ContentSizedClassCard extends StatelessWidget {
         backgroundColor: primary ? colorScheme.primary : Colors.transparent,
         foregroundColor: primary ? colorScheme.onPrimary : colorScheme.primary,
         elevation: primary ? 1 : 0,
-        side: primary
-            ? null
-            : BorderSide(color: colorScheme.primary),
+        side: primary ? null : BorderSide(color: colorScheme.primary),
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         textStyle: const TextStyle(fontWeight: FontWeight.bold),
+      ),
+    );
+  }
+
+  void _navigateToStudents(BuildContext context) {
+    Navigator.of(context, rootNavigator: false).push(
+      MaterialPageRoute(
+        builder: (context) => BlocProvider(
+          create: (context) => StudentsBloc(
+            repository: context.read<StudentsRepository>(),
+          ),
+          child: StudentsMarksScreen(
+            standard: classData.name,
+            classId: classData.id,
+            subjectId: classData.subjectId!,
+            subjectName: classData.subjectName!,
+          ),
+        ),
       ),
     );
   }

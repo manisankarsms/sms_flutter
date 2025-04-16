@@ -4,11 +4,11 @@ class Exam {
   final String? id;
   final String title;
   final String description;
-  final DateTime examDate;
-  final String subjectId;
-  final String classId;
-  final int duration; // in minutes
-  final double totalMarks;
+  final DateTime? examDate;
+  final String? subjectId;
+  final String? classId;
+  final int? duration; // in minutes
+  final double? totalMarks;
   final String? createdBy;
   final DateTime? createdAt;
   final String status; // draft, published, completed, etc.
@@ -48,7 +48,7 @@ class Exam {
       if (id != null) 'id': id,
       'title': title,
       'description': description,
-      'examDate': examDate.toIso8601String(),
+      'examDate': examDate?.toIso8601String(),
       'subjectId': subjectId,
       'classId': classId,
       'duration': duration,
