@@ -1,4 +1,3 @@
-
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:pluto_grid/pluto_grid.dart';
@@ -33,16 +32,29 @@ class StudentsMarksScreen extends StatefulWidget {
 class _StudentsMarksScreenState extends State<StudentsMarksScreen> {
   late PlutoGridStateManager _stateManager;
   Map<String, double> studentMarksMap = {};
+  Map<String, TextEditingController> _markControllers = {};
   bool isLoading = true;
   String errorMessage = '';
   List<Exam> exams = [];
   String? selectedExamId;
+  Exam? selectedExam;
+  List<StudentMark> currentMarks = [];
+  List<StudentMark> topScorers = [];
 
   @override
   void initState() {
     super.initState();
     // First load the available exams
     context.read<StudentsBloc>().add(LoadExams(widget.classId));
+  }
+
+  @override
+  void dispose() {
+    // Clean up all text controllers
+    for (var controller in _markControllers.values) {
+      controller.dispose();
+    }
+    super.dispose();
   }
 
   void _loadMarks() {
@@ -55,11 +67,35 @@ class _StudentsMarksScreenState extends State<StudentsMarksScreen> {
     }
   }
 
+  // Calculate top scorers without setState
+  List<StudentMark> _calculateTopScorers() {
+    // Create a list of students with their marks
+    List<StudentMark> studentsWithMarks = [];
+
+    for (var mark in currentMarks) {
+      double score = studentMarksMap[mark.studentId] ?? 0;
+      studentsWithMarks.add(
+          StudentMark(
+            studentId: mark.studentId,
+            studentName: mark.studentName,
+            marksScored: score,
+          )
+      );
+    }
+
+    // Sort by marks in descending order
+    studentsWithMarks.sort((a, b) => b.marksScored.compareTo(a.marksScored));
+
+    // Take top 3 (or less if fewer students)
+    return studentsWithMarks.take(3).toList();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey.shade100,
+      backgroundColor: Colors.grey.shade50,
       appBar: AppBar(
+        elevation: 0,
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -72,11 +108,15 @@ class _StudentsMarksScreenState extends State<StudentsMarksScreen> {
         ),
         actions: [
           IconButton(
-              icon: const Icon(Icons.print),
-              onPressed: () => _printStudentMarks(context)),
+            icon: const Icon(Icons.print),
+            tooltip: 'Print Marks',
+            onPressed: () => _printStudentMarks(context),
+          ),
           IconButton(
-              icon: const Icon(Icons.download),
-              onPressed: () => _showExportOptions(context)),
+            icon: const Icon(Icons.download),
+            tooltip: 'Export Marks',
+            onPressed: () => _showExportOptions(context),
+          ),
         ],
       ),
       body: BlocBuilder<StudentsBloc, StudentsState>(
@@ -87,126 +127,119 @@ class _StudentsMarksScreenState extends State<StudentsMarksScreen> {
             // Only set selected exam if not already set and exams available
             if (selectedExamId == null && exams.isNotEmpty) {
               selectedExamId = exams[0].id;
+              selectedExam = exams[0];
               // Now load marks for the selected exam
               Future.microtask(() => _loadMarks());
             }
 
             // Return loading indicator until marks are loaded
-            return Column(
-              children: [
-                _buildExamDropdown(),
-                const Expanded(
-                  child: Center(child: CircularProgressIndicator()),
-                ),
-              ],
+            return _buildMainContent(
+              content: const Center(child: CircularProgressIndicator()),
             );
           }
 
           if (state is StudentsLoading) {
-            return Column(
-              children: [
-                _buildExamDropdown(),
-                const Expanded(
-                  child: Center(child: CircularProgressIndicator()),
-                ),
-              ],
+            return _buildMainContent(
+              content: const Center(child: CircularProgressIndicator()),
             );
           }
 
           if (state is StudentsError) {
-            return Column(
-              children: [
-                _buildExamDropdown(),
-                Expanded(
-                  child: Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Text('Error: ${state.message}',
-                            style: const TextStyle(color: Colors.red)),
-                        const SizedBox(height: 16),
-                        ElevatedButton(
-                          onPressed: _loadMarks,
-                          child: const Text('Retry'),
-                        ),
-                      ],
+            return _buildMainContent(
+              content: Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.error_outline, size: 48, color: Colors.red.shade300),
+                    const SizedBox(height: 16),
+                    Text(
+                      'Error: ${state.message}',
+                      style: TextStyle(color: Colors.red.shade700),
                     ),
-                  ),
+                    const SizedBox(height: 16),
+                    ElevatedButton.icon(
+                      onPressed: _loadMarks,
+                      icon: const Icon(Icons.refresh),
+                      label: const Text('Retry'),
+                    ),
+                  ],
                 ),
-              ],
+              ),
             );
           }
 
           if (state is MarksLoaded) {
-            // Initialize marks map from API response
-            if (studentMarksMap.isEmpty || selectedExamId != state.examId) {
+            // Always update the current marks list
+            currentMarks = state.marks;
+
+            // Initialize or update marks map from API response
+            if (selectedExamId != state.examId) {
               selectedExamId = state.examId;
+              selectedExam = exams.firstWhere(
+                    (exam) => exam.id == selectedExamId,
+                orElse: () => Exam(
+                    id: '',
+                    title: 'Unknown Exam',
+                    description: '',
+                    createdBy: '',
+                    createdAt: null,
+                    examDate: null,
+                    subjectId: '',
+                    classId: '',
+                    duration: null,
+                    totalMarks: null
+                ),
+              );
+
+              // Clear existing data
               studentMarksMap.clear();
-              for (var mark in state.marks) {
+              for (var controller in _markControllers.values) {
+                controller.dispose();
+              }
+              _markControllers.clear();
+            }
+
+            // Always update the marks map and controllers with the latest data
+            for (var mark in state.marks) {
+              // If we don't have this mark yet, initialize it
+              if (!studentMarksMap.containsKey(mark.studentId)) {
                 studentMarksMap[mark.studentId] = mark.marksScored.toDouble();
+
+                // Create or update the controller
+                if (_markControllers.containsKey(mark.studentId)) {
+                  _markControllers[mark.studentId]!.text = mark.marksScored.toString();
+                } else {
+                  _markControllers[mark.studentId] = TextEditingController(
+                      text: mark.marksScored.toString()
+                  );
+                }
               }
             }
 
-            return Column(
-              children: [
-                _buildExamDropdown(),
-                Padding(
-                  padding: const EdgeInsets.all(8.0),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.end,
-                    children: [
-                      ElevatedButton(
-                        onPressed: _submitMarks,
-                        child: const Text('Save Marks'),
-                      ),
-                    ],
-                  ),
-                ),
-                Expanded(
-                  child: PlutoGrid(
-                    columns: _buildMarksGridColumns(),
-                    rows: _buildMarksGridRows(state.marks),
-                    configuration: const PlutoGridConfiguration(
-                      style: PlutoGridStyleConfig(
-                        gridBorderColor: Colors.grey,
-                        gridBackgroundColor: Colors.white,
-                        rowColor: Colors.white,
-                        gridBorderRadius:
-                        BorderRadius.all(Radius.circular(8.0)),
-                      ),
-                      columnSize: PlutoGridColumnSizeConfig(
-                        autoSizeMode: PlutoAutoSizeMode.scale,
-                        resizeMode: PlutoResizeMode.pushAndPull,
-                      ),
-                      scrollbar: PlutoGridScrollbarConfig(
-                        isAlwaysShown: true,
-                      ),
-                    ),
-                    onLoaded: (PlutoGridOnLoadedEvent event) {
-                      _stateManager = event.stateManager;
-                      event.stateManager.setShowColumnFilter(true);
-                      event.stateManager.setPageSize(10);
-                    },
-                    createFooter: (stateManager) =>
-                        PlutoPagination(stateManager),
-                    mode: PlutoGridMode.normal,
-                  ),
-                )
-              ],
+            // Calculate top scorers without setState
+            topScorers = _calculateTopScorers();
+
+            return _buildMainContent(
+              content: _buildMarksTable(state.marks),
+              showSaveButton: true,
             );
           }
 
           if (state is NoStudentsFound) {
-            return Column(
-              children: [
-                _buildExamDropdown(),
-                const Expanded(
-                  child: Center(
-                    child: Text('No students found',
-                        style: TextStyle(fontSize: 18, color: Colors.grey)),
-                  ),
+            return _buildMainContent(
+              content: Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.person_off, size: 48, color: Colors.grey.shade400),
+                    const SizedBox(height: 16),
+                    const Text(
+                      'No students found',
+                      style: TextStyle(fontSize: 18, color: Colors.grey),
+                    ),
+                  ],
                 ),
-              ],
+              ),
             );
           }
 
@@ -217,38 +250,310 @@ class _StudentsMarksScreenState extends State<StudentsMarksScreen> {
     );
   }
 
-  Widget _buildExamDropdown() {
+  String _getOrdinal(int number) {
+    if (number == 1) return 'st';
+    if (number == 2) return 'nd';
+    if (number == 3) return 'rd';
+    return 'th';
+  }
+
+  // Modified _buildMainContent function to handle desktop layout
+  Widget _buildMainContent({required Widget content, bool showSaveButton = false}) {
+    return Column(
+      children: [
+        _buildExamSelectionBar(),
+        if (showSaveButton) _buildSaveBar(),
+        Expanded(
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              // For desktop view (wider screens), use horizontal layout
+              if (constraints.maxWidth >= 600) {
+                return Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Side panel with top scorers (if available)
+                    if (topScorers.isNotEmpty)
+                      SizedBox(
+                        width: 250, // Fixed width for the sidebar
+                        child: _buildTopScorersSection(topScorers, isVertical: true),
+                      ),
+                    // Main content (marks table)
+                    Expanded(child: content),
+                  ],
+                );
+              } else {
+                // For mobile view, keep the original vertical layout
+                return Column(
+                  children: [
+                    if (topScorers.isNotEmpty) _buildTopScorersSection(topScorers, isVertical: false),
+                    Expanded(child: content),
+                  ],
+                );
+              }
+            },
+          ),
+        ),
+      ],
+    );
+  }
+
+// Modified top scorers section to support both horizontal and vertical layouts
+  Widget _buildTopScorersSection(List<StudentMark> topScorers, {required bool isVertical}) {
+    if (topScorers.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    final headerRow = Row(
+      children: [
+        Icon(Icons.emoji_events, color: Colors.amber.shade700),
+        const SizedBox(width: 8),
+        const Text(
+          'Top Scorers',
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+      ],
+    );
+
+    final scorersWidget = isVertical
+    // Vertical layout for desktop sidebar
+        ? Column(
+      children: topScorers.asMap().entries.map((entry) {
+        final index = entry.key;
+        final student = entry.value;
+        final colors = [
+          Colors.amber.shade800, // Gold
+          Colors.blueGrey.shade400, // Silver
+          Colors.brown.shade400, // Bronze
+        ];
+
+        return Card(
+          elevation: 0,
+          color: Colors.grey.shade50,
+          margin: const EdgeInsets.symmetric(vertical: 4, horizontal: 0),
+          child: Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: Column(
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.star, color: colors[index]),
+                    const SizedBox(width: 4),
+                    Text(
+                      '${index + 1}${_getOrdinal(index + 1)} place',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: colors[index],
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  student.studentName,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(fontWeight: FontWeight.bold),
+                  overflow: TextOverflow.ellipsis,
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  'Score: ${student.marksScored}',
+                  style: TextStyle(
+                    color: Colors.grey.shade700,
+                    fontSize: 13,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      }).toList(),
+    )
+    // Horizontal layout for mobile view (original layout)
+        : Row(
+      children: topScorers.asMap().entries.map((entry) {
+        final index = entry.key;
+        final student = entry.value;
+        final colors = [
+          Colors.amber.shade800, // Gold
+          Colors.blueGrey.shade400, // Silver
+          Colors.brown.shade400, // Bronze
+        ];
+
+        return Expanded(
+          child: Card(
+            elevation: 0,
+            color: Colors.grey.shade50,
+            margin: const EdgeInsets.symmetric(horizontal: 4),
+            child: Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: Column(
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.star, color: colors[index]),
+                      const SizedBox(width: 4),
+                      Text(
+                        '${index + 1}${_getOrdinal(index + 1)} place',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: colors[index],
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    student.studentName,
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(fontWeight: FontWeight.bold),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'Score: ${student.marksScored}',
+                    style: TextStyle(
+                      color: Colors.grey.shade700,
+                      fontSize: 13,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      }).toList(),
+    );
+
     return Container(
-      padding: const EdgeInsets.all(16.0),
-      child: Row(
+      padding: const EdgeInsets.all(16),
+      margin: const EdgeInsets.all(8),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(8),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.1),
+            spreadRadius: 1,
+            blurRadius: 3,
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          headerRow,
+          const SizedBox(height: 12),
+          scorersWidget,
+        ],
+      ),
+    );
+  }
+
+// Update the _buildMarksTable function to remove redundant LayoutBuilder
+  Widget _buildMarksTable(List<StudentMark> marks) {
+    // For narrow screens, use a ListView instead of PlutoGrid
+    if (MediaQuery.of(context).size.width < 600) {
+      return _buildMobileMarksView(marks);
+    } else {
+      return _buildDesktopMarksView(marks);
+    }
+  }
+
+  Widget _buildExamSelectionBar() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.1),
+            spreadRadius: 1,
+            blurRadius: 3,
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Text(
-            'Select Exam: ',
+            'Select Exam:',
             style: TextStyle(fontWeight: FontWeight.bold),
           ),
-          const SizedBox(width: 8),
-          Expanded(
-            child: DropdownButtonFormField<String>(
-              value: selectedExamId,
-              decoration: const InputDecoration(
-                border: OutlineInputBorder(),
-                contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          const SizedBox(height: 8),
+          DropdownButtonFormField<String>(
+            value: selectedExamId,
+            isExpanded: true,
+            decoration: InputDecoration(
+              isDense: true,
+              contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+                borderSide: BorderSide(color: Colors.grey.shade300),
               ),
-              items: exams.map((exam) {
-                return DropdownMenuItem<String>(
-                  value: exam.id,
-                  child: Text(exam.title),
-                );
-              }).toList(),
-              onChanged: (value) {
-                if (value != null && value != selectedExamId) {
-                  setState(() {
-                    selectedExamId = value;
-                    studentMarksMap.clear();
-                  });
-                  _loadMarks();
-                }
-              },
+              filled: true,
+              fillColor: Colors.grey.shade50,
+            ),
+            items: exams.map((exam) {
+              return DropdownMenuItem<String>(
+                value: exam.id,
+                child: Text(exam.title, overflow: TextOverflow.ellipsis),
+              );
+            }).toList(),
+            onChanged: (value) {
+              if (value != null && value != selectedExamId) {
+                setState(() {
+                  selectedExamId = value;
+                  selectedExam = exams.firstWhere((exam) => exam.id == value);
+                  studentMarksMap.clear();
+                  // Dispose old controllers
+                  for (var controller in _markControllers.values) {
+                    controller.dispose();
+                  }
+                  _markControllers.clear();
+                  topScorers = [];
+                  currentMarks = [];
+                });
+                _loadMarks();
+              }
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSaveBar() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+      color: Colors.white,
+      child: Row(
+        children: [
+          if (selectedExam != null && selectedExam!.totalMarks != null)
+            Expanded(
+              child: Text(
+                'Total Marks: ${selectedExam!.totalMarks}',
+                style: const TextStyle(fontWeight: FontWeight.bold),
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+          ElevatedButton.icon(
+            onPressed: _submitMarks,
+            icon: const Icon(Icons.save),
+            label: const Text('Save Marks'),
+            style: ElevatedButton.styleFrom(
+              foregroundColor: Colors.white,
+              backgroundColor: Colors.green.shade600,
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
             ),
           ),
         ],
@@ -256,35 +561,146 @@ class _StudentsMarksScreenState extends State<StudentsMarksScreen> {
     );
   }
 
-  // Marks Grid Columns
+
+  Widget _buildMobileMarksView(List<StudentMark> marks) {
+    return ListView.builder(
+      padding: const EdgeInsets.all(8),
+      itemCount: marks.length,
+      itemBuilder: (context, index) {
+        final mark = marks[index];
+        final studentId = mark.studentId;
+
+        // Ensure there's a controller for this student
+        if (!_markControllers.containsKey(studentId)) {
+          _markControllers[studentId] = TextEditingController(
+              text: (studentMarksMap[studentId] ?? 0).toString()
+          );
+        }
+
+        return Card(
+          margin: const EdgeInsets.symmetric(vertical: 4),
+          child: Padding(
+            padding: const EdgeInsets.all(12),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        mark.studentName,
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'ID: ${mark.studentId}',
+                        style: TextStyle(
+                          color: Colors.grey.shade700,
+                          fontSize: 14,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 12),
+                SizedBox(
+                  width: 80,
+                  child: TextField(
+                    controller: _markControllers[studentId],
+                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                    textAlign: TextAlign.center,
+                    decoration: InputDecoration(
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      labelText: 'Marks',
+                      isDense: true,
+                    ),
+                    onChanged: (value) {
+                      _updateStudentMark(studentId, double.tryParse(value) ?? 0);
+                    },
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildDesktopMarksView(List<StudentMark> marks) {
+    return Card(
+      margin: const EdgeInsets.all(8),
+      elevation: 1,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: PlutoGrid(
+        columns: _buildMarksGridColumns(),
+        rows: _buildMarksGridRows(marks),
+        configuration: PlutoGridConfiguration(
+          style: PlutoGridStyleConfig(
+            gridBorderColor: Colors.grey.shade200,
+            gridBackgroundColor: Colors.white,
+            rowColor: Colors.white,
+            activatedColor: Colors.blue.shade50,
+            gridBorderRadius: const BorderRadius.all(Radius.circular(8.0)),
+            columnTextStyle: const TextStyle(
+              fontWeight: FontWeight.bold,
+              fontSize: 14,
+            ),
+            rowHeight: 48,
+          ),
+          columnSize: const PlutoGridColumnSizeConfig(
+            autoSizeMode: PlutoAutoSizeMode.scale,
+            resizeMode: PlutoResizeMode.pushAndPull,
+          ),
+          scrollbar: const PlutoGridScrollbarConfig(
+            isAlwaysShown: true,
+            scrollbarThickness: 6,
+            scrollbarRadius: Radius.circular(3),
+          ),
+        ),
+        onLoaded: (PlutoGridOnLoadedEvent event) {
+          _stateManager = event.stateManager;
+          _stateManager.setShowColumnFilter(true);
+          _stateManager.setPageSize(12);
+        },
+        createFooter: (stateManager) => PlutoPagination(stateManager),
+        mode: PlutoGridMode.normal,
+      ),
+    );
+  }
+
   List<PlutoColumn> _buildMarksGridColumns() {
     return [
       PlutoColumn(
-        title: 'Student ID',
+        title: 'Roll No.',
         field: 'id',
+        width: 100,
         type: PlutoColumnType.text(),
-        enableRowChecked: true,
+        enableFilterMenuItem: true,
+        textAlign: PlutoColumnTextAlign.start,
+        enableEditingMode: false,
       ),
-      PlutoColumn(title: 'Name', field: 'name', type: PlutoColumnType.text()),
+      PlutoColumn(
+        title: 'Student Name',
+        field: 'name',
+        type: PlutoColumnType.text(),
+        enableFilterMenuItem: true,
+        textAlign: PlutoColumnTextAlign.start,
+        enableEditingMode: false,
+      ),
       PlutoColumn(
         title: 'Marks',
         field: 'marks',
         type: PlutoColumnType.number(),
-        renderer: (rendererContext) {
-          return TextFormField(
-            initialValue: rendererContext.cell.value?.toString() ?? '0',
-            keyboardType: TextInputType.number,
-            decoration: const InputDecoration(
-              border: InputBorder.none,
-              contentPadding: EdgeInsets.all(8),
-            ),
-            onChanged: (value) {
-              final studentId = rendererContext.row.cells['id']!.value as String;
-              _updateStudentMark(studentId, double.tryParse(value) ?? 0);
-              rendererContext.cell.value = double.tryParse(value) ?? 0;
-            },
-          );
-        },
+        enableEditingMode: true, // <-- Make sure this is true
       ),
     ];
   }
@@ -302,17 +718,32 @@ class _StudentsMarksScreenState extends State<StudentsMarksScreen> {
   void _updateStudentMark(String studentId, double mark) {
     setState(() {
       studentMarksMap[studentId] = mark;
+      // Recalculate top scorers when marks change
+      topScorers = _calculateTopScorers();
     });
   }
 
-  // Submitting Marks Data
   void _submitMarks() {
     if (selectedExamId == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Please select an exam first")),
+        const SnackBar(
+          content: Text("Please select an exam first"),
+          behavior: SnackBarBehavior.floating,
+        ),
       );
       return;
     }
+
+    // Update marks from controllers to ensure the latest values
+    _markControllers.forEach((studentId, controller) {
+      final value = double.tryParse(controller.text) ?? 0;
+      studentMarksMap[studentId] = value;
+    });
+
+    // Recalculate top scorers with the final marks
+    setState(() {
+      topScorers = _calculateTopScorers();
+    });
 
     // Construct payload
     final marksData = studentMarksMap.entries.map((entry) {
@@ -329,12 +760,23 @@ class _StudentsMarksScreenState extends State<StudentsMarksScreen> {
       "marks": marksData
     };
 
-    // Here you would make the API call to save the marks
+    // Make the API call to save the marks
     context.read<StudentsBloc>().add(SaveStudentMarks(requestBody));
 
-    // Show temporary success message
+    // Show success message
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text("Marks submitted successfully!")),
+      const SnackBar(
+        content: Row(
+          children: [
+            Icon(Icons.check_circle, color: Colors.white),
+            SizedBox(width: 12),
+            Text("Marks saved successfully!"),
+          ],
+        ),
+        backgroundColor: Colors.green,
+        behavior: SnackBarBehavior.floating,
+        duration: Duration(seconds: 2),
+      ),
     );
   }
 
@@ -344,8 +786,25 @@ class _StudentsMarksScreenState extends State<StudentsMarksScreen> {
       final marks = (bloc.state as MarksLoaded).marks;
       final selectedExam = exams.firstWhere(
             (exam) => exam.id == selectedExamId,
-        orElse: () => Exam(id: '', title: 'Unknown Exam', description: '', createdBy: '', createdAt: null, examDate: null, subjectId: '', classId: '', duration: null, totalMarks: null),
+        orElse: () => Exam(
+            id: '',
+            title: 'Unknown Exam',
+            description: '',
+            createdBy: '',
+            createdAt: null,
+            examDate: null,
+            subjectId: '',
+            classId: '',
+            duration: null,
+            totalMarks: null
+        ),
       );
+
+      // Update marks from controllers
+      _markControllers.forEach((studentId, controller) {
+        final value = double.tryParse(controller.text) ?? 0;
+        studentMarksMap[studentId] = value;
+      });
 
       final headers = ['ID', 'Name', 'Marks'];
       final data = marks.map((mark) {
@@ -366,6 +825,13 @@ class _StudentsMarksScreenState extends State<StudentsMarksScreen> {
           ),
         ),
       );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Please wait for marks to load"),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
     }
   }
 
@@ -375,8 +841,25 @@ class _StudentsMarksScreenState extends State<StudentsMarksScreen> {
       final marks = (bloc.state as MarksLoaded).marks;
       final selectedExam = exams.firstWhere(
             (exam) => exam.id == selectedExamId,
-        orElse: () => Exam(id: '', title: 'Unknown Exam', description: '', createdBy: '', createdAt: null, examDate: null, subjectId: '', classId: '', duration: null, totalMarks: null),
+        orElse: () => Exam(
+            id: '',
+            title: 'Unknown Exam',
+            description: '',
+            createdBy: '',
+            createdAt: null,
+            examDate: null,
+            subjectId: '',
+            classId: '',
+            duration: null,
+            totalMarks: null
+        ),
       );
+
+      // Update marks from controllers
+      _markControllers.forEach((studentId, controller) {
+        final value = double.tryParse(controller.text) ?? 0;
+        studentMarksMap[studentId] = value;
+      });
 
       final headers = ['ID', 'Name', 'Marks'];
       final data = marks.map((mark) {
@@ -389,41 +872,72 @@ class _StudentsMarksScreenState extends State<StudentsMarksScreen> {
 
       showModalBottomSheet(
         context: context,
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+        ),
         builder: (context) {
-          return Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              ListTile(
-                leading: const Icon(Icons.file_download),
-                title: const Text("Export as CSV"),
-                onTap: () {
-                  final fileName = 'marks_${widget.subjectName}_${selectedExam.title.replaceAll(' ', '_')}';
-                  ExportUtil.exportToCSV(
-                      fileName: fileName,
-                      headers: headers,
-                      data: data);
-                  Navigator.pop(context);
-                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-                      content: Text("CSV exported successfully!")));
-                },
-              ),
-              ListTile(
-                leading: const Icon(Icons.insert_drive_file),
-                title: const Text("Export as Excel"),
-                onTap: () {
-                  final fileName = 'marks_${widget.subjectName}_${selectedExam.title.replaceAll(' ', '_')}';
-                  ExportUtil.exportToExcel(
-                      fileName: fileName,
-                      headers: headers,
-                      data: data);
-                  Navigator.pop(context);
-                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-                      content: Text("Excel exported successfully!")));
-                },
-              ),
-            ],
+          return Container(
+            padding: const EdgeInsets.symmetric(vertical: 16),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Padding(
+                  padding: EdgeInsets.only(bottom: 12),
+                  child: Text(
+                    "Export Options",
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+                ListTile(
+                  leading: Icon(Icons.file_download, color: Colors.blue.shade700),
+                  title: const Text("Export as CSV"),
+                  onTap: () {
+                    final fileName = 'marks_${widget.subjectName}_${selectedExam.title.replaceAll(' ', '_')}';
+                    ExportUtil.exportToCSV(
+                        fileName: fileName,
+                        headers: headers,
+                        data: data);
+                    Navigator.pop(context);
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text("CSV exported successfully!"),
+                        behavior: SnackBarBehavior.floating,
+                      ),
+                    );
+                  },
+                ),
+                ListTile(
+                  leading: Icon(Icons.insert_drive_file, color: Colors.green.shade700),
+                  title: const Text("Export as Excel"),
+                  onTap: () {
+                    final fileName = 'marks_${widget.subjectName}_${selectedExam.title.replaceAll(' ', '_')}';
+                    ExportUtil.exportToExcel(
+                        fileName: fileName,
+                        headers: headers,
+                        data: data);
+                    Navigator.pop(context);
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text("Excel exported successfully!"),
+                        behavior: SnackBarBehavior.floating,
+                      ),
+                    );
+                  },
+                ),
+              ],
+            ),
           );
         },
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Please wait for marks to load"),
+          behavior: SnackBarBehavior.floating,
+        ),
       );
     }
   }

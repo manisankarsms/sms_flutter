@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:sms/screens/students_marks_screen.dart';
+import 'package:sms/screens/students_screen.dart';
 import '../bloc/classes_staff/staff_classes_bloc.dart';
 import '../bloc/classes_staff/staff_classes_event.dart';
 import '../bloc/classes_staff/staff_classes_state.dart';
@@ -58,15 +59,16 @@ class _ClassesScreenStaffState extends State<ClassesScreenStaff> {
                         padding: const EdgeInsets.all(10),
                         children: [
                           if (state.myClasses.isNotEmpty) ...[
-                            const SectionHeader(title: "MyClass"),
+                            const SectionHeader(title: "My Class"),
                             ContentBasedClassGrid(
-                                classes: state.myClasses, user: widget.user),
+                                classes: state.myClasses, user: widget.user,classType: "My Class"),
                           ],
                           if (state.teachingClasses.isNotEmpty) ...[
                             const SectionHeader(title: "Teaching Classes"),
                             ContentBasedClassGrid(
                                 classes: state.teachingClasses,
-                                user: widget.user),
+                                user: widget.user,
+                                classType: "Teaching"),
                           ],
                         ],
                       );
@@ -81,11 +83,13 @@ class _ClassesScreenStaffState extends State<ClassesScreenStaff> {
 class ContentBasedClassGrid extends StatelessWidget {
   final List<Class> classes;
   final User user;
+  final String classType;
 
   const ContentBasedClassGrid({
     super.key,
     required this.classes,
     required this.user,
+    required this.classType,
   });
 
   @override
@@ -116,6 +120,7 @@ class ContentBasedClassGrid extends StatelessWidget {
         return ContentSizedClassCard(
           classData: classes[index],
           user: user,
+          classType: classType
         );
       },
     );
@@ -125,11 +130,13 @@ class ContentBasedClassGrid extends StatelessWidget {
 class ContentSizedClassCard extends StatelessWidget {
   final Class classData;
   final User user;
+  final String classType;
 
   const ContentSizedClassCard({
     super.key,
     required this.classData,
     required this.user,
+    required this.classType,
   });
 
   @override
@@ -234,12 +241,15 @@ class ContentSizedClassCard extends StatelessWidget {
                     const SizedBox(width: 8),
                     _buildActionButton(
                       context,
-                      label: 'Update Marks',
-                      icon: Icons.edit_note,
+                      label: classType == 'Teaching' ? 'Update Marks' : 'Mark Attendance',
+                      icon: classType == 'Teaching' ? Icons.edit_note : Icons.check_circle_outline,
                       primary: true,
                       onPressed: () {
-                        // Navigate to marks update page
-                        _navigateToStudents(context);
+                        if (classType == 'Teaching') {
+                          _navigateToStudents(context); // Navigate to marks update
+                        } else {
+                          _navigateToAttendance(context); // Navigate to attendance screen
+                        }
                       },
                     ),
                   ],
@@ -291,6 +301,23 @@ class ContentSizedClassCard extends StatelessWidget {
             classId: classData.id,
             subjectId: classData.subjectId!,
             subjectName: classData.subjectName!,
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _navigateToAttendance(BuildContext context) {
+    Navigator.of(context, rootNavigator: false).push(
+      MaterialPageRoute(
+        builder: (context) => BlocProvider(
+          create: (context) => StudentsBloc(
+            repository: context.read<StudentsRepository>(),
+          ),
+          child: StudentsScreen(
+            standard: classData.name,
+            classId: classData.id,
+            userRole: user.userType,
           ),
         ),
       ),
