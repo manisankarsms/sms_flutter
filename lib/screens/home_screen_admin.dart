@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:sms/screens/classes_screen.dart';
 import 'package:sms/screens/complaint_list_screen.dart';
+import 'package:sms/screens/configuration_screen.dart';
 import 'package:sms/screens/dashboard_screen.dart';
 import 'package:sms/screens/exam/exam_list_screen.dart';
 import 'package:sms/screens/fees_screen.dart';
@@ -62,7 +63,8 @@ class _HomeScreenAdminState extends State<HomeScreenAdmin> {
       AdminFeesScreen(),
       ThemeScreen(),
       ComplaintListScreen(),
-      LibraryHomeScreen()
+      LibraryHomeScreen(),
+      const ConfigurationScreen()
     ];
   }
 
@@ -136,6 +138,11 @@ class _HomeScreenAdminState extends State<HomeScreenAdmin> {
       name: 'Library',
       imagePath: 'assets/images/library.png',
       icon: Icons.menu_book_rounded,
+    ),
+    NavigationItem(
+      name: 'Configuration',
+      imagePath: 'assets/images/library.png',
+      icon: Icons.settings,
     )
   ];
 

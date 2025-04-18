@@ -6,6 +6,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:sms/bloc/auth/auth_bloc.dart';
 import 'package:sms/bloc/classes_staff/staff_classes_bloc.dart';
+import 'package:sms/bloc/configuration/configuration_bloc.dart';
 import 'package:sms/bloc/exam/exam_bloc.dart';
 import 'package:sms/bloc/feed/feed_bloc.dart';
 import 'package:sms/bloc/fees/fees_bloc.dart';
@@ -19,6 +20,7 @@ import 'package:sms/bloc/subjects/subjects_bloc.dart';
 import 'package:sms/repositories/auth_repository.dart';
 import 'package:sms/repositories/class_repository.dart';
 import 'package:sms/repositories/complaint_repository.dart';
+import 'package:sms/repositories/configuration_repository.dart';
 import 'package:sms/repositories/dashboard_repository.dart';
 import 'package:sms/repositories/exam_repository.dart';
 import 'package:sms/repositories/feed_repository.dart';
@@ -61,6 +63,7 @@ void main() async{
   final FeesRepository feesRepository = FeesRepository(/*webService: webService*/);
   final LibraryRepository libraryRepository = LibraryRepository(webService: webService);
   final ExamRepository examRepository = ExamRepository(webService: webService);
+  final ConfigurationRepository configurationRepository = ConfigurationRepository(webService: webService);
 
   runApp(
     MultiBlocProvider(
@@ -109,6 +112,9 @@ void main() async{
         ),
         BlocProvider(
           create: (context) => ExamBloc(examRepository: examRepository),
+        ),
+        BlocProvider(
+          create: (context) => ConfigurationBloc(configurationRepository),
         ),
         RepositoryProvider(
           create: (context) => studentsRepository,

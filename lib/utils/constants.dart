@@ -41,4 +41,6 @@ class ApiEndpoints {
 
   static const String subjects = 'subjects';
   static const String exams = 'exams';
+
+  static const String configuration = 'admin/configuration';
 }
