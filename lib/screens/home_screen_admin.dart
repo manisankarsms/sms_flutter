@@ -38,15 +38,136 @@ class _HomeScreenAdminState extends State<HomeScreenAdmin> {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 
   late List<Widget> _screens;
+  late List<NavigationItem> items;
 
   @override
   void initState() {
     super.initState();
+    // Initialize with filtered navigation items based on permissions
+    items = _getFilteredNavigationItems();
     _screens = _buildScreens(widget.user);
   }
 
+  // Method to filter navigation items based on permissions
+  List<NavigationItem> _getFilteredNavigationItems() {
+    // Define all available navigation items with their permission keys
+    final List<NavigationItem> allItems = [
+      NavigationItem(
+        name: 'Dashboard',
+        imagePath: 'assets/images/students.png',
+        icon: Icons.pie_chart,
+        permissionKey: 'dashboard',
+      ),
+      NavigationItem(
+        name: 'New Admission',
+        imagePath: 'assets/images/students.png',
+        icon: Icons.person_add_rounded,
+        permissionKey: 'new_student',
+      ),
+      NavigationItem(
+        name: 'New Staff',
+        imagePath: 'assets/images/students.png',
+        icon: Icons.person_pin_outlined,
+        permissionKey: 'new_staff',
+      ),
+      NavigationItem(
+        name: 'Classes',
+        imagePath: 'assets/images/calendar.png',
+        icon: Icons.class_rounded,
+        permissionKey: 'classes',
+      ),
+      NavigationItem(
+        name: 'Subject',
+        imagePath: 'assets/images/calendar.png',
+        icon: Icons.subject,
+        permissionKey: 'subjects',
+      ),
+      NavigationItem(
+        name: 'Staff',
+        imagePath: 'assets/images/messages.png',
+        icon: Icons.badge_rounded,
+        permissionKey: 'staff',
+      ),
+      NavigationItem(
+        name: 'Students',
+        imagePath: 'assets/images/attendance.png',
+        icon: Icons.school_rounded,
+        permissionKey: 'students',
+      ),
+      NavigationItem(
+        name: 'Exams',
+        imagePath: 'assets/images/attendance.png',
+        icon: Icons.assessment_outlined,
+        permissionKey: 'exams',
+      ),
+      NavigationItem(
+        name: 'Holiday Calendar',
+        imagePath: 'assets/images/calendar.png',
+        icon: Icons.event_rounded,
+        permissionKey: 'holiday',
+      ),
+      NavigationItem(
+        name: 'Posts',
+        imagePath: 'assets/images/posts.png',
+        icon: Icons.article_rounded,
+        permissionKey: 'posts',
+      ),
+      NavigationItem(
+        name: 'Fees',
+        imagePath: 'assets/images/fees.png',
+        icon: Icons.payments_rounded,
+        permissionKey: 'fees',
+      ),
+      NavigationItem(
+        name: 'Themes',
+        imagePath: 'assets/images/themes.png',
+        icon: Icons.color_lens_rounded,
+        permissionKey: 'themes',
+      ),
+      NavigationItem(
+        name: 'Complaints',
+        imagePath: 'assets/images/complaints.png',
+        icon: Icons.report_problem_rounded,
+        permissionKey: 'complaints',
+      ),
+      NavigationItem(
+        name: 'Library',
+        imagePath: 'assets/images/library.png',
+        icon: Icons.menu_book_rounded,
+        permissionKey: 'library',
+      ),
+      NavigationItem(
+        name: 'Configuration',
+        imagePath: 'assets/images/library.png',
+        icon: Icons.settings,
+        permissionKey: 'configuration',
+      ),
+      NavigationItem(
+        name: 'Permissions',
+        imagePath: 'assets/images/library.png',
+        icon: Icons.perm_identity_rounded,
+        permissionKey: 'permissions',
+      )
+    ];
+
+    // If user is admin with no specific permissions or contains '*', show all items
+    if (widget.user.userType == "Admin" &&
+        (widget.user.permissions == null ||
+            widget.user.permissions!.isEmpty ||
+            widget.user.permissions!.contains('*'))) {
+      return allItems;
+    }
+
+    // Filter items based on user permissions
+    return allItems.where((item) =>
+    widget.user.permissions != null &&
+        widget.user.permissions!.contains(item.permissionKey)
+    ).toList();
+  }
+
   List<Widget> _buildScreens(User user) {
-    return [
+    // Create a full list of screens
+    final allScreens = [
       const DashboardScreen(),
       const NewStudentScreen(),
       const StaffRegistrationScreen(),
@@ -68,88 +189,125 @@ class _HomeScreenAdminState extends State<HomeScreenAdmin> {
       const ConfigurationScreen(),
       AdminPermissionScreen(),
     ];
+
+    // If showing all screens (admin with no filter)
+    if (items.length == allScreens.length) {
+      return allScreens;
+    }
+
+    // Filter screens based on permissions
+    final List<Widget> filteredScreens = [];
+    for (var i = 0; i < items.length; i++) {
+      // Find the original index of this item in the all items list
+      final originalIndex = allItems.indexWhere(
+              (item) => item.permissionKey == items[i].permissionKey
+      );
+
+      // Add the corresponding screen if found
+      if (originalIndex >= 0 && originalIndex < allScreens.length) {
+        filteredScreens.add(allScreens[originalIndex]);
+      }
+    }
+    return filteredScreens;
   }
 
-  final List<NavigationItem> items = [
+  // Define the complete list to reference original indexes
+  final List<NavigationItem> allItems = [
     NavigationItem(
       name: 'Dashboard',
       imagePath: 'assets/images/students.png',
       icon: Icons.pie_chart,
+      permissionKey: 'dashboard',
     ),
     NavigationItem(
       name: 'New Admission',
       imagePath: 'assets/images/students.png',
       icon: Icons.person_add_rounded,
+      permissionKey: 'new_student',
     ),
     NavigationItem(
       name: 'New Staff',
       imagePath: 'assets/images/students.png',
       icon: Icons.person_pin_outlined,
+      permissionKey: 'new_staff',
     ),
     NavigationItem(
       name: 'Classes',
       imagePath: 'assets/images/calendar.png',
       icon: Icons.class_rounded,
+      permissionKey: 'classes',
     ),
     NavigationItem(
       name: 'Subject',
       imagePath: 'assets/images/calendar.png',
       icon: Icons.subject,
+      permissionKey: 'subjects',
     ),
     NavigationItem(
       name: 'Staff',
       imagePath: 'assets/images/messages.png',
-      icon: Icons.badge_rounded, // Changed to badge icon representing staff
+      icon: Icons.badge_rounded,
+      permissionKey: 'staff',
     ),
     NavigationItem(
       name: 'Students',
       imagePath: 'assets/images/attendance.png',
       icon: Icons.school_rounded,
+      permissionKey: 'students',
     ),
     NavigationItem(
       name: 'Exams',
       imagePath: 'assets/images/attendance.png',
       icon: Icons.assessment_outlined,
+      permissionKey: 'exams',
     ),
     NavigationItem(
       name: 'Holiday Calendar',
       imagePath: 'assets/images/calendar.png',
-      icon: Icons.event_rounded, // Changed to event icon for a calendar
+      icon: Icons.event_rounded,
+      permissionKey: 'holiday',
     ),
     NavigationItem(
       name: 'Posts',
       imagePath: 'assets/images/posts.png',
-      icon: Icons.article_rounded, // Changed to article icon for posts
+      icon: Icons.article_rounded,
+      permissionKey: 'posts',
     ),
     NavigationItem(
       name: 'Fees',
       imagePath: 'assets/images/fees.png',
       icon: Icons.payments_rounded,
+      permissionKey: 'fees',
     ),
     NavigationItem(
       name: 'Themes',
       imagePath: 'assets/images/themes.png',
       icon: Icons.color_lens_rounded,
+      permissionKey: 'themes',
     ),
     NavigationItem(
       name: 'Complaints',
       imagePath: 'assets/images/complaints.png',
-      icon: Icons.report_problem_rounded, // Changed to report problem for complaints
+      icon: Icons.report_problem_rounded,
+      permissionKey: 'complaints',
     ),
     NavigationItem(
       name: 'Library',
       imagePath: 'assets/images/library.png',
       icon: Icons.menu_book_rounded,
+      permissionKey: 'library',
     ),
     NavigationItem(
       name: 'Configuration',
       imagePath: 'assets/images/library.png',
       icon: Icons.settings,
+      permissionKey: 'configuration',
     ),
     NavigationItem(
       name: 'Permissions',
       imagePath: 'assets/images/library.png',
       icon: Icons.perm_identity_rounded,
+      permissionKey: 'permissions',
     )
   ];
 
@@ -634,11 +792,37 @@ class _HomeScreenAdminState extends State<HomeScreenAdmin> {
   }
 
   Widget _buildBottomNav(ThemeData theme) {
-    List<BottomNavigationBarItem> visibleItems = items
-        .take(4) // Show only the first 4 items
-        .map((item) =>
-            BottomNavigationBarItem(icon: Icon(item.icon), label: item.name))
-        .toList();
+    // If we have fewer than 2 items, don't show a bottom nav at all
+    if (items.length < 2) {
+      return const SizedBox.shrink(); // Return an empty widget
+    }
+    // Get the items to show based on permissions and limit to 4 for bottom nav
+    List<BottomNavigationBarItem> visibleItems = [];
+
+    if (items.length <= 4) {
+      // If we have 4 or fewer items, show them all
+      visibleItems = items
+          .map((item) => BottomNavigationBarItem(
+          icon: Icon(item.icon),
+          label: item.name
+      ))
+          .toList();
+    } else {
+      // Show first 3 items and a "More" option
+      visibleItems = items
+          .take(3)
+          .map((item) => BottomNavigationBarItem(
+          icon: Icon(item.icon),
+          label: item.name
+      ))
+          .toList();
+
+      // Add the More option
+      visibleItems.add(const BottomNavigationBarItem(
+          icon: Icon(Icons.more_horiz),
+          label: 'More'
+      ));
+    }
 
     return Container(
       decoration: BoxDecoration(
@@ -652,9 +836,11 @@ class _HomeScreenAdminState extends State<HomeScreenAdmin> {
         ],
       ),
       child: BottomNavigationBar(
-        currentIndex: _selectedIndex > 4 ? 0 : _selectedIndex,
+        currentIndex: _selectedIndex >= visibleItems.length - 1 && visibleItems.length == 4
+            ? 3  // Select "More" if current index is beyond visible items
+            : _selectedIndex.clamp(0, visibleItems.length - 1),
         onTap: (int index) {
-          if (index == 4) {
+          if (visibleItems.length == 4 && index == 3 && items.length > 3) {
             _showMoreOptions();
           } else {
             setState(() {
@@ -667,14 +853,10 @@ class _HomeScreenAdminState extends State<HomeScreenAdmin> {
         selectedItemColor: theme.colorScheme.primary,
         unselectedItemColor: theme.colorScheme.onSurface.withOpacity(0.7),
         selectedLabelStyle:
-            const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
+        const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
         unselectedLabelStyle: const TextStyle(fontSize: 12),
         elevation: 0,
-        items: [
-          ...visibleItems,
-          BottomNavigationBarItem(
-              icon: const Icon(Icons.more_horiz), label: 'More'),
-        ],
+        items: visibleItems,
       ),
     );
   }
@@ -738,10 +920,12 @@ class _HomeScreenAdminState extends State<HomeScreenAdmin> {
 
 class NavigationItem extends Item {
   final IconData icon;
+  final String permissionKey;
 
   NavigationItem({
     required String name,
     required String imagePath,
     required this.icon,
+    required this.permissionKey,
   }) : super(name: name, imagePath: imagePath);
 }

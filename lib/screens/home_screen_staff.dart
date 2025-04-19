@@ -49,6 +49,7 @@ class _StaffHomeScreenState extends State<StaffHomeScreen> {
       name: 'My Class',
       imagePath: 'assets/images/attendance.png',
       icon: Icons.check_circle_outline,
+        permissionKey: ''
     ),
     /*NavigationItem(
       name: 'Tasks',
@@ -59,11 +60,12 @@ class _StaffHomeScreenState extends State<StaffHomeScreen> {
       name: 'Messages',
       imagePath: 'assets/images/messages.png',
       icon: Icons.forum_rounded,
+      permissionKey: ''
     ),
     NavigationItem(
       name: 'Profile',
       imagePath: 'assets/images/profile.png',
-      icon: Icons.person_rounded,
+      icon: Icons.person_rounded, permissionKey: ''
     ),
   ];
 

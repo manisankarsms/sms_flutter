@@ -63,51 +63,61 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
       name: 'Home',
       imagePath: 'assets/images/home.png',
       icon: Icons.home_rounded,
+        permissionKey: ''
     ),
     NavigationItem(
       name: 'Calendar',
       imagePath: 'assets/images/calendar.png',
       icon: Icons.calendar_today_rounded,
+        permissionKey: ''
     ),
     NavigationItem(
       name: 'Messages',
       imagePath: 'assets/images/messages.png',
       icon: Icons.forum_rounded,
+        permissionKey: ''
     ),
     NavigationItem(
       name: 'Attendance',
       imagePath: 'assets/images/attendance.png',
       icon: Icons.assignment_turned_in_rounded,
+        permissionKey: ''
     ),
     NavigationItem(
       name: 'Profile',
       imagePath: 'assets/images/profile.png',
       icon: Icons.person_rounded,
+        permissionKey: ''
     ),
     NavigationItem(
       name: 'Fees',
       imagePath: 'assets/images/profile.png',
       icon: Icons.person_rounded,
+        permissionKey: ''
     ),
     NavigationItem(
       name: 'Themes',
       imagePath: 'assets/images/profile.png',
       icon: Icons.color_lens_sharp,
+        permissionKey: ''
     ),
     NavigationItem(
       name: 'Rules',
       imagePath: 'assets/images/profile.png',
       icon: Icons.rule,
+        permissionKey: ''
     ),
     NavigationItem(
       name: 'Games',
       imagePath: 'assets/images/profile.png',
       icon: Icons.videogame_asset,
+        permissionKey: ''
     ),
     NavigationItem(
       name: 'Complaint',
       imagePath: 'assets/images/profile.png',
       icon: Icons.comment,
+        permissionKey: ''
     ),
   ];
 

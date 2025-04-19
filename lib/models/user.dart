@@ -7,6 +7,7 @@ class User extends Equatable {
   final String email;
   final String displayName;
   final String userType;
+  final List<String> permissions; // e.g., ["dashboard", "staff", "library"]
   final Student? studentData; // Nullable for student-specific fields
   final Staff? staffData; // Nullable for staff-specific fields
 
@@ -15,6 +16,7 @@ class User extends Equatable {
     required this.email,
     required this.displayName,
     required this.userType,
+    required this.permissions,
     this.studentData,
     this.staffData,
   });
@@ -26,6 +28,7 @@ class User extends Equatable {
       email: json['email'],
       displayName: json['displayName'],
       userType: json['userType'],
+      permissions: List<String>.from(json['permissions'] ?? []),
       studentData: json['userType'] == 'student' ? Student.fromJson(json['studentData']) : null,
       staffData: json['userType'] == 'staff' ? Staff.fromJson(json['staffData']) : null,
     );
@@ -38,6 +41,7 @@ class User extends Equatable {
       'email': email,
       'displayName': displayName,
       'userType': userType,
+      'permissions':permissions,
       'studentData': studentData?.toJson(),
       'staffData': staffData?.toJson(),
     };
