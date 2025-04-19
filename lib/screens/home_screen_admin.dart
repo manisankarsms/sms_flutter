@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:sms/screens/admin_permission_screen.dart';
 import 'package:sms/screens/classes_screen.dart';
 import 'package:sms/screens/complaint_list_screen.dart';
 import 'package:sms/screens/configuration_screen.dart';
@@ -64,7 +65,8 @@ class _HomeScreenAdminState extends State<HomeScreenAdmin> {
       ThemeScreen(),
       ComplaintListScreen(),
       LibraryHomeScreen(),
-      const ConfigurationScreen()
+      const ConfigurationScreen(),
+      AdminPermissionScreen(),
     ];
   }
 
@@ -143,6 +145,11 @@ class _HomeScreenAdminState extends State<HomeScreenAdmin> {
       name: 'Configuration',
       imagePath: 'assets/images/library.png',
       icon: Icons.settings,
+    ),
+    NavigationItem(
+      name: 'Permissions',
+      imagePath: 'assets/images/library.png',
+      icon: Icons.perm_identity_rounded,
     )
   ];
 
