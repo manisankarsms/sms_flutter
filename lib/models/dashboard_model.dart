@@ -2,11 +2,13 @@ class DashboardModel {
   final Students students;
   final Staff staff;
   final Complaints complaints;
+  final PlanUsage planUsage;
 
   DashboardModel({
     required this.students,
     required this.staff,
     required this.complaints,
+    required this.planUsage,
   });
 
   factory DashboardModel.fromJson(Map<String, dynamic> json) {
@@ -14,6 +16,7 @@ class DashboardModel {
       students: Students.fromJson(json['students']),
       staff: Staff.fromJson(json['staff']),
       complaints: Complaints.fromJson(json['complaints']),
+      planUsage: PlanUsage.fromJson(json['planUsage']),
     );
   }
 }
@@ -33,9 +36,9 @@ class Students {
 
   factory Students.fromJson(Map<String, dynamic> json) {
     return Students(
-      totalCount: json['totalCount'],
-      activeCount: json['activeCount'],
-      newAdmissionsThisMonth: json['newAdmissionsThisMonth'],
+      totalCount: json['totalCount'].toString(),
+      activeCount: json['activeCount'].toString(),
+      newAdmissionsThisMonth: json['newAdmissionsThisMonth'].toString(),
       genderDistribution: GenderDistribution.fromJson(json['genderDistribution']),
     );
   }
@@ -54,9 +57,9 @@ class GenderDistribution {
 
   factory GenderDistribution.fromJson(Map<String, dynamic> json) {
     return GenderDistribution(
-      boys: json['boys'],
-      girls: json['girls'],
-      other: json['other'],
+      boys: json['boys'].toString(),
+      girls: json['girls'].toString(),
+      other: json['other'].toString(),
     );
   }
 }
@@ -74,9 +77,9 @@ class Staff {
 
   factory Staff.fromJson(Map<String, dynamic> json) {
     return Staff(
-      totalTeachers: json['totalTeachers'],
-      totalAdminStaff: json['totalAdminStaff'],
-      onLeaveToday: json['onLeaveToday'],
+      totalTeachers: json['totalTeachers'].toString(),
+      totalAdminStaff: json['totalAdminStaff'].toString(),
+      onLeaveToday: json['onLeaveToday'].toString(),
     );
   }
 }
@@ -94,9 +97,9 @@ class Complaints {
 
   factory Complaints.fromJson(Map<String, dynamic> json) {
     return Complaints(
-      totalCount: json['totalCount'],
+      totalCount: json['totalCount'].toString(),
       byStatus: ComplaintsByStatus.fromJson(json['byStatus']),
-      resolutionRate: json['resolutionRate'],
+      resolutionRate: json['resolutionRate'].toString(),
     );
   }
 }
@@ -114,9 +117,44 @@ class ComplaintsByStatus {
 
   factory ComplaintsByStatus.fromJson(Map<String, dynamic> json) {
     return ComplaintsByStatus(
-      open: json['open'],
-      pending: json['pending'],
-      resolved: json['resolved'],
+      open: json['open'].toString(),
+      pending: json['pending'].toString(),
+      resolved: json['resolved'].toString(),
+    );
+  }
+}
+
+class PlanUsage {
+  final String planName;
+  final String studentLimit;
+  final String staffLimit;
+  final String currentStudentCount;
+  final String currentStaffCount;
+  final String storageLimitMB;
+  final String usedStorageMB;
+  final String nextBillingDate;
+
+  PlanUsage({
+    required this.planName,
+    required this.studentLimit,
+    required this.staffLimit,
+    required this.currentStudentCount,
+    required this.currentStaffCount,
+    required this.storageLimitMB,
+    required this.usedStorageMB,
+    required this.nextBillingDate,
+  });
+
+  factory PlanUsage.fromJson(Map<String, dynamic> json) {
+    return PlanUsage(
+      planName: json['planName'].toString(),
+      studentLimit: json['studentLimit'].toString(),
+      staffLimit: json['staffLimit'].toString(),
+      currentStudentCount: json['currentStudentCount'].toString(),
+      currentStaffCount: json['currentStaffCount'].toString(),
+      storageLimitMB: json['storageLimitMB'].toString(),
+      usedStorageMB: json['usedStorageMB'].toString(),
+      nextBillingDate: json['nextBillingDate'].toString(),
     );
   }
 }

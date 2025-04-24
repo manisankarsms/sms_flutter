@@ -328,6 +328,14 @@ class _DashboardScreenState extends State<DashboardScreen> with SingleTickerProv
               const SizedBox(height: 16),
               _buildQuickActionsGrid(colorScheme),
 
+              const SizedBox(height: 32),
+              _buildSectionHeader(
+                  'Plan Usage',
+                  colorScheme
+              ),
+              const SizedBox(height: 16),
+              _buildPlanUsageSection(data.planUsage, colorScheme),
+
               // Analytics Charts Section
               const SizedBox(height: 32),
               _buildSectionHeader(
@@ -941,6 +949,147 @@ class _DashboardScreenState extends State<DashboardScreen> with SingleTickerProv
         Text(
           label,
           style: TextStyle(color: colorScheme.onSurface),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildPlanUsageSection(PlanUsage planUsage, ColorScheme colorScheme) {
+    return Card(
+      elevation: 2,
+      shadowColor: Colors.black.withOpacity(0.1),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(20.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Replace the Row in the _buildPlanUsageSection function with this more responsive version
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Flexible(
+                  child: Text(
+                    'Plan Usage - ${planUsage.planName}',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: colorScheme.onSurface,
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+                const SizedBox(width: 8), // Add some spacing between the elements
+                Flexible(
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: colorScheme.primary.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: Text(
+                      'Renews: ${planUsage.nextBillingDate}',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: colorScheme.primary,
+                        fontSize: 12,
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 20),
+
+            // Students usage
+            _buildUsageIndicator(
+              title: 'Students',
+              current: double.parse(planUsage.currentStudentCount),
+              max: double.parse(planUsage.studentLimit),
+              color: Colors.blue,
+              colorScheme: colorScheme,
+            ),
+            const SizedBox(height: 12),
+
+            // Staff usage
+            _buildUsageIndicator(
+              title: 'Staff',
+              current: double.parse(planUsage.currentStaffCount),
+              max: double.parse(planUsage.staffLimit),
+              color: Colors.purple,
+              colorScheme: colorScheme,
+            ),
+            const SizedBox(height: 12),
+
+            // Storage usage
+            _buildUsageIndicator(
+              title: 'Storage',
+              current: double.parse(planUsage.usedStorageMB),
+              max: double.parse(planUsage.storageLimitMB),
+              color: Colors.amber,
+              colorScheme: colorScheme,
+              suffix: 'MB',
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildUsageIndicator({
+    required String title,
+    required double current,
+    required double max,
+    required Color color,
+    required ColorScheme colorScheme,
+    String suffix = '',
+  }) {
+    final percentage = current / max;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              title,
+              style: TextStyle(
+                fontWeight: FontWeight.w500,
+                color: colorScheme.onSurface,
+              ),
+            ),
+            Text(
+              '${current.toInt()}${suffix.isNotEmpty ? ' $suffix' : ''} / ${max.toInt()}${suffix.isNotEmpty ? ' $suffix' : ''}',
+              style: TextStyle(
+                fontWeight: FontWeight.w500,
+                color: colorScheme.onSurface.withOpacity(0.7),
+                fontSize: 13,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        Container(
+          height: 8,
+          width: double.infinity,
+          decoration: BoxDecoration(
+            color: Colors.grey.shade200,
+            borderRadius: BorderRadius.circular(4),
+          ),
+          child: FractionallySizedBox(
+            alignment: Alignment.centerLeft,
+            widthFactor: percentage > 1 ? 1 : percentage,
+            child: Container(
+              decoration: BoxDecoration(
+                color: percentage > 0.9 ? Colors.red : color,
+                borderRadius: BorderRadius.circular(4),
+              ),
+            ),
+          ),
         ),
       ],
     );

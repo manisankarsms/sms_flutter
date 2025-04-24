@@ -1,4 +1,3 @@
-// bloc/post/post_bloc.dart
 import 'package:bloc/bloc.dart';
 import 'package:flutter/foundation.dart';
 import 'package:sms/bloc/post/post_event.dart';
@@ -9,7 +8,6 @@ import '../../repositories/post_repository.dart';
 class PostBloc extends Bloc<PostEvent, PostState> {
   final PostRepository postRepository;
   List<Post> _posts = [];
-  Post? _currentPost;
 
   PostBloc({required this.postRepository}) : super(PostLoading()) {
     if (kDebugMode) {
@@ -19,82 +17,87 @@ class PostBloc extends Bloc<PostEvent, PostState> {
     on<AddPost>(_onAddPost);
     on<UpdatePost>(_onUpdatePost);
     on<DeletePost>(_onDeletePost);
-    on<SetCurrentPost>(_onSetCurrentPost);
-    add(LoadPosts()); // Automatically load staff when the bloc is created
+    add(LoadPosts());
   }
 
   Future<void> _onLoadPosts(LoadPosts event, Emitter<PostState> emit) async {
     try {
       if (kDebugMode) {
-        print("[PostBloc] Loading posts...");
+        print("[PostBloc] Processing LoadPosts event");
       }
       emit(PostLoading());
-
-      // Fetch posts from repository
       _posts = await postRepository.fetchPosts();
-
-      if (_posts.isNotEmpty) {
-        if (kDebugMode) {
-          print("[PostBloc] Posts loaded successfully. Count: ${_posts.length}");
-        }
-        emit(PostsLoaded(List.from(_posts), _currentPost));
-      } else {
-        if (kDebugMode) {
-          print("[PostBloc] No posts found.");
-        }
-        emit(PostOperationFailure("No posts available."));
+      if (kDebugMode) {
+        print("[PostBloc] Emitting PostsLoaded with ${_posts.length} posts");
       }
+      emit(PostsLoaded(List.from(_posts)));
     } catch (e, stacktrace) {
       if (kDebugMode) {
         print("[PostBloc] Error loading posts: $e");
         print("[PostBloc] Stacktrace: $stacktrace");
       }
-      emit(PostOperationFailure('Failed to load posts: ${e.toString()}'));
+      emit(PostOperationFailure('Failed to load posts: ${e.toString()}', _posts));
     }
   }
 
-
   Future<void> _onAddPost(AddPost event, Emitter<PostState> emit) async {
     try {
-      emit(PostLoading());
-      // Change this to postRepository.addPost() when API is ready
-      await postRepository.addPostMock(event.post);
-      _posts.insert(0, event.post);
-      emit(PostsLoaded(List.from(_posts), _currentPost));
+      emit(PostOperationInProgress(List.from(_posts), "Adding post..."));
+
+      // Simulate adding the post
+      final createdPost = await postRepository.addPost(event.post);
+      _posts.insert(0, createdPost);  // Update local cache
+
+      // Emit success
+      emit(PostOperationSuccess(List.from(_posts), "Post added successfully!"));
+
+      // Emit PostsLoaded to reload the list and update UI
+      emit(PostsLoaded(List.from(_posts)));
     } catch (e) {
-      emit(PostOperationFailure('Failed to add post: ${e.toString()}'));
+      // Emit failure if any error occurs
+      emit(PostOperationFailure('Failed to add post: ${e.toString()}', List.from(_posts)));
     }
   }
 
   Future<void> _onUpdatePost(UpdatePost event, Emitter<PostState> emit) async {
     try {
-      emit(PostLoading());
-      // Change this to postRepository.updatePost() when API is ready
-      await postRepository.updatePostMock(event.post);
+      emit(PostOperationInProgress(List.from(_posts), "Updating post..."));
+
+      // Simulate updating the post
+      await postRepository.updatePost(event.post);
       final index = _posts.indexWhere((p) => p.id == event.post.id);
       if (index != -1) {
-        _posts[index] = event.post;
+        _posts[index] = event.post;  // Update local cache
       }
-      emit(PostsLoaded(List.from(_posts), _currentPost));
+
+      // Emit success
+      emit(PostOperationSuccess(List.from(_posts), "Post updated successfully!"));
+
+      // Emit PostsLoaded to reload the list and update UI
+      emit(PostsLoaded(List.from(_posts)));
     } catch (e) {
-      emit(PostOperationFailure('Failed to update post: ${e.toString()}'));
+      // Emit failure if any error occurs
+      emit(PostOperationFailure('Failed to update post: ${e.toString()}', List.from(_posts)));
     }
   }
 
   Future<void> _onDeletePost(DeletePost event, Emitter<PostState> emit) async {
     try {
-      emit(PostLoading());
-      // Change this to postRepository.deletePost() when API is ready
-      await postRepository.deletePostMock(event.postId);
-      _posts.removeWhere((p) => p.id == event.postId);
-      emit(PostsLoaded(List.from(_posts), _currentPost));
+      emit(PostOperationInProgress(List.from(_posts), "Deleting post..."));
+
+      // Simulate deleting the post
+      await postRepository.deletePost(event.postId);
+      _posts.removeWhere((p) => p.id == event.postId);  // Update local cache
+
+      // Emit success
+      emit(PostOperationSuccess(List.from(_posts), "Post deleted successfully!"));
+
+      // Emit PostsLoaded to reload the list and update UI
+      emit(PostsLoaded(List.from(_posts)));
     } catch (e) {
-      emit(PostOperationFailure('Failed to delete post: ${e.toString()}'));
+      // Emit failure if any error occurs
+      emit(PostOperationFailure('Failed to delete post: ${e.toString()}', List.from(_posts)));
     }
   }
 
-  void _onSetCurrentPost(SetCurrentPost event, Emitter<PostState> emit) {
-    _currentPost = event.post;
-    emit(PostsLoaded(List.from(_posts), _currentPost));
-  }
 }

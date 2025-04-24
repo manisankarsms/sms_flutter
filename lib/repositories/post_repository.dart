@@ -1,9 +1,6 @@
-// repository/post_repository.dart
 import 'dart:convert';
-
 import 'package:flutter/foundation.dart';
 import 'package:sms/utils/constants.dart';
-
 import '../models/post.dart';
 import '../services/web_service.dart';
 
@@ -16,26 +13,50 @@ class PostRepository {
     try {
       final String responseString = await webService.fetchData(ApiEndpoints.adminPosts);
       if (kDebugMode) {
-        print("API Response: $responseString");
-      } // Debugging
-
+        print("Fetch Posts API Response: $responseString");
+      }
       final Map<String, dynamic> response = jsonDecode(responseString);
+      if (response['status'] != 1) {
+        throw Exception(response['message'] ?? 'Failed to fetch posts');
+      }
       final List<dynamic> postsJson = response['posts'];
       return postsJson.map((json) => Post.fromJson(json)).toList();
     } catch (e) {
       if (kDebugMode) {
         print("Error fetching posts: $e");
-      } // Debugging
+      }
       throw Exception('Failed to fetch posts: $e');
     }
   }
 
-  Future<void> addPost(Post newPost) async {
+  Future<Post> addPost(Post newPost) async {
     try {
-      // Convert to JSON string since webService.postData expects a String
       final String postJson = jsonEncode(newPost.toJson());
-      await webService.postData('admin/posts', postJson);
+      final responseString = await webService.postData('admin/posts', postJson);
+
+      if (kDebugMode) {
+        print("Add Post API Response: $responseString");
+      }
+
+      final Map<String, dynamic> response = jsonDecode(responseString);
+
+      if (response['status'] != 1) {
+        throw Exception(response['message'] ?? response['description'] ?? 'Failed to add post');
+      }
+
+      // Create a Post object from the response data
+      return Post(
+        id: response['id'],
+        title: response['title'],
+        content: response['content'],
+        author: response['author'],
+        createdAt: DateTime.parse(response['created_at']),
+        imageUrl: response['image_url'],
+      );
     } catch (e) {
+      if (kDebugMode) {
+        print("Error adding post: $e");
+      }
       throw Exception('Failed to add post: $e');
     }
   }
@@ -43,48 +64,44 @@ class PostRepository {
   Future<void> updatePost(Post post) async {
     try {
       final String postJson = jsonEncode(post.toJson());
-      await webService.putData('admin/posts/${post.id}', postJson);
+      final responseString = await webService.putData('admin/posts/${post.id}', postJson);
+      if (kDebugMode) {
+        print("Update Post API Response: $responseString");
+      }
+      final Map<String, dynamic> response = jsonDecode(responseString);
+      if (response['status'] != 1) {
+        throw Exception(response['message'] ?? 'Failed to update post');
+      }
     } catch (e) {
+      if (kDebugMode) {
+        print("Error updating post: $e");
+      }
       throw Exception('Failed to update post: $e');
     }
   }
 
-  Future<void> deletePost(String postId) async {
+  Future<void> deletePost(int? postId) async {
     try {
-      await webService.deleteData('admin/posts/$postId');
+      if (postId == null) {
+        throw Exception('Post ID is null');
+      }
+      final responseString = await webService.deleteData('admin/posts/$postId');
+      if (kDebugMode) {
+        print("Delete Post API Response: $responseString");
+      }
+      final Map<String, dynamic> response = jsonDecode(responseString);
+      if (response['status'] != 1) {
+        throw Exception(response['message'] ?? 'Failed to delete post');
+      }
     } catch (e) {
+      if (kDebugMode) {
+        print("Error deleting post: $e");
+      }
       throw Exception('Failed to delete post: $e');
     }
   }
 
-  // Mock implementation methods remain the same
-  Future<List<Post>> fetchPostsMock() async {
-    await Future.delayed(const Duration(seconds: 1));
-    return [
-      Post(
-        id: "1",
-        title: "Important Announcement",
-        author: "Admin",
-        content: "School will be closed on Monday due to weather conditions.",
-        createdAt: DateTime.now().subtract(Duration(days: 1)),
-      ),
-      Post(
-        id: "2",
-        title: "Upcoming Events",
-        author: "Admin",
-        content: "Check out the upcoming science fair next week.",
-        createdAt: DateTime.now().subtract(Duration(days: 3)),
-      ),
-      Post(
-        id: "3",
-        title: "New Curriculum",
-        author: "Principal",
-        content: "We're introducing a new mathematics curriculum next semester.",
-        createdAt: DateTime.now().subtract(Duration(days: 5)),
-      ),
-    ];
-  }
-
+  // Mock implementation methods (unchanged)
   Future<void> addPostMock(Post newPost) async {
     await Future.delayed(Duration(seconds: 1));
   }
