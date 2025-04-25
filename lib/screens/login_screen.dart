@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sms/bloc/auth/auth_bloc.dart';
 import 'package:sms/bloc/auth/auth_event.dart';
 import 'package:sms/bloc/auth/auth_state.dart';
@@ -16,6 +17,7 @@ import '../bloc/feed/feed_bloc.dart';
 import '../bloc/holiday/holiday_bloc.dart';
 import '../bloc/post/post_bloc.dart';
 import '../bloc/staffs/staff_bloc.dart';
+import '../dev_only/debug_overlay.dart';
 import '../models/user.dart';
 import '../repositories/auth_repository.dart';
 import '../repositories/class_repository.dart';
@@ -43,6 +45,46 @@ class _LoginScreenState extends State<LoginScreen> {
   String _userType = 'Student';
   bool _isLoading = false;
   bool _obscurePassword = true;
+  bool _isMockEnvironment = false; // Track the current environment
+  bool _showDebugConsole = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadEnvironmentSetting();
+  }
+
+
+  // Load environment setting from preferences
+  Future<void> _loadEnvironmentSetting() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      _isMockEnvironment = prefs.getBool('isMockEnvironment') ?? false;
+      // Update the Constants.baseUrl upon initialization
+      Constants.baseUrl = _isMockEnvironment
+          ? Constants.mockBaseUrl
+          : Constants.prodBaseUrl;
+    });
+  }
+
+  // Save environment setting to preferences
+  Future<void> _saveEnvironmentSetting(bool isMock) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('isMockEnvironment', isMock);
+    setState(() {
+      _isMockEnvironment = isMock;
+      // Update the baseUrl when the setting changes
+      Constants.baseUrl = isMock
+          ? Constants.mockBaseUrl
+          : Constants.prodBaseUrl;
+    });
+  }
+
+  void _toggleDebugConsole() {
+    setState(() {
+      _showDebugConsole = !_showDebugConsole;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -73,32 +115,152 @@ class _LoginScreenState extends State<LoginScreen> {
         }
       },
       child: Scaffold(
-        body: SafeArea(
-          child: Container(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [
-                  theme.colorScheme.primary.withOpacity(0.1),
-                  theme.colorScheme.background,
-                ],
+        appBar: AppBar(
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          actions: [
+            IconButton(
+              icon: Icon(
+                Icons.bug_report,
+                color: theme.colorScheme.primary,
               ),
+              onPressed: () => _toggleDebugConsole(),
+              tooltip: 'Debug Console',
             ),
-            child: Center(
-              child: SingleChildScrollView(
-                child: LayoutBuilder(
-                  builder: (context, constraints) {
-                    return kIsWeb && !isSmallScreen
-                        ? _buildWebLayout(theme, authBloc)
-                        : _buildMobileLayout(theme, authBloc);
-                  },
+            // Settings button
+            IconButton(
+              icon: Icon(
+                Icons.settings,
+                color: theme.colorScheme.primary,
+              ),
+              onPressed: () => _showEnvironmentSelectionDialog(),
+              tooltip: 'Environment Settings',
+            ),
+          ],
+        ),
+        body: Stack(
+          children: [
+            // Main login content
+            SafeArea(
+              child: Container(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [
+                      theme.colorScheme.primary.withOpacity(0.1),
+                      theme.colorScheme.background,
+                    ],
+                  ),
+                ),
+                child: Center(
+                  child: SingleChildScrollView(
+                    child: LayoutBuilder(
+                      builder: (context, constraints) {
+                        return kIsWeb && !isSmallScreen
+                            ? _buildWebLayout(theme, authBloc)
+                            : _buildMobileLayout(theme, authBloc);
+                      },
+                    ),
+                  ),
                 ),
               ),
             ),
-          ),
+
+            // Debug console overlay
+            if (_showDebugConsole) DebugConsoleOverlay(),
+          ],
         ),
       ),
+    );
+  }
+
+  void _showEnvironmentSelectionDialog() {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: Text('Environment Settings'),
+          content: StatefulBuilder(
+            builder: (context, setDialogState) {
+              return Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Select Environment:',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: Theme.of(context).colorScheme.primary,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  RadioListTile<bool>(
+                    title: Text('Production'),
+                    value: false,
+                    groupValue: _isMockEnvironment,
+                    onChanged: (value) {
+                      setDialogState(() {
+                        _isMockEnvironment = value!;
+                      });
+                    },
+                  ),
+                  RadioListTile<bool>(
+                    title: Text('Mock (Development)'),
+                    value: true,
+                    groupValue: _isMockEnvironment,
+                    onChanged: (value) {
+                      setDialogState(() {
+                        _isMockEnvironment = value!;
+                      });
+                    },
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Current Base URL:',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  Text(
+                    _isMockEnvironment
+                        ? Constants.mockBaseUrl
+                        : Constants.prodBaseUrl,
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.secondary,
+                    ),
+                  ),
+                ],
+              );
+            },
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: Text('Cancel'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                _saveEnvironmentSetting(_isMockEnvironment);
+                Navigator.pop(context);
+                // Show a confirmation snackbar
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(
+                      'Environment changed to ${_isMockEnvironment ? 'Mock' : 'Production'}',
+                    ),
+                    behavior: SnackBarBehavior.floating,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                  ),
+                );
+              },
+              child: Text('Save'),
+            ),
+          ],
+        );
+      },
     );
   }
 

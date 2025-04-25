@@ -47,6 +47,7 @@ import 'bloc/dashboard/dashboard_bloc.dart';
 import 'bloc/language/language_state.dart';
 import 'bloc/staffs/staff_bloc.dart';
 import 'bloc/theme/theme_bloc.dart';
+import 'dev_only/debug_logger.dart';
 import 'firebase_options.dart';
 
 void main() async{
@@ -68,7 +69,7 @@ void main() async{
   final ConfigurationRepository configurationRepository = ConfigurationRepository(webService: webService);
   final PermissionRepository permissionRepository = PermissionRepository(webService: webService);
 
-  runApp(
+  final app =
     MultiBlocProvider(
       providers: [
         BlocProvider<AuthBloc>(
@@ -127,8 +128,8 @@ void main() async{
         ),
       ],
       child: MyApp(),
-    ),
   );
+  DebugLogger.initWithZone(app);
 }
 
 class MyApp extends StatelessWidget {
