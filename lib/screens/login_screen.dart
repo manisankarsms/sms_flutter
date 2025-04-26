@@ -19,6 +19,7 @@ import '../bloc/post/post_bloc.dart';
 import '../bloc/staffs/staff_bloc.dart';
 import '../dev_only/debug_overlay.dart';
 import '../models/user.dart';
+import '../models/client.dart';
 import '../repositories/auth_repository.dart';
 import '../repositories/class_repository.dart';
 import '../repositories/dashboard_repository.dart';
@@ -47,13 +48,16 @@ class _LoginScreenState extends State<LoginScreen> {
   bool _obscurePassword = true;
   bool _isMockEnvironment = false; // Track the current environment
   bool _showDebugConsole = false;
+  List<Client> _clients = [];
+  Client? _selectedClient;
+  bool _isLoadingClients = false;
 
   @override
   void initState() {
     super.initState();
     _loadEnvironmentSetting();
+    _loadClientData();
   }
-
 
   // Load environment setting from preferences
   Future<void> _loadEnvironmentSetting() async {
@@ -67,6 +71,127 @@ class _LoginScreenState extends State<LoginScreen> {
     });
   }
 
+  // Load client data from SharedPreferences
+  // Load client data from SharedPreferences
+  // Load client data from SharedPreferences
+  Future<void> _loadClientData() async {
+    if (kIsWeb) {
+      // Skip client data loading on web
+      return;
+    }
+
+    setState(() {
+      _isLoadingClients = true;
+    });
+
+    final prefs = await SharedPreferences.getInstance();
+    final clientsJson = prefs.getString('clients');
+    final selectedClientId = prefs.getString('selectedClientId');
+
+    if (clientsJson != null) {
+      // Deserialize clients from JSON
+      final clientsList = Client.fromJsonList(clientsJson);
+
+      setState(() {
+        _clients = clientsList;
+
+        // Find the previously selected client if it exists
+        if (selectedClientId != null) {
+          // Using try-catch instead of firstWhere with orElse
+          try {
+            _selectedClient = _clients.firstWhere(
+                  (client) => client.id == selectedClientId,
+            );
+
+            // If we found a selected client, update the base URL
+            // Constants.baseUrl = _selectedClient!.baseUrl;
+          } catch (e) {
+            // Client not found in the list, so no selected client
+            _selectedClient = null;
+          }
+        }
+
+        _isLoadingClients = false;
+      });
+
+      // Only show client selection dialog if no client is selected and there are clients available
+      if (_selectedClient == null && _clients.isNotEmpty) {
+        // Use a post-frame callback to avoid calling setState during build
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          _showClientSelectionDialog();
+        });
+      }
+    } else {
+      // No stored clients, fetch from API
+      await _fetchClientData();
+    }
+  }
+
+  // Fetch client data from API
+  Future<void> _fetchClientData() async {
+    try {
+      setState(() {
+        _isLoadingClients = true;
+      });
+
+      final authRepository = AuthRepository(
+        webService: WebService(baseUrl: Constants.baseUrl),
+      );
+
+      final clients = await authRepository.fetchClients();
+
+      // Save to SharedPreferences
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('clients', Client.toJsonList(clients));
+
+      setState(() {
+        _clients = clients;
+        _isLoadingClients = false;
+      });
+
+      // Show the client selection dialog if clients were loaded
+      if (_clients.isNotEmpty) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          _showClientSelectionDialog();
+        });
+      }
+    } catch (e) {
+      setState(() {
+        _isLoadingClients = false;
+        // Don't empty _clients list on error, keeping previous state
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Failed to load client data: ${e.toString()}'),
+          backgroundColor: Theme.of(context).colorScheme.error,
+        ),
+      );
+
+      // Add logging for debugging
+      print('Error fetching client data: $e');
+    }
+  }
+
+  // Reset client data
+  // Reset client data
+  Future<void> _resetClientData() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove('clients');
+    await prefs.remove('selectedClientId');  // Also remove the selected client ID
+
+    setState(() {
+      _clients = [];
+      _selectedClient = null;
+      Constants.baseUrl = _isMockEnvironment
+          ? Constants.mockBaseUrl
+          : Constants.prodBaseUrl;
+    });
+
+    // Fetch fresh client data
+    _fetchClientData();
+  }
+
   // Save environment setting to preferences
   Future<void> _saveEnvironmentSetting(bool isMock) async {
     final prefs = await SharedPreferences.getInstance();
@@ -77,6 +202,11 @@ class _LoginScreenState extends State<LoginScreen> {
       Constants.baseUrl = isMock
           ? Constants.mockBaseUrl
           : Constants.prodBaseUrl;
+
+      // If a client is selected, use its URL instead
+      /*if (_selectedClient != null) {
+        Constants.baseUrl = _selectedClient!.baseUrl;
+      }*/
     });
   }
 
@@ -127,6 +257,26 @@ class _LoginScreenState extends State<LoginScreen> {
               onPressed: () => _toggleDebugConsole(),
               tooltip: 'Debug Console',
             ),
+            // Reset client data (only for mobile)
+            if (!kIsWeb && (!_isLoadingClients || _clients.isNotEmpty))
+              IconButton(
+                icon: Icon(
+                  Icons.refresh,
+                  color: theme.colorScheme.primary,
+                ),
+                onPressed: _isLoadingClients ? null : () => _showResetConfirmationDialog(),
+                tooltip: 'Reset Client Data',
+              ),
+            // Change client button
+            if (!kIsWeb && (!_isLoadingClients || _clients.isNotEmpty))
+              IconButton(
+                icon: Icon(
+                  Icons.school,
+                  color: theme.colorScheme.primary,
+                ),
+                onPressed: _isLoadingClients ? null : () => _showClientSelectionDialog(),
+                tooltip: 'Change School',
+              ),
             // Settings button
             IconButton(
               icon: Icon(
@@ -154,7 +304,9 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                 ),
                 child: Center(
-                  child: SingleChildScrollView(
+                  child: _isLoadingClients && !kIsWeb
+                      ? _buildLoadingIndicator(theme)
+                      : SingleChildScrollView(
                     child: LayoutBuilder(
                       builder: (context, constraints) {
                         return kIsWeb && !isSmallScreen
@@ -172,6 +324,182 @@ class _LoginScreenState extends State<LoginScreen> {
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildLoadingIndicator(ThemeData theme) {
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        CircularProgressIndicator(
+          color: theme.colorScheme.primary,
+        ),
+        const SizedBox(height: 16),
+        Text(
+          'Loading schools...',
+          style: theme.textTheme.titleMedium,
+        ),
+      ],
+    );
+  }
+
+  void _showResetConfirmationDialog() {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: Text('Reset Client Data'),
+          content: Text(
+              'This will clear all saved school data and fetch it again. Do you want to continue?'
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: Text('Cancel'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.pop(context);
+                _resetClientData();
+              },
+              child: Text('Reset'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Theme.of(context).colorScheme.error,
+                foregroundColor: Theme.of(context).colorScheme.onError,
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _showClientSelectionDialog() {
+    // Controller for the search field
+    final TextEditingController _searchController = TextEditingController();
+    // List to hold filtered clients
+    List<Client> _filteredClients = List.from(_clients);
+
+    // Function to filter clients based on search text
+    void _filterClients(String query) {
+      setState(() {
+        if (query.isEmpty) {
+          _filteredClients = List.from(_clients);
+        } else {
+          _filteredClients = _clients
+              .where((client) =>
+          client.name.toLowerCase().contains(query.toLowerCase()) ||
+              client.address.toLowerCase().contains(query.toLowerCase()))
+              .toList();
+        }
+      });
+    }
+
+    showDialog(
+      context: context,
+      barrierDismissible: _selectedClient != null, // Only allow dismissal if a client is already selected
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setStateDialog) {
+            return WillPopScope(
+              // Prevent back button from closing dialog if no client is selected
+              onWillPop: () async => _selectedClient != null,
+              child: AlertDialog(
+                title: Text('Select School'),
+                content: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // Search TextField
+                    TextField(
+                      controller: _searchController,
+                      decoration: InputDecoration(
+                        hintText: 'Search by name or address',
+                        prefixIcon: Icon(Icons.search),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8.0),
+                        ),
+                        contentPadding: EdgeInsets.symmetric(vertical: 8.0),
+                      ),
+                      onChanged: (value) {
+                        setStateDialog(() {
+                          if (value.isEmpty) {
+                            _filteredClients = List.from(_clients);
+                          } else {
+                            _filteredClients = _clients
+                                .where((client) =>
+                            client.name.toLowerCase().contains(value.toLowerCase()) ||
+                                client.address.toLowerCase().contains(value.toLowerCase()))
+                                .toList();
+                          }
+                        });
+                      },
+                    ),
+                    SizedBox(height: 16),
+                    // Client list
+                    Flexible(
+                      child: SizedBox(
+                        width: double.maxFinite,
+                        child: _filteredClients.isEmpty
+                            ? Center(child: Text('No schools found'))
+                            : ListView.builder(
+                          shrinkWrap: true,
+                          itemCount: _filteredClients.length,
+                          itemBuilder: (context, index) {
+                            final client = _filteredClients[index];
+                            final isSelected = _selectedClient?.id == client.id;
+                            return ListTile(
+                              leading: CircleAvatar(
+                                backgroundColor: isSelected
+                                    ? Theme.of(context).colorScheme.primary
+                                    : Theme.of(context).colorScheme.primary.withOpacity(0.2),
+                                child: Text(
+                                  client.name.substring(0, 1).toUpperCase(),
+                                  style: TextStyle(
+                                    color: isSelected
+                                        ? Theme.of(context).colorScheme.onPrimary
+                                        : Theme.of(context).colorScheme.primary,
+                                  ),
+                                ),
+                              ),
+                              title: Text(client.name),
+                              subtitle: Text(client.address),
+                              selected: isSelected,
+                              onTap: () async {
+                                // Save selected client ID to SharedPreferences
+                                final prefs = await SharedPreferences.getInstance();
+                                await prefs.setString('selectedClientId', client.id);
+                                setState(() {
+                                  _selectedClient = client;
+                                  // Constants.baseUrl = client.baseUrl;
+                                });
+                                Navigator.pop(context);
+                                // Show confirmation
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text('School changed to ${client.name}'),
+                                    behavior: SnackBarBehavior.floating,
+                                  ),
+                                );
+                              },
+                            );
+                          },
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                actions: [
+                  if (_selectedClient != null) // Only show Cancel if a client is already selected
+                    TextButton(
+                      onPressed: () => Navigator.pop(context),
+                      child: Text('Cancel'),
+                    ),
+                ],
+              ),
+            );
+          },
+        );
+      },
     );
   }
 
@@ -223,9 +551,14 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                   ),
                   Text(
-                    _isMockEnvironment
+                    _selectedClient != null
+                        // ? _selectedClient!.baseUrl
+                        ? (_isMockEnvironment
                         ? Constants.mockBaseUrl
-                        : Constants.prodBaseUrl,
+                        : Constants.prodBaseUrl)
+                        : (_isMockEnvironment
+                        ? Constants.mockBaseUrl
+                        : Constants.prodBaseUrl),
                     style: TextStyle(
                       color: Theme.of(context).colorScheme.secondary,
                     ),
@@ -292,14 +625,12 @@ class _LoginScreenState extends State<LoginScreen> {
                     mainAxisAlignment: MainAxisAlignment.center,
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Image.asset(
-                        'assets/images/students.png',
-                        width: 120,
-                        height: 120,
-                      ),
+                      _buildLogo(size: 120), // Display client logo if available
                       const SizedBox(height: 40),
                       Text(
-                        'School Management System',
+                        _selectedClient != null
+                            ? '${_selectedClient!.name} Management System'
+                            : 'School Management System',
                         style: theme.textTheme.headlineMedium?.copyWith(
                           fontWeight: FontWeight.bold,
                           color: Colors.white,
@@ -342,7 +673,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 flex: 4,
                 child: Container(
                   padding:
-                      const EdgeInsets.symmetric(horizontal: 40, vertical: 32),
+                  const EdgeInsets.symmetric(horizontal: 40, vertical: 32),
                   child: _buildLoginForm(theme, authBloc, isWeb: true),
                 ),
               ),
@@ -360,6 +691,77 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
+  // Widget to display client logo or default logo
+  Widget _buildLogo({double size = 80.0}) {
+    // Check if we have a selected client with a logo URL
+    if (_selectedClient != null && _selectedClient!.logoUrl != null && _selectedClient!.logoUrl!.isNotEmpty) {
+      return Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Theme.of(context).colorScheme.surface,
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+              color: Theme.of(context).shadowColor.withOpacity(0.1),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Image.network(
+          _selectedClient!.logoUrl!,
+          width: size,
+          height: size,
+          fit: BoxFit.contain,
+          errorBuilder: (context, error, stackTrace) {
+            // If there's an error loading the image, show default
+            return Image.asset(
+              'assets/images/students.png',
+              width: size,
+              height: size,
+            );
+          },
+          loadingBuilder: (context, child, loadingProgress) {
+            if (loadingProgress == null) return child;
+            return SizedBox(
+              width: size,
+              height: size,
+              child: Center(
+                child: CircularProgressIndicator(
+                  value: loadingProgress.expectedTotalBytes != null
+                      ? loadingProgress.cumulativeBytesLoaded / loadingProgress.expectedTotalBytes!
+                      : null,
+                  color: Theme.of(context).colorScheme.primary,
+                ),
+              ),
+            );
+          },
+        ),
+      );
+    } else {
+      // If no client or client logo, use default asset
+      return Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Theme.of(context).colorScheme.surface,
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+              color: Theme.of(context).shadowColor.withOpacity(0.1),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Image.asset(
+          'assets/images/students.png',
+          width: size,
+          height: size,
+        ),
+      );
+    }
+  }
+
   Widget _buildLoginForm(ThemeData theme, AuthBloc authBloc,
       {required bool isWeb}) {
     return Form(
@@ -373,33 +775,17 @@ class _LoginScreenState extends State<LoginScreen> {
             Center(
               child: Hero(
                 tag: 'logo',
-                child: Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: theme.colorScheme.surface,
-                    borderRadius: BorderRadius.circular(20),
-                    boxShadow: [
-                      BoxShadow(
-                        color: theme.shadowColor.withOpacity(0.1),
-                        blurRadius: 10,
-                        offset: const Offset(0, 4),
-                      ),
-                    ],
-                  ),
-                  child: Image.asset(
-                    'assets/images/students.png',
-                    width: 80.0,
-                    height: 80.0,
-                  ),
-                ),
+                child: _buildLogo(), // Use the shared logo building function
               ),
             ),
             const SizedBox(height: 24),
           ],
 
           Text(
-            AppLocalizations.of(context)?.welcome ?? "Welcome",
-            style: theme.textTheme.headlineMedium?.copyWith(
+            _selectedClient != null
+                ? 'Welcome to \n${_selectedClient!.name}'
+                : (AppLocalizations.of(context)?.welcome ?? "Welcome"),
+            style: theme.textTheme.displaySmall?.copyWith(
               fontWeight: FontWeight.bold,
               color: isWeb
                   ? theme.colorScheme.primary
@@ -409,9 +795,9 @@ class _LoginScreenState extends State<LoginScreen> {
           ),
           Text(
             AppLocalizations.of(context)?.sign_in_to_continue ??
-            'Sign in to continue',
+                'Sign in to continue',
             style: theme.textTheme.bodyLarge?.copyWith(
-              color: theme.colorScheme.onBackground.withOpacity(0.7),
+              color: theme.colorScheme.onSurface.withOpacity(0.7),
             ),
             textAlign: TextAlign.center,
           ),
@@ -480,9 +866,6 @@ class _LoginScreenState extends State<LoginScreen> {
               if (value == null || value.isEmpty) {
                 return 'Please enter your email';
               }
-              /*if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(value)) {
-                return 'Please enter a valid email';
-              }*/
               return null;
             },
             keyboardType: TextInputType.emailAddress,
@@ -525,7 +908,7 @@ class _LoginScreenState extends State<LoginScreen> {
               },
               child: Text(
                 AppLocalizations.of(context)?.forgot_password ??
-                'Forgot Password?',
+                    'Forgot Password?',
                 style: TextStyle(
                   color: theme.colorScheme.primary,
                 ),
@@ -539,10 +922,10 @@ class _LoginScreenState extends State<LoginScreen> {
             onPressed: _isLoading
                 ? null
                 : () {
-                    if (_formKey.currentState!.validate()) {
-                      _login(authBloc);
-                    }
-                  },
+              if (_formKey.currentState!.validate()) {
+                _login(authBloc);
+              }
+            },
             style: ElevatedButton.styleFrom(
               backgroundColor: theme.colorScheme.primary,
               foregroundColor: theme.colorScheme.onPrimary,
@@ -554,21 +937,21 @@ class _LoginScreenState extends State<LoginScreen> {
             ),
             child: _isLoading
                 ? const SizedBox(
-                    height: 20,
-                    width: 20,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      color: Colors.white,
-                    ),
-                  )
+              height: 20,
+              width: 20,
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+                color: Colors.white,
+              ),
+            )
                 : Text(
-                    AppLocalizations.of(context)?.login ??
-                    'Log In',
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
+              AppLocalizations.of(context)?.login ??
+                  'Log In',
+              style: const TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
           ),
 
           const SizedBox(height: 24),
@@ -744,81 +1127,6 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
-  /*void _navigateToHomeScreen(BuildContext context, List<User> users) {
-    Widget homeScreen;
-    final WebService webService = WebService(baseUrl: Constants.baseUrl);
-    final AuthRepository authRepository =
-    AuthRepository(webService: webService);
-    final DashboardRepository dashboardRepository =
-    DashboardRepository(webService: webService);
-    final ClassRepository classRepository =
-    ClassRepository(webService: webService);
-    final StudentsRepository studentsRepository =
-    StudentsRepository(webService: webService);
-    final StaffRepository staffRepository =
-    StaffRepository(webService: webService);
-    final HolidayRepository holidayRepository =
-    HolidayRepository(webService: webService);
-    final PostRepository postRepository =
-    PostRepository(webService: webService);
-    final FeedRepository feedRepository =
-    FeedRepository(webService: webService);
-
-    // Default to first user
-    User activeUser = users.first;
-
-    switch (activeUser.userType) {
-      case 'Student':
-        homeScreen = StudentHomeScreen(users: users, selectedUser: activeUser);
-        break;
-      case 'Staff':
-        homeScreen = MultiBlocProvider(
-          providers: [
-            BlocProvider<ClassesBloc>(
-              create: (context) =>
-                  ClassesBloc(repository: classRepository, user: activeUser),
-            ),
-          ],
-          child: StaffHomeScreen(user: activeUser),
-        );
-        break;
-      case 'Admin':
-        homeScreen = MultiBlocProvider(
-          providers: [
-            BlocProvider<DashboardBloc>(
-              create: (context) =>
-                  DashboardBloc(repository: dashboardRepository),
-            ),
-            BlocProvider<ClassesBloc>(
-              create: (context) =>
-                  ClassesBloc(repository: classRepository, user: activeUser),
-            ),
-            BlocProvider<StaffsBloc>(
-              create: (context) => StaffsBloc(repository: staffRepository),
-            ),
-            BlocProvider<HolidayBloc>(
-              create: (context) => HolidayBloc(repository: holidayRepository),
-            ),
-            BlocProvider<PostBloc>(
-              create: (context) => PostBloc(postRepository: postRepository),
-            ),
-            BlocProvider<FeedBloc>(
-              create: (context) => FeedBloc(feedRepository: feedRepository),
-            ),
-          ],
-          child: HomeScreenAdmin(user: activeUser),
-        );
-        break;
-      default:
-        homeScreen = StudentHomeScreen(users: users, selectedUser: activeUser);
-    }
-
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(builder: (context) => homeScreen),
-    );
-  }*/
-
   void _navigateToHomeScreen(BuildContext context, List<User> users, User? activeUser) {
     if (activeUser != null) {
       // If an active user is already selected, navigate directly
@@ -829,8 +1137,7 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
-
-// Navigate based on user type
+  // Navigate based on user type
   void _navigateBasedOnUserType(BuildContext context, User selectedUser, List<User> users) {
     Widget homeScreen;
     final WebService webService = WebService(baseUrl: Constants.baseUrl);
@@ -929,6 +1236,4 @@ class _LoginScreenState extends State<LoginScreen> {
       },
     );
   }
-
-
 }

@@ -4,6 +4,7 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:sms/utils/constants.dart';
 
+import '../models/client.dart';
 import '../models/user.dart';
 import '../services/request.dart';
 import '../services/web_service.dart'; // Import your WebService class
@@ -75,6 +76,26 @@ class AuthRepository {
     // Example: Clearing stored user session (modify as needed)
     // final prefs = await SharedPreferences.getInstance();
     // await prefs.clear();
+  }
+
+  Future<List<Client>> fetchClients() async {
+    try {
+      final String responseString = await webService.fetchData('config/clients');
+      if (kDebugMode) {
+        print("Fetch Clients API Response: $responseString");
+      }
+      final Map<String, dynamic> response = jsonDecode(responseString);
+      if (response['status'] != 1) {
+        throw Exception(response['message'] ?? 'Failed to fetch clients');
+      }
+      final List<dynamic> clientsJson = response['clients'];
+      return clientsJson.map((json) => Client.fromJson(json)).toList();
+    } catch (e) {
+      if (kDebugMode) {
+        print("Error fetching clients: $e");
+      }
+      throw Exception('Failed to fetch clients: $e');
+    }
   }
 
 // Additional authentication methods like signOut, signUp, resetPassword can be added here.
