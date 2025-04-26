@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sms/screens/complaint_screen.dart';
 import 'package:sms/screens/fees_screen_user.dart';
 import 'package:sms/screens/holiday_screen.dart';
@@ -36,11 +37,23 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
   int _selectedIndex = 0;
   late User _activeUser; // Track active user
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+  String? _schoolLogo;
+  String _schoolName = '';
 
   @override
   void initState() {
     super.initState();
     _activeUser = widget.selectedUser; // Initialize with selected user
+    _loadSchoolInfo(); // <- load logo and name
+  }
+
+  Future<void> _loadSchoolInfo() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      _schoolLogo = prefs.getString('logoUrl'); // Example key
+      print(_schoolLogo);
+      _schoolName = prefs.getString('name') ?? 'Your School';
+    });
   }
 
   List<Widget> get _screens {
@@ -164,14 +177,27 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
     return AppBar(
       backgroundColor: theme.colorScheme.surface,
       elevation: 0,
-      title: Text(
-        "Welcome, ${_activeUser.displayName}",
-        style: TextStyle(
-          color: theme.colorScheme.onSurface,
-          fontWeight: FontWeight.bold,
-        ),
+      title: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            "Welcome,",
+            style: TextStyle(
+              color: theme.colorScheme.onSurface.withOpacity(0.7),
+              fontSize: 14,
+            ),
+          ),
+          Text(
+            _activeUser.displayName,
+            style: TextStyle(
+              color: theme.colorScheme.onSurface,
+              fontWeight: FontWeight.bold,
+            ),
+            overflow: TextOverflow.ellipsis,
+          ),
+        ],
       ),
-      centerTitle: true,
+      centerTitle: false,
       leading: IconButton(
         icon: Icon(
           Icons.menu,
@@ -187,6 +213,9 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
           PopupMenuButton<User>(
             icon: const Icon(Icons.swap_horiz, color: Colors.blue),
             tooltip: "Switch User",
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
             onSelected: (User newUser) {
               setState(() {
                 _activeUser = newUser;
@@ -199,13 +228,44 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
               List<User> studentUsers = widget.users.where((user) => user.userType == Constants.student).toList();
 
               return studentUsers.map((User user) {
+                final isActive = user.displayName == _activeUser.displayName;
                 return PopupMenuItem<User>(
                   value: user,
                   child: Row(
                     children: [
-                      Icon(Icons.person, color: theme.colorScheme.primary),
+                      Icon(
+                        Icons.person,
+                        color: isActive ? theme.colorScheme.primary : theme.colorScheme.onSurface.withOpacity(0.7),
+                      ),
                       const SizedBox(width: 8),
-                      Text(user.displayName),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              user.displayName,
+                              style: TextStyle(
+                                fontWeight: isActive ? FontWeight.bold : FontWeight.normal,
+                              ),
+                            ),
+                            if (isActive)
+                              Text(
+                                "Current",
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: theme.colorScheme.primary,
+                                ),
+                              ),
+                          ],
+                        ),
+                      ),
+                      if (isActive)
+                        Icon(
+                          Icons.check_circle,
+                          color: theme.colorScheme.primary,
+                          size: 16,
+                        ),
                     ],
                   ),
                 );
@@ -225,10 +285,13 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
         CircleAvatar(
           radius: 16,
           backgroundColor: theme.colorScheme.primary.withOpacity(0.2),
-          child: Icon(
-            Icons.person_outline,
-            size: 20,
-            color: theme.colorScheme.primary,
+          child: Text(
+            _activeUser.displayName.substring(0, 1).toUpperCase(),
+            style: TextStyle(
+              color: theme.colorScheme.primary,
+              fontWeight: FontWeight.bold,
+              fontSize: 14,
+            ),
           ),
         ),
         const SizedBox(width: 16),
@@ -244,24 +307,74 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
         child: Column(
           children: [
             // Branding Section
-            DrawerHeader(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  Image.asset(
-                    'assets/images/school_logo.png', // Replace with actual logo
-                    width: 60,
-                    height: 60,
-                  ),
-                  const SizedBox(height: 12),
-                  Text(
-                    'XYZ School', // Replace with actual school name
-                    style: theme.textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.bold,
+            // Branding Section - Redesigned Header
+            Container(
+              padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
+              decoration: BoxDecoration(
+                color: theme.colorScheme.primaryContainer,
+              ),
+              child: SafeArea(
+                bottom: false,
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: theme.colorScheme.surface,
+                            shape: BoxShape.circle,
+                            boxShadow: [
+                              BoxShadow(
+                                color: theme.shadowColor.withOpacity(0.1),
+                                blurRadius: 8,
+                                offset: const Offset(0, 2),
+                              ),
+                            ],
+                          ),
+                          child: _schoolLogo != null
+                              ? ClipOval(
+                            child: Image.network(
+                              _schoolLogo!,
+                              width: 80,
+                              height: 80,
+                              fit: BoxFit.cover,
+                              errorBuilder: (context, error, stackTrace) =>
+                                  Icon(Icons.school, color: theme.colorScheme.primary),
+                            ),
+                          )
+                              : Icon(Icons.school, size: 50, color: theme.colorScheme.primary),
+                        ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                _schoolName,
+                                style: theme.textTheme.titleLarge?.copyWith(
+                                  fontWeight: FontWeight.bold,
+                                  color: theme.colorScheme.onPrimaryContainer,
+                                ),
+                                overflow: TextOverflow.ellipsis,
+                                maxLines: 2,
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                'Student Portal', // You can customize this text or make it dynamic
+                                style: theme.textTheme.bodyMedium?.copyWith(
+                                  color: theme.colorScheme.onPrimaryContainer.withOpacity(0.8),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
 

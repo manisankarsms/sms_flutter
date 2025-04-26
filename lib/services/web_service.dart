@@ -15,6 +15,7 @@ class WebService {
     String aesKey = AESUtil.generateKey();
     final encryptedBody = AESUtil.encrypt(jsonEncode(data), aesKey);
     if (kDebugMode) {
+      print('$baseUrl/$endpoint');
       print(data);
       print(encryptedBody);
       print(aesKey);
@@ -46,7 +47,7 @@ class WebService {
 
   Future<String> fetchData(String endpoint) async {
     if (kDebugMode) {
-      print(endpoint);
+      print('$baseUrl/$endpoint');
     }
     final response = await http.get(
       Uri.parse('$baseUrl/$endpoint'),
@@ -71,6 +72,9 @@ class WebService {
 
   // New method for PUT requests
   Future<String> putData(String endpoint, String data) async {
+    if (kDebugMode) {
+      print('$baseUrl/$endpoint');
+    }
     final response = await http.put(
       Uri.parse('$baseUrl/$endpoint'),
       headers: <String, String>{
@@ -87,6 +91,9 @@ class WebService {
 
   // New method for DELETE requests
   Future<String> deleteData(String endpoint) async {
+    if (kDebugMode) {
+      print('$baseUrl/$endpoint');
+    }
     final response = await http.delete(
       Uri.parse('$baseUrl/$endpoint'),
       headers: <String, String>{

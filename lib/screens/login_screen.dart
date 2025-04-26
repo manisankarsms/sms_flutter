@@ -72,8 +72,6 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   // Load client data from SharedPreferences
-  // Load client data from SharedPreferences
-  // Load client data from SharedPreferences
   Future<void> _loadClientData() async {
     if (kIsWeb) {
       // Skip client data loading on web
@@ -173,7 +171,6 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
-  // Reset client data
   // Reset client data
   Future<void> _resetClientData() async {
     final prefs = await SharedPreferences.getInstance();
@@ -468,6 +465,8 @@ class _LoginScreenState extends State<LoginScreen> {
                                 // Save selected client ID to SharedPreferences
                                 final prefs = await SharedPreferences.getInstance();
                                 await prefs.setString('selectedClientId', client.id);
+                                await prefs.setString('name', client.name);
+                                await prefs.setString('logoUrl', client.logoUrl);
                                 setState(() {
                                   _selectedClient = client;
                                   // Constants.baseUrl = client.baseUrl;
@@ -627,10 +626,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     children: [
                       _buildLogo(size: 120), // Display client logo if available
                       const SizedBox(height: 40),
-                      Text(
-                        _selectedClient != null
-                            ? '${_selectedClient!.name} Management System'
-                            : 'School Management System',
+                      Text('School Management System',
                         style: theme.textTheme.headlineMedium?.copyWith(
                           fontWeight: FontWeight.bold,
                           color: Colors.white,
@@ -692,74 +688,59 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   // Widget to display client logo or default logo
-  Widget _buildLogo({double size = 80.0}) {
-    // Check if we have a selected client with a logo URL
-    if (_selectedClient != null && _selectedClient!.logoUrl != null && _selectedClient!.logoUrl!.isNotEmpty) {
-      return Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.surface,
-          borderRadius: BorderRadius.circular(20),
-          boxShadow: [
-            BoxShadow(
-              color: Theme.of(context).shadowColor.withOpacity(0.1),
-              blurRadius: 10,
-              offset: const Offset(0, 4),
-            ),
-          ],
-        ),
-        child: Image.network(
-          _selectedClient!.logoUrl!,
-          width: size,
-          height: size,
-          fit: BoxFit.contain,
-          errorBuilder: (context, error, stackTrace) {
-            // If there's an error loading the image, show default
-            return Image.asset(
-              'assets/images/students.png',
-              width: size,
-              height: size,
-            );
-          },
-          loadingBuilder: (context, child, loadingProgress) {
-            if (loadingProgress == null) return child;
-            return SizedBox(
-              width: size,
-              height: size,
-              child: Center(
-                child: CircularProgressIndicator(
-                  value: loadingProgress.expectedTotalBytes != null
-                      ? loadingProgress.cumulativeBytesLoaded / loadingProgress.expectedTotalBytes!
-                      : null,
-                  color: Theme.of(context).colorScheme.primary,
-                ),
-              ),
-            );
-          },
-        ),
-      );
-    } else {
-      // If no client or client logo, use default asset
-      return Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.surface,
-          borderRadius: BorderRadius.circular(20),
-          boxShadow: [
-            BoxShadow(
-              color: Theme.of(context).shadowColor.withOpacity(0.1),
-              blurRadius: 10,
-              offset: const Offset(0, 4),
-            ),
-          ],
-        ),
-        child: Image.asset(
+  Widget _buildLogo({double size = 100.0}) {
+    Widget imageWidget;
+
+    if (_selectedClient != null && _selectedClient!.logoUrl.isNotEmpty) {
+      imageWidget = Image.network(
+        _selectedClient!.logoUrl,
+        width: size,
+        height: size,
+        fit: BoxFit.contain,
+        errorBuilder: (context, error, stackTrace) => Image.asset(
           'assets/images/students.png',
           width: size,
           height: size,
         ),
+        loadingBuilder: (context, child, loadingProgress) {
+          if (loadingProgress == null) return child;
+          return SizedBox(
+            width: size,
+            height: size,
+            child: Center(
+              child: CircularProgressIndicator(
+                value: loadingProgress.expectedTotalBytes != null
+                    ? loadingProgress.cumulativeBytesLoaded / loadingProgress.expectedTotalBytes!
+                    : null,
+                color: Theme.of(context).colorScheme.primary,
+              ),
+            ),
+          );
+        },
+      );
+    } else {
+      imageWidget = Image.asset(
+        'assets/images/students.png',
+        width: size,
+        height: size,
       );
     }
+
+    return Container(
+      padding: const EdgeInsets.all(4),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surface,
+        borderRadius: BorderRadius.circular(4),
+        boxShadow: [
+          BoxShadow(
+            color: Theme.of(context).shadowColor.withOpacity(0.1),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: imageWidget,
+    );
   }
 
   Widget _buildLoginForm(ThemeData theme, AuthBloc authBloc,
