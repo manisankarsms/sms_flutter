@@ -34,9 +34,6 @@ import 'package:sms/repositories/staff_repository.dart';
 import 'package:sms/repositories/student_repository.dart';
 import 'package:sms/repositories/students_repository.dart';
 import 'package:sms/repositories/subjects_repository.dart';
-import 'package:sms/screens/games/alphabet_order.dart';
-import 'package:sms/screens/games/balloon_pop.dart';
-import 'package:sms/screens/games/number_sequence.dart';
 import 'package:sms/screens/login_screen.dart';
 import 'package:sms/services/web_service.dart';
 import 'package:sms/utils/constants.dart';
@@ -51,7 +48,8 @@ import 'dev_only/debug_logger.dart';
 import 'firebase_options.dart';
 
 void main() async{
-  final WebService webService = WebService(baseUrl: Constants.baseUrl);
+  String url = "http://192.168.1.5:8080";
+  final WebService webService = WebService(baseUrl: url);
   final AuthRepository authRepository = AuthRepository(webService: webService);
   final DashboardRepository dashboardRepository = DashboardRepository(webService: webService);
   final ClassRepository classRepository = ClassRepository(webService: webService);
@@ -140,7 +138,7 @@ class MyApp extends StatelessWidget {
         return BlocBuilder<LanguageBloc, LanguageState>(
           builder: (context, langState) {
             return MaterialApp(
-              title: 'My School',
+              title: 'SchoolMate',
               theme: themeState.themeData, // ✅ Dynamic Theme
               locale: langState.locale, // ✅ Dynamic Language
               supportedLocales: const [

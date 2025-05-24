@@ -5,6 +5,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sms/bloc/auth/auth_bloc.dart';
 import 'package:sms/bloc/auth/auth_event.dart';
 import 'package:sms/bloc/auth/auth_state.dart';
+import 'package:sms/bloc/exam/exam_bloc.dart';
+import 'package:sms/repositories/exam_repository.dart';
 import 'package:sms/screens/home_screen_staff.dart';
 import 'package:sms/screens/home_screen_student.dart';
 import 'package:sms/screens/home_screen_admin.dart';
@@ -52,6 +54,9 @@ class _LoginScreenState extends State<LoginScreen> {
   Client? _selectedClient;
   bool _isLoadingClients = false;
 
+  bool _isCustomEnvironment = false;
+  String _customBaseUrl = '';
+
   @override
   void initState() {
     super.initState();
@@ -60,7 +65,7 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   // Load environment setting from preferences
-  Future<void> _loadEnvironmentSetting() async {
+  /*Future<void> _loadEnvironmentSetting() async {
     final prefs = await SharedPreferences.getInstance();
     setState(() {
       _isMockEnvironment = prefs.getBool('isMockEnvironment') ?? false;
@@ -69,7 +74,7 @@ class _LoginScreenState extends State<LoginScreen> {
           ? Constants.mockBaseUrl
           : Constants.prodBaseUrl;
     });
-  }
+  }*/
 
   // Load client data from SharedPreferences
   Future<void> _loadClientData() async {
@@ -190,7 +195,7 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   // Save environment setting to preferences
-  Future<void> _saveEnvironmentSetting(bool isMock) async {
+  /*Future<void> _saveEnvironmentSetting(bool isMock) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool('isMockEnvironment', isMock);
     setState(() {
@@ -201,9 +206,54 @@ class _LoginScreenState extends State<LoginScreen> {
           : Constants.prodBaseUrl;
 
       // If a client is selected, use its URL instead
-      /*if (_selectedClient != null) {
+      *//*if (_selectedClient != null) {
         Constants.baseUrl = _selectedClient!.baseUrl;
-      }*/
+      }*//*
+    });
+  }*/
+
+  Future<void> _saveEnvironmentSetting({
+    required bool isMock,
+    required bool isCustom,
+    required String customUrl,
+  }) async {
+    final prefs = await SharedPreferences.getInstance();
+
+    await prefs.setBool('isMockEnvironment', isMock);
+    await prefs.setBool('isCustomEnvironment', isCustom);
+    await prefs.setString('customBaseUrl', customUrl);
+
+    setState(() {
+      _isMockEnvironment = isMock;
+      _isCustomEnvironment = isCustom;
+      _customBaseUrl = customUrl;
+
+      Constants.baseUrl = isCustom
+          ? customUrl
+          : (isMock ? Constants.mockBaseUrl : Constants.prodBaseUrl);
+
+      // If using client-specific URL logic later, you can reintroduce this block:
+      /*
+    if (_selectedClient != null) {
+      Constants.baseUrl = _selectedClient!.baseUrl;
+    }
+    */
+    });
+  }
+
+
+  Future<void> _loadEnvironmentSetting() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      _isMockEnvironment = prefs.getBool('isMockEnvironment') ?? false;
+      _isCustomEnvironment = prefs.getBool('isCustomEnvironment') ?? false;
+      _customBaseUrl = prefs.getString('customBaseUrl') ?? '';
+
+      Constants.baseUrl = _isCustomEnvironment
+          ? _customBaseUrl
+          : (_isMockEnvironment
+          ? Constants.mockBaseUrl
+          : Constants.prodBaseUrl);
     });
   }
 
@@ -510,59 +560,88 @@ class _LoginScreenState extends State<LoginScreen> {
           title: Text('Environment Settings'),
           content: StatefulBuilder(
             builder: (context, setDialogState) {
-              return Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Select Environment:',
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      color: Theme.of(context).colorScheme.primary,
+              return SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Select Environment:',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: Theme.of(context).colorScheme.primary,
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 16),
-                  RadioListTile<bool>(
-                    title: Text('Production'),
-                    value: false,
-                    groupValue: _isMockEnvironment,
-                    onChanged: (value) {
-                      setDialogState(() {
-                        _isMockEnvironment = value!;
-                      });
-                    },
-                  ),
-                  RadioListTile<bool>(
-                    title: Text('Mock (Development)'),
-                    value: true,
-                    groupValue: _isMockEnvironment,
-                    onChanged: (value) {
-                      setDialogState(() {
-                        _isMockEnvironment = value!;
-                      });
-                    },
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Current Base URL:',
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
+                    const SizedBox(height: 16),
+                    RadioListTile<String>(
+                      title: Text('Production'),
+                      value: 'prod',
+                      groupValue: _isCustomEnvironment
+                          ? 'custom'
+                          : (_isMockEnvironment ? 'mock' : 'prod'),
+                      onChanged: (value) {
+                        setDialogState(() {
+                          _isMockEnvironment = false;
+                          _isCustomEnvironment = false;
+                        });
+                      },
                     ),
-                  ),
-                  Text(
-                    _selectedClient != null
-                        // ? _selectedClient!.baseUrl
-                        ? (_isMockEnvironment
-                        ? Constants.mockBaseUrl
-                        : Constants.prodBaseUrl)
-                        : (_isMockEnvironment
-                        ? Constants.mockBaseUrl
-                        : Constants.prodBaseUrl),
-                    style: TextStyle(
-                      color: Theme.of(context).colorScheme.secondary,
+                    RadioListTile<String>(
+                      title: Text('Mock (Development)'),
+                      value: 'mock',
+                      groupValue: _isCustomEnvironment
+                          ? 'custom'
+                          : (_isMockEnvironment ? 'mock' : 'prod'),
+                      onChanged: (value) {
+                        setDialogState(() {
+                          _isMockEnvironment = true;
+                          _isCustomEnvironment = false;
+                        });
+                      },
                     ),
-                  ),
-                ],
+                    RadioListTile<String>(
+                      title: Text('Custom'),
+                      value: 'custom',
+                      groupValue: _isCustomEnvironment
+                          ? 'custom'
+                          : (_isMockEnvironment ? 'mock' : 'prod'),
+                      onChanged: (value) {
+                        setDialogState(() {
+                          _isCustomEnvironment = true;
+                        });
+                      },
+                    ),
+                    if (_isCustomEnvironment)
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 12.0),
+                        child: TextField(
+                          decoration: InputDecoration(
+                            labelText: 'Custom Base URL',
+                            hintText: 'https://your-api.com',
+                          ),
+                          controller: TextEditingController(text: _customBaseUrl),
+                          onChanged: (value) {
+                            _customBaseUrl = value;
+                          },
+                        ),
+                      ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Current Base URL:',
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                    Text(
+                      _isCustomEnvironment
+                          ? _customBaseUrl
+                          : (_isMockEnvironment
+                          ? Constants.mockBaseUrl
+                          : Constants.prodBaseUrl),
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.secondary,
+                      ),
+                    ),
+                  ],
+                ),
               );
             },
           ),
@@ -573,13 +652,24 @@ class _LoginScreenState extends State<LoginScreen> {
             ),
             ElevatedButton(
               onPressed: () {
-                _saveEnvironmentSetting(_isMockEnvironment);
+                final baseUrl = _isCustomEnvironment
+                    ? _customBaseUrl
+                    : (_isMockEnvironment
+                    ? Constants.mockBaseUrl
+                    : Constants.prodBaseUrl);
+
+                _saveEnvironmentSetting(
+                  isMock: _isMockEnvironment,
+                  isCustom: _isCustomEnvironment,
+                  customUrl: _customBaseUrl,
+                );
+
+                Constants.baseUrl = baseUrl;
                 Navigator.pop(context);
-                // Show a confirmation snackbar
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
                     content: Text(
-                      'Environment changed to ${_isMockEnvironment ? 'Mock' : 'Production'}',
+                      'Environment set to ${_isCustomEnvironment ? 'Custom' : (_isMockEnvironment ? 'Mock' : 'Production')}',
                     ),
                     behavior: SnackBarBehavior.floating,
                     shape: RoundedRectangleBorder(
@@ -1130,6 +1220,7 @@ class _LoginScreenState extends State<LoginScreen> {
     final HolidayRepository holidayRepository = HolidayRepository(webService: webService);
     final PostRepository postRepository = PostRepository(webService: webService);
     final FeedRepository feedRepository = FeedRepository(webService: webService);
+    final ExamRepository examRepository = ExamRepository(webService: webService);
 
     switch (selectedUser.userType) {
       case 'Student':
@@ -1168,6 +1259,9 @@ class _LoginScreenState extends State<LoginScreen> {
             ),
             BlocProvider<FeedBloc>(
               create: (context) => FeedBloc(feedRepository: feedRepository),
+            ),
+            BlocProvider<ExamBloc>(
+              create: (context) => ExamBloc(examRepository: examRepository),
             ),
           ],
           child: HomeScreenAdmin(user: selectedUser),

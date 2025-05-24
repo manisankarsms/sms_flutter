@@ -84,7 +84,7 @@ final allModules = [
     permissionKey: 'holidays',
     name: 'Holiday Calendar',
     icon: Icons.event_rounded,
-    screenBuilder: (_) => HolidayScreen(),
+    screenBuilder: (user) => HolidayScreen(user: user,),
   ),
   NavigationModule(
     permissionKey: 'posts',

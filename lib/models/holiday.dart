@@ -1,17 +1,16 @@
-import 'package:equatable/equatable.dart';
-
-class Holiday extends Equatable {
+// holiday.dart
+class Holiday {
   final int id;
   final String name;
-  final String date;
-  final String description;
+  final String date; // Format: 'yyyy-MM-dd'
+  final String? description;
   final bool isPublicHoliday;
 
   Holiday({
     required this.id,
     required this.name,
     required this.date,
-    required this.description,
+    this.description,
     required this.isPublicHoliday,
   });
 
@@ -21,7 +20,7 @@ class Holiday extends Equatable {
       name: json['name'],
       date: json['date'],
       description: json['description'],
-      isPublicHoliday: json['isPublicHoliday'],
+      isPublicHoliday: json['isPublicHoliday'] ?? false,
     );
   }
 
@@ -35,6 +34,19 @@ class Holiday extends Equatable {
     };
   }
 
-  @override
-  List<Object?> get props => [id, name, date, description, isPublicHoliday];
+  Holiday copyWith({
+    int? id,
+    String? name,
+    String? date,
+    String? description,
+    bool? isPublicHoliday,
+  }) {
+    return Holiday(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      date: date ?? this.date,
+      description: description ?? this.description,
+      isPublicHoliday: isPublicHoliday ?? this.isPublicHoliday,
+    );
+  }
 }

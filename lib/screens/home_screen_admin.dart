@@ -180,7 +180,7 @@ class _HomeScreenAdminState extends State<HomeScreenAdmin> {
       StaffsScreen(),
       const Center(child: Text('Students - Development In Progress')),
       ExamsListScreen(),
-      HolidayScreen(),
+      HolidayScreen(user: user),
       PostsScreen(),
       AdminFeesScreen(),
       ThemeScreen(),
