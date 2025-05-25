@@ -45,12 +45,10 @@ class PostBloc extends Bloc<PostEvent, PostState> {
       emit(PostOperationInProgress(List.from(_posts), "Adding post..."));
 
       // Simulate adding the post
-      final createdPost = await postRepository.addPost(event.post);
-      _posts.insert(0, createdPost);  // Update local cache
-
+      await postRepository.addPost(event.post);
       // Emit success
       emit(PostOperationSuccess(List.from(_posts), "Post added successfully!"));
-
+      add(LoadPosts());
       // Emit PostsLoaded to reload the list and update UI
       emit(PostsLoaded(List.from(_posts)));
     } catch (e) {

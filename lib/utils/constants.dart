@@ -1,5 +1,5 @@
 class Constants {
-  static String baseUrl = mockBaseUrl;
+  static String baseUrl = '';
   static const String prodBaseUrl = 'https://sms-50025300844.development.catalystappsail.in'; //Zoho Catalyst
   static const String mockBaseUrl = 'https://mock.apidog.com/m1/820032-799426-default'; //ApiDog
   // static const String baseUrl = 'https://0ceba48b-6fa5-45d1-9520-4d0792c8d123.mock.pstmn.io'; //Postman

@@ -78,19 +78,6 @@ class PostWidget extends StatelessWidget {
               post.content,
             ),
           ),
-          if (post.imageUrl != null && post.imageUrl!.isNotEmpty)
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(8),
-                child: Image.network(
-                  post.imageUrl!,
-                  fit: BoxFit.cover,
-                  errorBuilder: (context, error, stackTrace) =>
-                  const SizedBox(),
-                ),
-              ),
-            ),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             child: Row(
@@ -109,7 +96,7 @@ class PostWidget extends StatelessWidget {
                   ],
                 ),
                 Text(
-                  "${post.createdAt.day}/${post.createdAt.month}/${post.createdAt.year}",
+                  post.createdAt,
                   style: const TextStyle(color: Colors.grey, fontSize: 12),
                 ),
               ],

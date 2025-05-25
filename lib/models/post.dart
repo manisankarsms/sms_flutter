@@ -2,17 +2,15 @@ class Post {
   final int? id;
   final String title;
   final String content;
-  final DateTime createdAt;
+  final String createdAt;
   final String author;
-  final String? imageUrl;
 
   const Post({
     required this.id,
     required this.title,
     required this.content,
     required this.author,
-    required this.createdAt,
-    this.imageUrl,
+    required this.createdAt
   });
 
   factory Post.fromJson(Map<String, dynamic> json) {
@@ -21,8 +19,7 @@ class Post {
       title: json['title'],
       content: json['content'],
       author: json['author'],
-      createdAt: DateTime.parse(json['created_at']),
-      imageUrl: json['image_url'],
+      createdAt: (json['createdAt']),
     );
   }
 
@@ -32,8 +29,7 @@ class Post {
       'title': title,
       'content': content,
       'author': author,
-      'created_at': createdAt.toIso8601String(),
-      'image_url': imageUrl,
+      'createdAt': createdAt,
     };
   }
 }

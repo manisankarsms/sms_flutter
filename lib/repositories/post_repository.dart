@@ -16,7 +16,7 @@ class PostRepository {
         print("Fetch Posts API Response: $responseString");
       }
       final Map<String, dynamic> response = jsonDecode(responseString);
-      if (response['status'] != 1) {
+      if (response['status'] != 'success') {
         throw Exception(response['message'] ?? 'Failed to fetch posts');
       }
       final List<dynamic> postsJson = response['posts'];
@@ -29,7 +29,7 @@ class PostRepository {
     }
   }
 
-  Future<Post> addPost(Post newPost) async {
+  Future<void> addPost(Post newPost) async {
     try {
       final String postJson = jsonEncode(newPost.toJson());
       final responseString = await webService.postData('admin/posts', postJson);
@@ -40,19 +40,9 @@ class PostRepository {
 
       final Map<String, dynamic> response = jsonDecode(responseString);
 
-      if (response['status'] != 1) {
+      if (response['status'] != 'success') {
         throw Exception(response['message'] ?? response['description'] ?? 'Failed to add post');
       }
-
-      // Create a Post object from the response data
-      return Post(
-        id: response['id'],
-        title: response['title'],
-        content: response['content'],
-        author: response['author'],
-        createdAt: DateTime.parse(response['created_at']),
-        imageUrl: response['image_url'],
-      );
     } catch (e) {
       if (kDebugMode) {
         print("Error adding post: $e");
@@ -69,7 +59,7 @@ class PostRepository {
         print("Update Post API Response: $responseString");
       }
       final Map<String, dynamic> response = jsonDecode(responseString);
-      if (response['status'] != 1) {
+      if (response['status'] != 'success') {
         throw Exception(response['message'] ?? 'Failed to update post');
       }
     } catch (e) {
@@ -90,7 +80,7 @@ class PostRepository {
         print("Delete Post API Response: $responseString");
       }
       final Map<String, dynamic> response = jsonDecode(responseString);
-      if (response['status'] != 1) {
+      if (response['status'] != 'success') {
         throw Exception(response['message'] ?? 'Failed to delete post');
       }
     } catch (e) {
@@ -99,18 +89,5 @@ class PostRepository {
       }
       throw Exception('Failed to delete post: $e');
     }
-  }
-
-  // Mock implementation methods (unchanged)
-  Future<void> addPostMock(Post newPost) async {
-    await Future.delayed(Duration(seconds: 1));
-  }
-
-  Future<void> updatePostMock(Post post) async {
-    await Future.delayed(Duration(seconds: 1));
-  }
-
-  Future<void> deletePostMock(String postId) async {
-    await Future.delayed(Duration(seconds: 1));
   }
 }

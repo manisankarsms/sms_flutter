@@ -62,13 +62,24 @@ class _PostsScreenState extends State<PostsScreen> {
             icon: Icon(isEdit ? Icons.save : Icons.add),
             label: Text(isEdit ? "Update" : "Add"),
             onPressed: () {
+              // Validate input
+              if (_titleController.text.trim().isEmpty ||
+                  _contentController.text.trim().isEmpty) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text("Please fill in both title and content"),
+                    backgroundColor: Colors.red,
+                  ),
+                );
+                return;
+              }
+
               final post = Post(
-                id: existingPost?.id,
-                title: _titleController.text,
-                content: _contentController.text,
+                id: isEdit ? existingPost.id : 0,
+                title: _titleController.text.trim(),
+                content: _contentController.text.trim(),
                 author: "Admin",
-                createdAt: DateTime.now(),
-                imageUrl: null,
+                createdAt: DateTime.now().toString(),
               );
 
               if (isEdit) {
@@ -109,6 +120,51 @@ class _PostsScreenState extends State<PostsScreen> {
     );
   }
 
+  Widget _buildEmptyState() {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(32.0),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.post_add,
+              size: 80,
+              color: Colors.grey[400],
+            ),
+            const SizedBox(height: 16),
+            Text(
+              "No Posts Yet",
+              style: TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+                color: Colors.grey[600],
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              "Create your first post to get started!",
+              style: TextStyle(
+                fontSize: 16,
+                color: Colors.grey[500],
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 24),
+            ElevatedButton.icon(
+              onPressed: () => _showPostDialog(),
+              icon: const Icon(Icons.add),
+              label: const Text("Create Post"),
+              style: ElevatedButton.styleFrom(
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -121,19 +177,33 @@ class _PostsScreenState extends State<PostsScreen> {
           ),
         ],
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => _showPostDialog(),
-        child: const Icon(Icons.add),
+      floatingActionButton: BlocBuilder<PostBloc, PostState>(
+        builder: (context, state) {
+          // Only show FAB when posts are loaded (even if empty)
+          if (state is PostsLoaded) {
+            return FloatingActionButton(
+              onPressed: () => _showPostDialog(),
+              child: const Icon(Icons.add),
+            );
+          }
+          return const SizedBox.shrink();
+        },
       ),
       body: BlocConsumer<PostBloc, PostState>(
         listener: (context, state) {
           if (state is PostOperationSuccess) {
             ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text(state.message)),
+              SnackBar(
+                content: Text(state.message),
+                backgroundColor: Colors.green,
+              ),
             );
           } else if (state is PostOperationFailure) {
             ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text(state.error)),
+              SnackBar(
+                content: Text(state.error),
+                backgroundColor: Colors.red,
+              ),
             );
           }
         },
@@ -141,6 +211,11 @@ class _PostsScreenState extends State<PostsScreen> {
           if (state is PostLoading) {
             return const Center(child: CircularProgressIndicator());
           } else if (state is PostsLoaded) {
+            // Handle empty posts case
+            if (state.posts.isEmpty) {
+              return _buildEmptyState();
+            }
+
             return ListView.builder(
               padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
               itemCount: state.posts.length,
@@ -189,7 +264,7 @@ class _PostsScreenState extends State<PostsScreen> {
                                       ),
                                       const SizedBox(width: 8),
                                       Text(
-                                        "· ${DateFormat('MMM d, yyyy · h:mm a').format(post.createdAt)}",
+                                        _formatDate(post.createdAt),
                                         style: TextStyle(
                                           color: Colors.grey[600],
                                           fontSize: 14,
@@ -241,12 +316,123 @@ class _PostsScreenState extends State<PostsScreen> {
               },
             );
           } else if (state is PostOperationFailure) {
-            return Center(child: Text(state.error));
+            return Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.error_outline,
+                    size: 80,
+                    color: Colors.red[300],
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    "Error Loading Posts",
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.red[700],
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 32),
+                    child: Text(
+                      state.error,
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: Colors.grey[600],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  ElevatedButton.icon(
+                    onPressed: () => context.read<PostBloc>().add(LoadPosts()),
+                    icon: const Icon(Icons.refresh),
+                    label: const Text("Retry"),
+                  ),
+                ],
+              ),
+            );
+          } else if (state is PostOperationInProgress) {
+            // Show current posts with loading overlay
+            return Stack(
+              children: [
+                if (state.currentPosts.isNotEmpty)
+                  ListView.builder(
+                    padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+                    itemCount: state.currentPosts.length,
+                    itemBuilder: (context, index) {
+                      final post = state.currentPosts[index];
+                      return Opacity(
+                        opacity: 0.6,
+                        child: Container(
+                          margin: const EdgeInsets.only(bottom: 12),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(8),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.grey.withOpacity(0.1),
+                                spreadRadius: 1,
+                                blurRadius: 3,
+                                offset: const Offset(0, 1),
+                              ),
+                            ],
+                          ),
+                          child: Padding(
+                            padding: const EdgeInsets.all(12.0),
+                            child: Text(post.title),
+                          ),
+                        ),
+                      );
+                    },
+                  )
+                else
+                  _buildEmptyState(),
+                // Loading overlay
+                Container(
+                  color: Colors.black.withOpacity(0.3),
+                  child: Center(
+                    child: Card(
+                      child: Padding(
+                        padding: const EdgeInsets.all(16.0),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const CircularProgressIndicator(),
+                            const SizedBox(height: 12),
+                            Text(state.operation),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            );
           } else {
             return const Center(child: CircularProgressIndicator());
           }
         },
       ),
     );
+  }
+
+  String _formatDate(String dateString) {
+    try {
+      final date = DateTime.parse(dateString);
+      return DateFormat('MMM dd, yyyy HH:mm').format(date);
+    } catch (e) {
+      return dateString; // Return original string if parsing fails
+    }
+  }
+
+  @override
+  void dispose() {
+    _titleController.dispose();
+    _contentController.dispose();
+    super.dispose();
   }
 }
