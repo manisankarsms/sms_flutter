@@ -57,6 +57,45 @@ class AuthRepository {
     }
   }
 
+  Future<void> getOtp(String email) async {
+    try {
+      String request = frameGetOtpRequest(email);
+      if (kDebugMode) {
+        print(request);
+      }
+
+      await webService.postData(ApiEndpoints.loginGetOtp, request);
+
+    } catch (error) {
+      if (kDebugMode) {
+        print("Error signing in: $error");
+      }
+      rethrow;
+    }
+  }
+
+  Future<List<User>> sendOtp(String email, String otp) async {
+    try {
+      String request = frameVerifyOtpRequest(email, otp);
+      if (kDebugMode) {
+        print(request);
+      }
+
+      final data = await webService.postData(ApiEndpoints.loginVerifyOtp, request);
+      final Map<String, dynamic> jsonResponse = jsonDecode(data.toString());
+
+      // Navigate to the user list inside data
+      final List<dynamic> usersJson = jsonResponse['data']['user'];
+
+      return usersJson.map((user) => User.fromJson(user)).toList();
+    } catch (error) {
+      if (kDebugMode) {
+        print("Error signing in: $error");
+      }
+      rethrow;
+    }
+  }
+
   Future<void> logout() async {
     try {
       // await webService.postData('logout', '{}'); // Adjust API endpoint if needed

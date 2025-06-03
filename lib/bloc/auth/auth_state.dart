@@ -28,6 +28,22 @@ class AuthMultipleUsers extends AuthState {
   AuthMultipleUsers(this.users);
 }
 
+// New States
+class OtpSent extends AuthState {}
+
+class OtpVerified extends AuthState {
+  final List<User> users;
+  final User selectedUser;
+
+  OtpVerified(this.users, this.selectedUser);
+}
+
+class OtpFailure extends AuthState {
+  final String error;
+
+  OtpFailure(this.error);
+}
+
 
 class AuthFailure extends AuthState {
   final String error;

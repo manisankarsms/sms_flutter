@@ -27,7 +27,7 @@ class WebService {
       },
       body: data,
     );
-    if (response.statusCode == 200) {
+    if (response.statusCode == 200 || response.statusCode == 201) {
       if (kDebugMode) {
         print(response.body);
       }

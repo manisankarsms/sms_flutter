@@ -1,6 +1,6 @@
 class Constants {
-  static String baseUrl = '';
-  static const String prodBaseUrl = 'https://sms-50025300844.development.catalystappsail.in'; //Zoho Catalyst
+  static String baseUrl = "https://web-production-49928.up.railway.app/api/v1";
+  static const String prodBaseUrl = 'https://web-production-49928.up.railway.app/api/v1'; //Zoho Catalyst
   static const String mockBaseUrl = 'https://mock.apidog.com/m1/820032-799426-default'; //ApiDog
   // static const String baseUrl = 'https://0ceba48b-6fa5-45d1-9520-4d0792c8d123.mock.pstmn.io'; //Postman
   // static const String baseUrl = 'https://api.mockfly.dev/mocks/8bc986d0-f33b-4f0d-80cf-a9655739a6c4'; //MockFly
@@ -12,23 +12,26 @@ class Constants {
 }
 
 class ApiEndpoints {
-  static const String adminLogin = 'login/admin';
-  static const String studentLogin = 'login/student';
-  static const String staffLogin = 'login/staff';
+  static const String adminLogin = 'users/login';
+  static const String studentLogin = 'users/login';
+  static const String staffLogin = 'users/login';
+
+  static const String loginGetOtp = 'users/login/send-otp';
+  static const String loginVerifyOtp = 'users/login/verify-otp';
 
   static const String adminDashboard = 'admin/dashboard';
   static const String login = 'login';
   static const String studentFeed = 'students/feed';
   static const String adminHolidays = 'holidays';
-  static const String adminPosts = 'admin/posts';
+  static const String adminPosts = 'posts';
   static const String adminStaffs = 'admin/staffs';
   static const String adminStudents = 'admin/students';
   static const String staffAttendance = 'staff/attendance';
 
-  static const String complaints = "admin/complaints";
-  static const String addComplaint = "api/complaints";
-  static const String updateComplaintStatus = "api/complaints/update-status";
-  static const String addComplaintComment = "api/complaints/comment";
+  static const String complaints = "complaints";
+  static const String addComplaint = "complaints";
+  static const String updateComplaintStatus = "complaints/status";
+  static const String addComplaintComment = "complaints/comment";
 
   static const String books = 'books';
   static const String addBook = 'books/add';

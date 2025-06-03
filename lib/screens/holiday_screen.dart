@@ -21,7 +21,7 @@ class HolidayScreen extends StatelessWidget {
         title: const Text('Holidays'),
         elevation: 0,
         actions: [
-          if (user.userType == 'Admin')
+          if (user.role.toLowerCase() == 'admin')
             IconButton(
               icon: const Icon(Icons.add),
               onPressed: () => _showHolidayDialog(context),
@@ -125,7 +125,7 @@ class HolidayScreen extends StatelessWidget {
           ),
         ],
       ),
-      floatingActionButton: user.userType == 'Admin'
+      floatingActionButton: user.role.toLowerCase() == 'admin'
           ? BlocBuilder<HolidayBloc, HolidayState>(
         builder: (context, state) {
           return FloatingActionButton(
@@ -192,7 +192,7 @@ class HolidayScreen extends StatelessWidget {
             const Icon(Icons.event_busy, size: 64, color: Colors.grey),
             const SizedBox(height: 16),
             const Text('No holidays available'),
-            if (user.userType == 'Admin') ...[
+            if (user.role.toLowerCase() == 'admin') ...[
               const SizedBox(height: 16),
               ElevatedButton(
                 onPressed: () => _showHolidayDialog(context),
@@ -476,7 +476,7 @@ class HolidayScreen extends StatelessWidget {
                   'holiday_${holiday.id}_${holiday.name ?? "unnamed"}_${DateTime
                       .now()
                       .millisecondsSinceEpoch}'),
-              direction: (user.userType == 'Admin' && !state.isOperating)
+              direction: (user.role.toLowerCase() == 'admin' && !state.isOperating)
                   ? DismissDirection.endToStart
                   : DismissDirection.none,
               background: Container(
@@ -486,7 +486,7 @@ class HolidayScreen extends StatelessWidget {
                 child: const Icon(Icons.delete, color: Colors.white),
               ),
               confirmDismiss: (direction) async {
-                if (user.userType != 'Admin' || state.isOperating) return false;
+                if (user.role.toLowerCase() != 'admin' || state.isOperating) return false;
                 return await _showDeleteConfirmation(context, holiday);
               },
               onDismissed: (direction) async {
@@ -513,9 +513,9 @@ class HolidayScreen extends StatelessWidget {
                       fontWeight: FontWeight.bold, fontSize: 16),
                 ),
                 subtitle: _buildHolidaySubtitle(holiday, holidayDate),
-                trailing: user.userType == 'Admin' ? _buildAdminActions(
+                trailing: user.role.toLowerCase() == 'admin' ? _buildAdminActions(
                     context, state, holiday) : null,
-                onTap: (user.userType == 'Admin' && !state.isOperating)
+                onTap: (user.role.toLowerCase() == 'admin' && !state.isOperating)
                     ? () => _showHolidayDialog(context, holiday: holiday)
                     : null,
               ),

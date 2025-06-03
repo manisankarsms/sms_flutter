@@ -41,14 +41,23 @@ class LoginScreen extends StatefulWidget {
   _LoginScreenState createState() => _LoginScreenState();
 }
 
-class _LoginScreenState extends State<LoginScreen> {
-  final _formKey = GlobalKey<FormState>();
-  String _email = '';
+class _LoginScreenState extends State<LoginScreen>
+    with SingleTickerProviderStateMixin {
+  final _mobileFormKey = GlobalKey<FormState>();
+  final _otpFormKey = GlobalKey<FormState>();
+
+  // Mobile/Password Login Fields
+  String _mobile = '';
   String _password = '';
-  String _userType = 'Student';
+
+  // Email/OTP Login Fields
+  String _email = '';
+  String _otp = '';
+  bool _isOtpSent = false;
+
   bool _isLoading = false;
   bool _obscurePassword = true;
-  bool _isMockEnvironment = false; // Track the current environment
+  bool _isMockEnvironment = false;
   bool _showDebugConsole = false;
   List<Client> _clients = [];
   Client? _selectedClient;
@@ -57,29 +66,44 @@ class _LoginScreenState extends State<LoginScreen> {
   bool _isCustomEnvironment = false;
   String _customBaseUrl = '';
 
+  // Tab controller
+  late TabController _tabController;
+  int _currentTabIndex = 0;
+
   @override
   void initState() {
     super.initState();
+    _tabController = TabController(length: 2, vsync: this);
+    _tabController.addListener(() {
+      setState(() {
+        _currentTabIndex = _tabController.index;
+        // Reset form state when switching tabs
+        _resetFormStates();
+      });
+    });
     _loadEnvironmentSetting();
     _loadClientData();
   }
 
-  // Load environment setting from preferences
-  /*Future<void> _loadEnvironmentSetting() async {
-    final prefs = await SharedPreferences.getInstance();
-    setState(() {
-      _isMockEnvironment = prefs.getBool('isMockEnvironment') ?? false;
-      // Update the Constants.baseUrl upon initialization
-      Constants.baseUrl = _isMockEnvironment
-          ? Constants.mockBaseUrl
-          : Constants.prodBaseUrl;
-    });
-  }*/
+  @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
+  }
+
+  void _resetFormStates() {
+    _mobile = '';
+    _password = '';
+    _email = '';
+    _otp = '';
+    _isOtpSent = false;
+    _mobileFormKey.currentState?.reset();
+    _otpFormKey.currentState?.reset();
+  }
 
   // Load client data from SharedPreferences
   Future<void> _loadClientData() async {
     if (kIsWeb) {
-      // Skip client data loading on web
       return;
     }
 
@@ -92,24 +116,17 @@ class _LoginScreenState extends State<LoginScreen> {
     final selectedClientId = prefs.getString('selectedClientId');
 
     if (clientsJson != null) {
-      // Deserialize clients from JSON
       final clientsList = Client.fromJsonList(clientsJson);
 
       setState(() {
         _clients = clientsList;
 
-        // Find the previously selected client if it exists
         if (selectedClientId != null) {
-          // Using try-catch instead of firstWhere with orElse
           try {
             _selectedClient = _clients.firstWhere(
                   (client) => client.id == selectedClientId,
             );
-
-            // If we found a selected client, update the base URL
-            // Constants.baseUrl = _selectedClient!.baseUrl;
           } catch (e) {
-            // Client not found in the list, so no selected client
             _selectedClient = null;
           }
         }
@@ -117,15 +134,12 @@ class _LoginScreenState extends State<LoginScreen> {
         _isLoadingClients = false;
       });
 
-      // Only show client selection dialog if no client is selected and there are clients available
       if (_selectedClient == null && _clients.isNotEmpty) {
-        // Use a post-frame callback to avoid calling setState during build
         WidgetsBinding.instance.addPostFrameCallback((_) {
-          _showClientSelectionDialog();
+          // _showClientSelectionDialog();
         });
       }
     } else {
-      // No stored clients, fetch from API
       await _fetchClientData();
     }
   }
@@ -143,7 +157,6 @@ class _LoginScreenState extends State<LoginScreen> {
 
       final clients = await authRepository.fetchClients();
 
-      // Save to SharedPreferences
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString('clients', Client.toJsonList(clients));
 
@@ -152,16 +165,14 @@ class _LoginScreenState extends State<LoginScreen> {
         _isLoadingClients = false;
       });
 
-      // Show the client selection dialog if clients were loaded
       if (_clients.isNotEmpty) {
         WidgetsBinding.instance.addPostFrameCallback((_) {
-          _showClientSelectionDialog();
+          // _showClientSelectionDialog();
         });
       }
     } catch (e) {
       setState(() {
         _isLoadingClients = false;
-        // Don't empty _clients list on error, keeping previous state
       });
 
       ScaffoldMessenger.of(context).showSnackBar(
@@ -171,7 +182,6 @@ class _LoginScreenState extends State<LoginScreen> {
         ),
       );
 
-      // Add logging for debugging
       print('Error fetching client data: $e');
     }
   }
@@ -180,7 +190,7 @@ class _LoginScreenState extends State<LoginScreen> {
   Future<void> _resetClientData() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove('clients');
-    await prefs.remove('selectedClientId');  // Also remove the selected client ID
+    await prefs.remove('selectedClientId');
 
     setState(() {
       _clients = [];
@@ -190,27 +200,8 @@ class _LoginScreenState extends State<LoginScreen> {
           : Constants.prodBaseUrl;
     });
 
-    // Fetch fresh client data
     _fetchClientData();
   }
-
-  // Save environment setting to preferences
-  /*Future<void> _saveEnvironmentSetting(bool isMock) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool('isMockEnvironment', isMock);
-    setState(() {
-      _isMockEnvironment = isMock;
-      // Update the baseUrl when the setting changes
-      Constants.baseUrl = isMock
-          ? Constants.mockBaseUrl
-          : Constants.prodBaseUrl;
-
-      // If a client is selected, use its URL instead
-      *//*if (_selectedClient != null) {
-        Constants.baseUrl = _selectedClient!.baseUrl;
-      }*//*
-    });
-  }*/
 
   Future<void> _saveEnvironmentSetting({
     required bool isMock,
@@ -231,16 +222,8 @@ class _LoginScreenState extends State<LoginScreen> {
       Constants.baseUrl = isCustom
           ? customUrl
           : (isMock ? Constants.mockBaseUrl : Constants.prodBaseUrl);
-
-      // If using client-specific URL logic later, you can reintroduce this block:
-      /*
-    if (_selectedClient != null) {
-      Constants.baseUrl = _selectedClient!.baseUrl;
-    }
-    */
     });
   }
-
 
   Future<void> _loadEnvironmentSetting() async {
     final prefs = await SharedPreferences.getInstance();
@@ -277,10 +260,10 @@ class _LoginScreenState extends State<LoginScreen> {
 
         if (state is AuthFailure) {
           _showErrorSnackbar(state.error);
-        } if (state is AuthAuthenticated) {
+        } else if (state is AuthAuthenticated) {
           _navigateToHomeScreen(context, state.users, state.activeUser);
         } else if (state is AuthMultipleUsers) {
-          _navigateToHomeScreen(context, state.users, null); // Call user selection dialog
+          _navigateToHomeScreen(context, state.users, null);
         } else if (state is AuthUnauthenticated) {
           if (ModalRoute.of(context)?.settings.name != '/login') {
             Navigator.pushAndRemoveUntil(
@@ -289,6 +272,15 @@ class _LoginScreenState extends State<LoginScreen> {
                   (route) => false,
             );
           }
+        } else if (state is OtpSent) {
+          setState(() {
+            _isOtpSent = true;
+          });
+          _showSuccessSnackbar('OTP sent to your email');
+        } else if (state is OtpVerified) {
+          _navigateToHomeScreen(context, state.users, state.selectedUser);
+        } else if (state is OtpFailure) {
+          _showErrorSnackbar(state.error);
         }
       },
       child: Scaffold(
@@ -304,8 +296,7 @@ class _LoginScreenState extends State<LoginScreen> {
               onPressed: () => _toggleDebugConsole(),
               tooltip: 'Debug Console',
             ),
-            // Reset client data (only for mobile)
-            if (!kIsWeb && (!_isLoadingClients || _clients.isNotEmpty))
+            /*if (!kIsWeb && (!_isLoadingClients || _clients.isNotEmpty))
               IconButton(
                 icon: Icon(
                   Icons.refresh,
@@ -314,7 +305,6 @@ class _LoginScreenState extends State<LoginScreen> {
                 onPressed: _isLoadingClients ? null : () => _showResetConfirmationDialog(),
                 tooltip: 'Reset Client Data',
               ),
-            // Change client button
             if (!kIsWeb && (!_isLoadingClients || _clients.isNotEmpty))
               IconButton(
                 icon: Icon(
@@ -323,8 +313,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
                 onPressed: _isLoadingClients ? null : () => _showClientSelectionDialog(),
                 tooltip: 'Change School',
-              ),
-            // Settings button
+              ),*/
             IconButton(
               icon: Icon(
                 Icons.settings,
@@ -337,7 +326,6 @@ class _LoginScreenState extends State<LoginScreen> {
         ),
         body: Stack(
           children: [
-            // Main login content
             SafeArea(
               child: Container(
                 decoration: BoxDecoration(
@@ -365,8 +353,6 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
               ),
             ),
-
-            // Debug console overlay
             if (_showDebugConsole) DebugConsoleOverlay(),
           ],
         ),
@@ -390,163 +376,723 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
-  void _showResetConfirmationDialog() {
+  Widget _buildWebLayout(ThemeData theme, AuthBloc authBloc) {
+    return Center(
+      child: Container(
+        width: 1000,
+        margin: const EdgeInsets.symmetric(vertical: 32),
+        child: Card(
+          elevation: 4,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(24),
+          ),
+          child: Row(
+            children: [
+              Expanded(
+                flex: 5,
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: theme.colorScheme.primary.withOpacity(0.8),
+                    borderRadius: const BorderRadius.only(
+                      topLeft: Radius.circular(24),
+                      bottomLeft: Radius.circular(24),
+                    ),
+                  ),
+                  padding: const EdgeInsets.all(40),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _buildLogo(size: 120),
+                      const SizedBox(height: 40),
+                      Text(
+                        'School Management System',
+                        style: theme.textTheme.headlineMedium?.copyWith(
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      Text(
+                        AppLocalizations.of(context)?.app_description ??
+                            'Manage your educational journey efficiently with our comprehensive school management platform.',
+                        style: theme.textTheme.bodyLarge?.copyWith(
+                          color: Colors.white.withOpacity(0.8),
+                        ),
+                      ),
+                      const SizedBox(height: 40),
+                      Wrap(
+                        spacing: 24,
+                        runSpacing: 16,
+                        children: [
+                          _buildFeatureItem(
+                              Icons.security,
+                              AppLocalizations.of(context)?.secure_access ??
+                                  'Secure Access'),
+                          _buildFeatureItem(
+                              Icons.devices,
+                              AppLocalizations.of(context)?.cross_platform ??
+                                  'Cross-Platform'),
+                          _buildFeatureItem(
+                              Icons.analytics,
+                              AppLocalizations.of(context)?.real_time_reports ??
+                                  'Real-time Reports'),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              Expanded(
+                flex: 4,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 32),
+                  child: _buildLoginForm(theme, authBloc, isWeb: true),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildMobileLayout(ThemeData theme, AuthBloc authBloc) {
+    return Padding(
+      padding: const EdgeInsets.all(24.0),
+      child: _buildLoginForm(theme, authBloc, isWeb: false),
+    );
+  }
+
+  Widget _buildLogo({double size = 100.0}) {
+    Widget imageWidget;
+
+    if (_selectedClient != null && _selectedClient!.logoUrl.isNotEmpty) {
+      imageWidget = Image.network(
+        _selectedClient!.logoUrl,
+        width: size,
+        height: size,
+        fit: BoxFit.contain,
+        errorBuilder: (context, error, stackTrace) => Image.asset(
+          'assets/images/students.png',
+          width: size,
+          height: size,
+        ),
+        loadingBuilder: (context, child, loadingProgress) {
+          if (loadingProgress == null) return child;
+          return SizedBox(
+            width: size,
+            height: size,
+            child: Center(
+              child: CircularProgressIndicator(
+                value: loadingProgress.expectedTotalBytes != null
+                    ? loadingProgress.cumulativeBytesLoaded /
+                    loadingProgress.expectedTotalBytes!
+                    : null,
+                color: Theme.of(context).colorScheme.primary,
+              ),
+            ),
+          );
+        },
+      );
+    } else {
+      imageWidget = Image.asset(
+        'assets/images/students.png',
+        width: size,
+        height: size,
+      );
+    }
+
+    return Container(
+      padding: const EdgeInsets.all(4),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surface,
+        borderRadius: BorderRadius.circular(4),
+        boxShadow: [
+          BoxShadow(
+            color: Theme.of(context).shadowColor.withOpacity(0.1),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: imageWidget,
+    );
+  }
+
+  Widget _buildLoginForm(ThemeData theme, AuthBloc authBloc, {required bool isWeb}) {
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        if (!isWeb) ...[
+          Center(
+            child: Hero(
+              tag: 'logo',
+              child: _buildLogo(),
+            ),
+          ),
+          const SizedBox(height: 24),
+        ],
+
+        Text(
+          _selectedClient != null
+              ? 'Welcome to \n${_selectedClient!.name}'
+              : (AppLocalizations.of(context)?.welcome ?? "Welcome"),
+          style: theme.textTheme.displaySmall?.copyWith(
+            fontWeight: FontWeight.bold,
+            color: isWeb
+                ? theme.colorScheme.primary
+                : theme.colorScheme.onBackground,
+          ),
+          textAlign: TextAlign.center,
+        ),
+        Text(
+          AppLocalizations.of(context)?.sign_in_to_continue ??
+              'Sign in to continue',
+          style: theme.textTheme.bodyLarge?.copyWith(
+            color: theme.colorScheme.onSurface.withOpacity(0.7),
+          ),
+          textAlign: TextAlign.center,
+        ),
+        const SizedBox(height: 32),
+
+        // Tab Bar
+        Container(
+          decoration: BoxDecoration(
+            color: theme.colorScheme.surface,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: theme.colorScheme.outline.withOpacity(0.2),
+            ),
+          ),
+          child: TabBar(
+            controller: _tabController,
+            indicator: BoxDecoration(
+              color: theme.colorScheme.primary,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            indicatorSize: TabBarIndicatorSize.tab,
+            labelColor: theme.colorScheme.onPrimary,
+            unselectedLabelColor: theme.colorScheme.onSurface.withOpacity(0.7),
+            labelStyle: const TextStyle(fontWeight: FontWeight.bold),
+            unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.normal),
+            tabs: const [
+              Tab(
+                icon: Icon(Icons.phone),
+                text: 'Mobile & Password',
+              ),
+              Tab(
+                icon: Icon(Icons.email),
+                text: 'Email & OTP',
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 24),
+
+        // Tab Bar View
+        SizedBox(
+          height: 350,
+          child: TabBarView(
+            controller: _tabController,
+            children: [
+              _buildMobilePasswordForm(theme, authBloc),
+              _buildEmailOtpForm(theme, authBloc),
+            ],
+          ),
+        ),
+
+        const SizedBox(height: 24),
+
+        // Language Selection
+        Container(
+          color: theme.colorScheme.surface,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+            child: LanguageSelector(),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildMobilePasswordForm(ThemeData theme, AuthBloc authBloc) {
+    return Form(
+      key: _mobileFormKey,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          _buildTextField(
+            label: 'Mobile Number',
+            prefixIcon: Icons.phone,
+            onChanged: (value) => _mobile = value,
+            validator: (value) {
+              if (value == null || value.isEmpty) {
+                return 'Please enter your mobile number';
+              }
+              if (value.length < 10) {
+                return 'Please enter a valid mobile number';
+              }
+              return null;
+            },
+            keyboardType: TextInputType.phone,
+          ),
+          const SizedBox(height: 16),
+          _buildTextField(
+            label: 'Password',
+            prefixIcon: Icons.lock_outline,
+            obscureText: _obscurePassword,
+            onChanged: (value) => _password = value,
+            validator: (value) {
+              if (value == null || value.isEmpty) {
+                return 'Please enter your password';
+              }
+              return null;
+            },
+            suffixIcon: IconButton(
+              icon: Icon(
+                _obscurePassword
+                    ? Icons.visibility_outlined
+                    : Icons.visibility_off_outlined,
+                color: theme.colorScheme.primary,
+              ),
+              onPressed: () {
+                setState(() {
+                  _obscurePassword = !_obscurePassword;
+                });
+              },
+            ),
+          ),
+          const SizedBox(height: 24),
+          ElevatedButton(
+            onPressed: _isLoading
+                ? null
+                : () {
+              if (_mobileFormKey.currentState!.validate()) {
+                _loginWithMobile(authBloc);
+              }
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: theme.colorScheme.primary,
+              foregroundColor: theme.colorScheme.onPrimary,
+              padding: const EdgeInsets.symmetric(vertical: 16),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
+              elevation: 0,
+            ),
+            child: _isLoading
+                ? const SizedBox(
+              height: 20,
+              width: 20,
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+                color: Colors.white,
+              ),
+            )
+                : Text(
+              AppLocalizations.of(context)?.login ?? 'Log In',
+              style: const TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildEmailOtpForm(ThemeData theme, AuthBloc authBloc) {
+    return Form(
+      key: _otpFormKey,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          _buildTextField(
+            label: 'Email Address',
+            prefixIcon: Icons.email_outlined,
+            onChanged: (value) => _email = value,
+            validator: (value) {
+              if (value == null || value.isEmpty) {
+                return 'Please enter your email';
+              }
+              if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(value)) {
+                return 'Please enter a valid email';
+              }
+              return null;
+            },
+            keyboardType: TextInputType.emailAddress,
+            enabled: !_isOtpSent,
+          ),
+          const SizedBox(height: 16),
+          if (!_isOtpSent) ...[
+            ElevatedButton(
+              onPressed: _isLoading
+                  ? null
+                  : () {
+                if (_otpFormKey.currentState!.validate()) {
+                  _getOtp(authBloc);
+                }
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: theme.colorScheme.secondary,
+                foregroundColor: theme.colorScheme.onSecondary,
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                elevation: 0,
+              ),
+              child: _isLoading
+                  ? const SizedBox(
+                height: 20,
+                width: 20,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  color: Colors.white,
+                ),
+              )
+                  : const Text(
+                'Send OTP',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ] else ...[
+            _buildTextField(
+              label: 'Enter OTP',
+              prefixIcon: Icons.security,
+              onChanged: (value) => _otp = value,
+              validator: (value) {
+                if (value == null || value.isEmpty) {
+                  return 'Please enter the OTP';
+                }
+                if (value.length != 6) {
+                  return 'OTP must be 6 digits';
+                }
+                return null;
+              },
+              keyboardType: TextInputType.number,
+            ),
+            const SizedBox(height: 16),
+            Row(
+              children: [
+                Expanded(
+                  child: TextButton(
+                    onPressed: _isLoading
+                        ? null
+                        : () {
+                      setState(() {
+                        _isOtpSent = false;
+                        _otp = '';
+                      });
+                    },
+                    child: Text(
+                      'Change Email',
+                      style: TextStyle(
+                        color: theme.colorScheme.secondary,
+                      ),
+                    ),
+                  ),
+                ),
+                Expanded(
+                  flex: 2,
+                  child: ElevatedButton(
+                    onPressed: _isLoading
+                        ? null
+                        : () {
+                      if (_otpFormKey.currentState!.validate()) {
+                        _verifyOtp(authBloc);
+                      }
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: theme.colorScheme.primary,
+                      foregroundColor: theme.colorScheme.onPrimary,
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      elevation: 0,
+                    ),
+                    child: _isLoading
+                        ? const SizedBox(
+                      height: 20,
+                      width: 20,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: Colors.white,
+                      ),
+                    )
+                        : const Text(
+                      'Verify OTP',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildFeatureItem(IconData icon, String text) {
+    return Row(
+      children: [
+        Icon(
+          icon,
+          color: Colors.white,
+          size: 20,
+        ),
+        const SizedBox(width: 8),
+        Text(
+          text,
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 14,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildTextField({
+    required String label,
+    required IconData prefixIcon,
+    bool obscureText = false,
+    Function(String)? onChanged,
+    String? Function(String?)? validator,
+    Widget? suffixIcon,
+    TextInputType? keyboardType,
+    bool enabled = true,
+  }) {
+    final theme = Theme.of(context);
+
+    return TextFormField(
+      obscureText: obscureText,
+      onChanged: onChanged,
+      validator: validator,
+      keyboardType: keyboardType,
+      enabled: enabled,
+      style: TextStyle(
+        color: enabled
+            ? theme.colorScheme.onSurface
+            : theme.colorScheme.onSurface.withOpacity(0.5),
+      ),
+      decoration: InputDecoration(
+        labelText: label,
+        prefixIcon: Icon(
+          prefixIcon,
+          color: enabled
+              ? theme.colorScheme.primary
+              : theme.colorScheme.primary.withOpacity(0.5),
+        ),
+        suffixIcon: suffixIcon,
+        filled: true,
+        fillColor: enabled
+            ? theme.colorScheme.surface
+            : theme.colorScheme.surface.withOpacity(0.5),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(16),
+          borderSide: BorderSide(
+            color: theme.colorScheme.outline.withOpacity(0.3),
+          ),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(16),
+          borderSide: BorderSide(
+            color: theme.colorScheme.outline.withOpacity(0.3),
+          ),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(16),
+          borderSide: BorderSide(
+            color: theme.colorScheme.primary,
+            width: 2,
+          ),
+        ),
+        errorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(16),
+          borderSide: BorderSide(
+            color: theme.colorScheme.error,
+          ),
+        ),
+        disabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(16),
+          borderSide: BorderSide(
+            color: theme.colorScheme.outline.withOpacity(0.2),
+          ),
+        ),
+        contentPadding: const EdgeInsets.symmetric(
+          vertical: 16,
+          horizontal: 16,
+        ),
+      ),
+    );
+  }
+
+  void _loginWithMobile(AuthBloc authBloc) {
+    // Since we removed user type selection, we'll use a default or derive it from the response
+    authBloc.add(LoginButtonPressed(
+      email: _mobile,
+      password: _password,
+      userType: 'Student', // Default user type, or you can modify your backend to handle this
+    ));
+  }
+
+  void _getOtp(AuthBloc authBloc) {
+    authBloc.add(GetOtpRequested(_email));
+  }
+
+  void _verifyOtp(AuthBloc authBloc) {
+    authBloc.add(VerifyOtpRequested(_email, _otp));
+  }
+
+  void _showErrorSnackbar(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: Theme.of(context).colorScheme.error,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(10),
+        ),
+        margin: const EdgeInsets.all(16),
+      ),
+    );
+  }
+
+  void _showSuccessSnackbar(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: Theme.of(context).colorScheme.error,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(10),
+        ),
+        margin: const EdgeInsets.all(16),
+      ),
+    );
+  }
+
+  void _navigateToHomeScreen(BuildContext context, List<User> users, User? activeUser) {
+    if (activeUser != null) {
+      // If an active user is already selected, navigate directly
+      _navigateBasedOnUserType(context, activeUser, users);
+    } else {
+      // Otherwise, show user selection dialog
+      _showUserSelectionDialog(context, users);
+    }
+  }
+
+  // Navigate based on user type
+  void _navigateBasedOnUserType(BuildContext context, User selectedUser, List<User> users) {
+    Widget homeScreen;
+    final WebService webService = WebService(baseUrl: Constants.baseUrl);
+    final AuthRepository authRepository = AuthRepository(webService: webService);
+    final DashboardRepository dashboardRepository = DashboardRepository(webService: webService);
+    final ClassRepository classRepository = ClassRepository(webService: webService);
+    final StudentsRepository studentsRepository = StudentsRepository(webService: webService);
+    final StaffRepository staffRepository = StaffRepository(webService: webService);
+    final HolidayRepository holidayRepository = HolidayRepository(webService: webService);
+    final PostRepository postRepository = PostRepository(webService: webService);
+    final FeedRepository feedRepository = FeedRepository(webService: webService);
+    final ExamRepository examRepository = ExamRepository(webService: webService);
+
+    switch (selectedUser.role.toLowerCase()) {
+      case Constants.student:
+        homeScreen = StudentHomeScreen(users: users, selectedUser: selectedUser);
+        break;
+      case Constants.staff:
+        homeScreen = MultiBlocProvider(
+          providers: [
+            BlocProvider<ClassesBloc>(
+              create: (context) => ClassesBloc(repository: classRepository, user: selectedUser),
+            ),
+            BlocProvider<StaffClassesBloc>(
+              create: (context) => StaffClassesBloc(repository: classRepository, user: selectedUser),
+            ),
+          ],
+          child: StaffHomeScreen(user: selectedUser),
+        );
+        break;
+      case Constants.admin:
+        homeScreen = MultiBlocProvider(
+          providers: [
+            BlocProvider<DashboardBloc>(
+              create: (context) => DashboardBloc(repository: dashboardRepository),
+            ),
+            BlocProvider<ClassesBloc>(
+              create: (context) => ClassesBloc(repository: classRepository, user: selectedUser),
+            ),
+            BlocProvider<StaffsBloc>(
+              create: (context) => StaffsBloc(repository: staffRepository),
+            ),
+            BlocProvider<HolidayBloc>(
+              create: (context) => HolidayBloc(repository: holidayRepository),
+            ),
+            BlocProvider<PostBloc>(
+              create: (context) => PostBloc(postRepository: postRepository),
+            ),
+            BlocProvider<FeedBloc>(
+              create: (context) => FeedBloc(feedRepository: feedRepository),
+            ),
+            BlocProvider<ExamBloc>(
+              create: (context) => ExamBloc(examRepository: examRepository),
+            ),
+          ],
+          child: HomeScreenAdmin(user: selectedUser),
+        );
+        break;
+      default:
+        homeScreen = StudentHomeScreen(users: users, selectedUser: selectedUser);
+    }
+
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(builder: (context) => homeScreen),
+    );
+  }
+
+  void _showUserSelectionDialog(BuildContext context, List<User> users) {
     showDialog(
       context: context,
       builder: (context) {
         return AlertDialog(
-          title: Text('Reset Client Data'),
-          content: Text(
-              'This will clear all saved school data and fetch it again. Do you want to continue?'
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: Text('Cancel'),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                Navigator.pop(context);
-                _resetClientData();
-              },
-              child: Text('Reset'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Theme.of(context).colorScheme.error,
-                foregroundColor: Theme.of(context).colorScheme.onError,
-              ),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
-  void _showClientSelectionDialog() {
-    // Controller for the search field
-    final TextEditingController _searchController = TextEditingController();
-    // List to hold filtered clients
-    List<Client> _filteredClients = List.from(_clients);
-
-    // Function to filter clients based on search text
-    void _filterClients(String query) {
-      setState(() {
-        if (query.isEmpty) {
-          _filteredClients = List.from(_clients);
-        } else {
-          _filteredClients = _clients
-              .where((client) =>
-          client.name.toLowerCase().contains(query.toLowerCase()) ||
-              client.address.toLowerCase().contains(query.toLowerCase()))
-              .toList();
-        }
-      });
-    }
-
-    showDialog(
-      context: context,
-      barrierDismissible: _selectedClient != null, // Only allow dismissal if a client is already selected
-      builder: (context) {
-        return StatefulBuilder(
-          builder: (context, setStateDialog) {
-            return WillPopScope(
-              // Prevent back button from closing dialog if no client is selected
-              onWillPop: () async => _selectedClient != null,
-              child: AlertDialog(
-                title: Text('Select School'),
-                content: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    // Search TextField
-                    TextField(
-                      controller: _searchController,
-                      decoration: InputDecoration(
-                        hintText: 'Search by name or address',
-                        prefixIcon: Icon(Icons.search),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(8.0),
-                        ),
-                        contentPadding: EdgeInsets.symmetric(vertical: 8.0),
-                      ),
-                      onChanged: (value) {
-                        setStateDialog(() {
-                          if (value.isEmpty) {
-                            _filteredClients = List.from(_clients);
-                          } else {
-                            _filteredClients = _clients
-                                .where((client) =>
-                            client.name.toLowerCase().contains(value.toLowerCase()) ||
-                                client.address.toLowerCase().contains(value.toLowerCase()))
-                                .toList();
-                          }
-                        });
-                      },
+          title: Text("Select User"),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: users.map((user) {
+              return ListTile(
+                leading: CircleAvatar(
+                  radius: 18,
+                  backgroundColor: Theme.of(context).colorScheme.primary.withOpacity(0.2),
+                  child: Text(
+                    user.displayName.isNotEmpty ? user.displayName[0] : "?",
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.primary,
+                      fontWeight: FontWeight.bold,
                     ),
-                    SizedBox(height: 16),
-                    // Client list
-                    Flexible(
-                      child: SizedBox(
-                        width: double.maxFinite,
-                        child: _filteredClients.isEmpty
-                            ? Center(child: Text('No schools found'))
-                            : ListView.builder(
-                          shrinkWrap: true,
-                          itemCount: _filteredClients.length,
-                          itemBuilder: (context, index) {
-                            final client = _filteredClients[index];
-                            final isSelected = _selectedClient?.id == client.id;
-                            return ListTile(
-                              leading: CircleAvatar(
-                                backgroundColor: isSelected
-                                    ? Theme.of(context).colorScheme.primary
-                                    : Theme.of(context).colorScheme.primary.withOpacity(0.2),
-                                child: Text(
-                                  client.name.substring(0, 1).toUpperCase(),
-                                  style: TextStyle(
-                                    color: isSelected
-                                        ? Theme.of(context).colorScheme.onPrimary
-                                        : Theme.of(context).colorScheme.primary,
-                                  ),
-                                ),
-                              ),
-                              title: Text(client.name),
-                              subtitle: Text(client.address),
-                              selected: isSelected,
-                              onTap: () async {
-                                // Save selected client ID to SharedPreferences
-                                final prefs = await SharedPreferences.getInstance();
-                                await prefs.setString('selectedClientId', client.id);
-                                await prefs.setString('name', client.name);
-                                await prefs.setString('logoUrl', client.logoUrl);
-                                setState(() {
-                                  _selectedClient = client;
-                                  // Constants.baseUrl = client.baseUrl;
-                                });
-                                Navigator.pop(context);
-                                // Show confirmation
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                    content: Text('School changed to ${client.name}'),
-                                    behavior: SnackBarBehavior.floating,
-                                  ),
-                                );
-                              },
-                            );
-                          },
-                        ),
-                      ),
-                    ),
-                  ],
+                  ),
                 ),
-                actions: [
-                  if (_selectedClient != null) // Only show Cancel if a client is already selected
-                    TextButton(
-                      onPressed: () => Navigator.pop(context),
-                      child: Text('Cancel'),
-                    ),
-                ],
-              ),
-            );
-          },
+                title: Text(user.displayName),
+                subtitle: Text(user.role),
+                onTap: () {
+                  Navigator.pop(context); // Close dialog
+                  context.read<AuthBloc>().add(UserSelected(user, users)); // Pass all users
+                },
+              );
+            }).toList(),
+          ),
         );
       },
     );
@@ -681,632 +1227,6 @@ class _LoginScreenState extends State<LoginScreen> {
               child: Text('Save'),
             ),
           ],
-        );
-      },
-    );
-  }
-
-  Widget _buildWebLayout(ThemeData theme, AuthBloc authBloc) {
-    return Center(
-      child: Container(
-        width: 1000,
-        margin: const EdgeInsets.symmetric(vertical: 32),
-        child: Card(
-          elevation: 4,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(24),
-          ),
-          child: Row(
-            children: [
-              // Left side - Illustration/Branding
-              Expanded(
-                flex: 5,
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: theme.colorScheme.primary.withOpacity(0.8),
-                    borderRadius: const BorderRadius.only(
-                      topLeft: Radius.circular(24),
-                      bottomLeft: Radius.circular(24),
-                    ),
-                  ),
-                  padding: const EdgeInsets.all(40),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      _buildLogo(size: 120), // Display client logo if available
-                      const SizedBox(height: 40),
-                      Text('School Management System',
-                        style: theme.textTheme.headlineMedium?.copyWith(
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-                      Text(
-                        AppLocalizations.of(context)?.app_description ??
-                            'Manage your educational journey efficiently with our comprehensive school management platform.',
-                        style: theme.textTheme.bodyLarge?.copyWith(
-                          color: Colors.white.withOpacity(0.8),
-                        ),
-                      ),
-                      const SizedBox(height: 40),
-                      Wrap(
-                        spacing: 24, // Horizontal spacing
-                        runSpacing: 16, // Vertical spacing when wrapping
-                        children: [
-                          _buildFeatureItem(
-                              Icons.security,
-                              AppLocalizations.of(context)?.secure_access ??
-                                  'Secure Access'),
-                          _buildFeatureItem(
-                              Icons.devices,
-                              AppLocalizations.of(context)?.cross_platform ??
-                                  'Cross-Platform'),
-                          _buildFeatureItem(
-                              Icons.analytics,
-                              AppLocalizations.of(context)?.real_time_reports ??
-                                  'Real-time Reports'),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-
-              // Right side - Login Form
-              Expanded(
-                flex: 4,
-                child: Container(
-                  padding:
-                  const EdgeInsets.symmetric(horizontal: 40, vertical: 32),
-                  child: _buildLoginForm(theme, authBloc, isWeb: true),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildMobileLayout(ThemeData theme, AuthBloc authBloc) {
-    return Padding(
-      padding: const EdgeInsets.all(24.0),
-      child: _buildLoginForm(theme, authBloc, isWeb: false),
-    );
-  }
-
-  // Widget to display client logo or default logo
-  Widget _buildLogo({double size = 100.0}) {
-    Widget imageWidget;
-
-    if (_selectedClient != null && _selectedClient!.logoUrl.isNotEmpty) {
-      imageWidget = Image.network(
-        _selectedClient!.logoUrl,
-        width: size,
-        height: size,
-        fit: BoxFit.contain,
-        errorBuilder: (context, error, stackTrace) => Image.asset(
-          'assets/images/students.png',
-          width: size,
-          height: size,
-        ),
-        loadingBuilder: (context, child, loadingProgress) {
-          if (loadingProgress == null) return child;
-          return SizedBox(
-            width: size,
-            height: size,
-            child: Center(
-              child: CircularProgressIndicator(
-                value: loadingProgress.expectedTotalBytes != null
-                    ? loadingProgress.cumulativeBytesLoaded / loadingProgress.expectedTotalBytes!
-                    : null,
-                color: Theme.of(context).colorScheme.primary,
-              ),
-            ),
-          );
-        },
-      );
-    } else {
-      imageWidget = Image.asset(
-        'assets/images/students.png',
-        width: size,
-        height: size,
-      );
-    }
-
-    return Container(
-      padding: const EdgeInsets.all(4),
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface,
-        borderRadius: BorderRadius.circular(4),
-        boxShadow: [
-          BoxShadow(
-            color: Theme.of(context).shadowColor.withOpacity(0.1),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: imageWidget,
-    );
-  }
-
-  Widget _buildLoginForm(ThemeData theme, AuthBloc authBloc,
-      {required bool isWeb}) {
-    return Form(
-      key: _formKey,
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          if (!isWeb) ...[
-            // Mobile Logo and title
-            Center(
-              child: Hero(
-                tag: 'logo',
-                child: _buildLogo(), // Use the shared logo building function
-              ),
-            ),
-            const SizedBox(height: 24),
-          ],
-
-          Text(
-            _selectedClient != null
-                ? 'Welcome to \n${_selectedClient!.name}'
-                : (AppLocalizations.of(context)?.welcome ?? "Welcome"),
-            style: theme.textTheme.displaySmall?.copyWith(
-              fontWeight: FontWeight.bold,
-              color: isWeb
-                  ? theme.colorScheme.primary
-                  : theme.colorScheme.onBackground,
-            ),
-            textAlign: TextAlign.center,
-          ),
-          Text(
-            AppLocalizations.of(context)?.sign_in_to_continue ??
-                'Sign in to continue',
-            style: theme.textTheme.bodyLarge?.copyWith(
-              color: theme.colorScheme.onSurface.withOpacity(0.7),
-            ),
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: 16),
-
-          // User type selection
-          Card(
-            elevation: 0,
-            color: theme.colorScheme.surface,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16),
-              side: BorderSide(
-                color: theme.colorScheme.outline.withOpacity(0.2),
-              ),
-            ),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(vertical: 8.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.only(left: 16.0, top: 8.0),
-                    child: Text(
-                      'I am a:',
-                      style: theme.textTheme.titleSmall,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: _buildUserTypeOption(
-                          value: Constants.student,
-                          icon: Icons.school,
-                          label: AppLocalizations.of(context)?.student ??'Student',
-                        ),
-                      ),
-                      Expanded(
-                        child: _buildUserTypeOption(
-                          value: Constants.staff,
-                          icon: Icons.business_center,
-                          label: AppLocalizations.of(context)?.staff ?? 'Staff',
-                        ),
-                      ),
-                      Expanded(
-                        child: _buildUserTypeOption(
-                          value: Constants.admin,
-                          icon: Icons.admin_panel_settings,
-                          label: AppLocalizations.of(context)?.admin ?? 'Admin',
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-          ),
-          const SizedBox(height: 12),
-
-          // Email field
-          _buildTextField(
-            label: 'Email',
-            prefixIcon: Icons.email_outlined,
-            onChanged: (value) => _email = value,
-            validator: (value) {
-              if (value == null || value.isEmpty) {
-                return 'Please enter your email';
-              }
-              return null;
-            },
-            keyboardType: TextInputType.emailAddress,
-          ),
-          const SizedBox(height: 12),
-
-          // Password field
-          _buildTextField(
-            label: 'Password',
-            prefixIcon: Icons.lock_outline,
-            obscureText: _obscurePassword,
-            onChanged: (value) => _password = value,
-            validator: (value) {
-              if (value == null || value.isEmpty) {
-                return 'Please enter your password';
-              }
-              return null;
-            },
-            suffixIcon: IconButton(
-              icon: Icon(
-                _obscurePassword
-                    ? Icons.visibility_outlined
-                    : Icons.visibility_off_outlined,
-                color: theme.colorScheme.primary,
-              ),
-              onPressed: () {
-                setState(() {
-                  _obscurePassword = !_obscurePassword;
-                });
-              },
-            ),
-          ),
-
-          // Forgot password
-          Align(
-            alignment: Alignment.centerRight,
-            child: TextButton(
-              onPressed: () {
-                // Handle forgot password
-              },
-              child: Text(
-                AppLocalizations.of(context)?.forgot_password ??
-                    'Forgot Password?',
-                style: TextStyle(
-                  color: theme.colorScheme.primary,
-                ),
-              ),
-            ),
-          ),
-          const SizedBox(height: 24),
-
-          // Login button
-          ElevatedButton(
-            onPressed: _isLoading
-                ? null
-                : () {
-              if (_formKey.currentState!.validate()) {
-                _login(authBloc);
-              }
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: theme.colorScheme.primary,
-              foregroundColor: theme.colorScheme.onPrimary,
-              padding: const EdgeInsets.symmetric(vertical: 16),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
-              ),
-              elevation: 0,
-            ),
-            child: _isLoading
-                ? const SizedBox(
-              height: 20,
-              width: 20,
-              child: CircularProgressIndicator(
-                strokeWidth: 2,
-                color: Colors.white,
-              ),
-            )
-                : Text(
-              AppLocalizations.of(context)?.login ??
-                  'Log In',
-              style: const TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ),
-
-          const SizedBox(height: 24),
-
-          // Language Selection Dropdown (Using Bloc)
-          Container(
-            color: theme.colorScheme.surface,
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-              child: LanguageSelector(), // Updated class now looks better!
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildFeatureItem(IconData icon, String text) {
-    return Row(
-      children: [
-        Icon(
-          icon,
-          color: Colors.white,
-          size: 20,
-        ),
-        const SizedBox(width: 8),
-        Text(
-          text,
-          style: const TextStyle(
-            color: Colors.white,
-            fontSize: 14,
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildUserTypeOption({
-    required String value,
-    required IconData icon,
-    required String label,
-  }) {
-    final theme = Theme.of(context);
-    final isSelected = _userType == value;
-
-    return InkWell(
-      onTap: () {
-        setState(() {
-          _userType = value;
-        });
-      },
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 12),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: isSelected
-                    ? theme.colorScheme.primary.withOpacity(0.1)
-                    : theme.colorScheme.surface,
-                shape: BoxShape.circle,
-                border: Border.all(
-                  color: isSelected
-                      ? theme.colorScheme.primary
-                      : theme.colorScheme.outline.withOpacity(0.3),
-                  width: 2,
-                ),
-              ),
-              child: Icon(
-                icon,
-                color: isSelected
-                    ? theme.colorScheme.primary
-                    : theme.colorScheme.onSurface.withOpacity(0.6),
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: 12,
-                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                color: isSelected
-                    ? theme.colorScheme.primary
-                    : theme.colorScheme.onSurface.withOpacity(0.7),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildTextField({
-    required String label,
-    required IconData prefixIcon,
-    bool obscureText = false,
-    Function(String)? onChanged,
-    String? Function(String?)? validator,
-    Widget? suffixIcon,
-    TextInputType? keyboardType,
-  }) {
-    final theme = Theme.of(context);
-
-    return TextFormField(
-      obscureText: obscureText,
-      onChanged: onChanged,
-      validator: validator,
-      keyboardType: keyboardType,
-      style: TextStyle(color: theme.colorScheme.onSurface),
-      decoration: InputDecoration(
-        labelText: label,
-        prefixIcon: Icon(
-          prefixIcon,
-          color: theme.colorScheme.primary,
-        ),
-        suffixIcon: suffixIcon,
-        filled: true,
-        fillColor: theme.colorScheme.surface,
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
-          borderSide: BorderSide(
-            color: theme.colorScheme.outline.withOpacity(0.3),
-          ),
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
-          borderSide: BorderSide(
-            color: theme.colorScheme.outline.withOpacity(0.3),
-          ),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
-          borderSide: BorderSide(
-            color: theme.colorScheme.primary,
-            width: 2,
-          ),
-        ),
-        errorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
-          borderSide: BorderSide(
-            color: theme.colorScheme.error,
-          ),
-        ),
-        contentPadding: const EdgeInsets.symmetric(
-          vertical: 16,
-          horizontal: 16,
-        ),
-      ),
-    );
-  }
-
-  void _login(AuthBloc authBloc) {
-    authBloc.add(LoginButtonPressed(
-      email: _email,
-      password: _password,
-      userType: _userType,
-    ));
-  }
-
-  void _showErrorSnackbar(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: Theme.of(context).colorScheme.error,
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(10),
-        ),
-        margin: const EdgeInsets.all(16),
-      ),
-    );
-  }
-
-  void _navigateToHomeScreen(BuildContext context, List<User> users, User? activeUser) {
-    if (activeUser != null) {
-      // If an active user is already selected, navigate directly
-      _navigateBasedOnUserType(context, activeUser, users);
-    } else {
-      // Otherwise, show user selection dialog
-      _showUserSelectionDialog(context, users);
-    }
-  }
-
-  // Navigate based on user type
-  void _navigateBasedOnUserType(BuildContext context, User selectedUser, List<User> users) {
-    Widget homeScreen;
-    final WebService webService = WebService(baseUrl: Constants.baseUrl);
-    final AuthRepository authRepository = AuthRepository(webService: webService);
-    final DashboardRepository dashboardRepository = DashboardRepository(webService: webService);
-    final ClassRepository classRepository = ClassRepository(webService: webService);
-    final StudentsRepository studentsRepository = StudentsRepository(webService: webService);
-    final StaffRepository staffRepository = StaffRepository(webService: webService);
-    final HolidayRepository holidayRepository = HolidayRepository(webService: webService);
-    final PostRepository postRepository = PostRepository(webService: webService);
-    final FeedRepository feedRepository = FeedRepository(webService: webService);
-    final ExamRepository examRepository = ExamRepository(webService: webService);
-
-    switch (selectedUser.userType) {
-      case 'Student':
-        homeScreen = StudentHomeScreen(users: users, selectedUser: selectedUser);
-        break;
-      case 'Staff':
-        homeScreen = MultiBlocProvider(
-          providers: [
-            BlocProvider<ClassesBloc>(
-              create: (context) => ClassesBloc(repository: classRepository, user: selectedUser),
-            ),
-            BlocProvider<StaffClassesBloc>(
-              create: (context) => StaffClassesBloc(repository: classRepository, user: selectedUser),
-            ),
-          ],
-          child: StaffHomeScreen(user: selectedUser),
-        );
-        break;
-      case 'Admin':
-        homeScreen = MultiBlocProvider(
-          providers: [
-            BlocProvider<DashboardBloc>(
-              create: (context) => DashboardBloc(repository: dashboardRepository),
-            ),
-            BlocProvider<ClassesBloc>(
-              create: (context) => ClassesBloc(repository: classRepository, user: selectedUser),
-            ),
-            BlocProvider<StaffsBloc>(
-              create: (context) => StaffsBloc(repository: staffRepository),
-            ),
-            BlocProvider<HolidayBloc>(
-              create: (context) => HolidayBloc(repository: holidayRepository),
-            ),
-            BlocProvider<PostBloc>(
-              create: (context) => PostBloc(postRepository: postRepository),
-            ),
-            BlocProvider<FeedBloc>(
-              create: (context) => FeedBloc(feedRepository: feedRepository),
-            ),
-            BlocProvider<ExamBloc>(
-              create: (context) => ExamBloc(examRepository: examRepository),
-            ),
-          ],
-          child: HomeScreenAdmin(user: selectedUser),
-        );
-        break;
-      default:
-        homeScreen = StudentHomeScreen(users: users, selectedUser: selectedUser);
-    }
-
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(builder: (context) => homeScreen),
-    );
-  }
-
-  void _showUserSelectionDialog(BuildContext context, List<User> users) {
-    showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: Text("Select User"),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: users.map((user) {
-              return ListTile(
-                leading: CircleAvatar(
-                  radius: 18,
-                  backgroundColor: Theme.of(context).colorScheme.primary.withOpacity(0.2),
-                  child: Text(
-                    user.displayName.isNotEmpty ? user.displayName[0] : "?",
-                    style: TextStyle(
-                      color: Theme.of(context).colorScheme.primary,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-                title: Text(user.displayName),
-                subtitle: Text(user.userType),
-                onTap: () {
-                  Navigator.pop(context); // Close dialog
-                  context.read<AuthBloc>().add(UserSelected(user, users)); // Pass all users
-                },
-              );
-            }).toList(),
-          ),
         );
       },
     );

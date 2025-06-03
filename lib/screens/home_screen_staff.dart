@@ -406,7 +406,7 @@ class _StaffHomeScreenState extends State<StaffHomeScreen> {
           ),
           const Spacer(),
           Text(
-            "Welcome, ${widget.user.displayName} (${widget.user.userType})",
+            "Welcome, ${widget.user.displayName} (${widget.user.role})",
             style: theme.textTheme.bodyMedium?.copyWith(
                 fontWeight: FontWeight.bold, color: theme.colorScheme.primary),
           ),

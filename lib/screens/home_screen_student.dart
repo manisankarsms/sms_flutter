@@ -59,15 +59,16 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
   List<Widget> get _screens {
     return [
       const StudentFeedScreen(),
-      HolidayScreen(user: widget.selectedUser,),
+      HolidayScreen(user: widget.selectedUser),
       MessagesScreen(),
       AttendanceScreen(),
       ProfileScreen(),
-      UserFeesScreen(studentClass: _activeUser.studentData!.studentStandard), // Pass active user type
+      ProfileScreen(),
+      // UserFeesScreen(studentClass: _activeUser.studentData!.studentStandard), // Pass active user type
       ThemeScreen(),
       RulesScreen(),
       GamesScreen(),
-      ComplaintScreen(),
+      ComplaintScreen(user: widget.selectedUser),
     ];
   }
 
@@ -209,7 +210,7 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
       ),
       actions: [
         // If multiple student users exist, show Switch User option
-        if (widget.users.where((user) => user.userType == Constants.student).length > 1)
+        if (widget.users.where((user) => user.role == Constants.student).length > 1)
           PopupMenuButton<User>(
             icon: const Icon(Icons.swap_horiz, color: Colors.blue),
             tooltip: "Switch User",
@@ -219,13 +220,13 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
             onSelected: (User newUser) {
               setState(() {
                 _activeUser = newUser;
-                _screens[5] = UserFeesScreen(studentClass: _activeUser.userType);
+                _screens[5] = UserFeesScreen(studentClass: _activeUser.role);
                 _screens[4] = ProfileScreen(); // Refresh profile screen
               });
             },
             itemBuilder: (BuildContext context) {
               // Filter only Student users
-              List<User> studentUsers = widget.users.where((user) => user.userType == Constants.student).toList();
+              List<User> studentUsers = widget.users.where((user) => user.role.toLowerCase() == Constants.student).toList();
 
               return studentUsers.map((User user) {
                 final isActive = user.displayName == _activeUser.displayName;
@@ -742,7 +743,7 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
                         ),
                       ),
                       Text(
-                        _activeUser.userType,
+                        _activeUser.role,
                         style: theme.textTheme.bodySmall?.copyWith(
                           color: theme.colorScheme.onSurface.withOpacity(0.7),
                         ),
@@ -762,7 +763,7 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
                 print("Switching to user: ${value.displayName}"); // Debugging
                 setState(() {
                   _activeUser = value;
-                  _screens[5] = UserFeesScreen(studentClass: _activeUser.userType);
+                  _screens[5] = UserFeesScreen(studentClass: _activeUser.role);
                   _screens[4] = ProfileScreen(); // Refresh profile screen
                 });
               } else if (value == 'logout') {
@@ -770,7 +771,7 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
               }
             },
               itemBuilder: (context) {
-                List<User> studentUsers = widget.users.where((user) => user.userType == Constants.student).toList();
+                List<User> studentUsers = widget.users.where((user) => user.role == Constants.student).toList();
 
                 List<PopupMenuEntry<dynamic>> items = [
                   PopupMenuItem<String>(

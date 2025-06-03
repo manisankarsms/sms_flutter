@@ -491,7 +491,7 @@ class ClassDetailsScreen extends StatelessWidget {
           child: StudentsScreen(
             standard: classData.name,
             classId: classData.id,
-            userRole: user.userType,
+            userRole: user.role,
           ),
         ),
       ),

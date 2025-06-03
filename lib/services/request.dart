@@ -4,8 +4,23 @@ import 'package:sms/models/student.dart';
 
 String frameLoginRequest(String mobile, String password) {
   Map<String, dynamic> jsonMap = {
-    'username': mobile,
+    'mobileNumber': mobile,
     'password': password,
+  };
+  return jsonEncode(jsonMap);
+}
+
+String frameGetOtpRequest(String email) {
+  Map<String, dynamic> jsonMap = {
+    'email': email
+  };
+  return jsonEncode(jsonMap);
+}
+
+String frameVerifyOtpRequest(String email, String otpCode) {
+  Map<String, dynamic> jsonMap = {
+    'email': email,
+    'otpCode': otpCode,
   };
   return jsonEncode(jsonMap);
 }

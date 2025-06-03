@@ -24,3 +24,16 @@ class UserSelected extends AuthEvent {
 
 
 class LogoutRequested extends AuthEvent {} // New Logout Event
+
+class GetOtpRequested extends AuthEvent {
+  final String email;
+
+  GetOtpRequested(this.email);
+}
+
+class VerifyOtpRequested extends AuthEvent {
+  final String email;
+  final String otp;
+
+  VerifyOtpRequested(this.email, this.otp);
+}

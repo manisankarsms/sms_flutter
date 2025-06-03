@@ -48,8 +48,7 @@ import 'dev_only/debug_logger.dart';
 import 'firebase_options.dart';
 
 void main() async{
-  String url = "http://192.168.1.5:8080";
-  final WebService webService = WebService(baseUrl: url);
+  final WebService webService = WebService(baseUrl: Constants.baseUrl);
   final AuthRepository authRepository = AuthRepository(webService: webService);
   final DashboardRepository dashboardRepository = DashboardRepository(webService: webService);
   final ClassRepository classRepository = ClassRepository(webService: webService);

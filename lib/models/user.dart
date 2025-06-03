@@ -1,52 +1,68 @@
 import 'package:equatable/equatable.dart';
-import 'package:sms/models/staff.dart';
-import 'package:sms/models/student.dart';
 
 class User extends Equatable {
   final String id;
   final String email;
-  final String displayName;
-  final String userType;
-  final List<String> permissions; // e.g., ["dashboard", "staff", "library"]
-  final Student? studentData; // Nullable for student-specific fields
-  final Staff? staffData; // Nullable for staff-specific fields
+  final String firstName;
+  final String lastName;
+  final String role;
+  final String? mobileNumber;
+  final DateTime? createdAt;
+  final DateTime? updatedAt;
+  final List<String> permissions;
 
   const User({
     required this.id,
     required this.email,
-    required this.displayName,
-    required this.userType,
+    required this.firstName,
+    required this.lastName,
+    required this.role,
+    this.mobileNumber,
+    this.createdAt,
+    this.updatedAt,
     required this.permissions,
-    this.studentData,
-    this.staffData,
   });
 
-  /// **Factory method to parse JSON**
   factory User.fromJson(Map<String, dynamic> json) {
     return User(
       id: json['id'],
       email: json['email'],
-      displayName: json['displayName'],
-      userType: json['userType'],
+      firstName: json['firstName'] ?? '',
+      lastName: json['lastName'] ?? '',
+      role: json['role'] ?? '',
+      mobileNumber: json['mobileNumber'],
+      createdAt: json['createdAt'] != null ? DateTime.parse(json['createdAt']) : null,
+      updatedAt: json['updatedAt'] != null ? DateTime.tryParse(json['updatedAt']) : null,
       permissions: List<String>.from(json['permissions'] ?? []),
-      studentData: json['userType'] == 'student' ? Student.fromJson(json['studentData']) : null,
-      staffData: json['userType'] == 'staff' ? Staff.fromJson(json['staffData']) : null,
     );
   }
 
-  /// **Convert User to JSON**
   Map<String, dynamic> toJson() {
     return {
       'id': id,
       'email': email,
-      'displayName': displayName,
-      'userType': userType,
-      'permissions':permissions,
-      'studentData': studentData?.toJson(),
-      'staffData': staffData?.toJson(),
+      'firstName': firstName,
+      'lastName': lastName,
+      'role': role,
+      'mobileNumber': mobileNumber,
+      'createdAt': createdAt?.toIso8601String(),
+      'updatedAt': updatedAt?.toIso8601String(),
+      'permissions': permissions,
     };
   }
 
+  String get displayName => '$firstName $lastName';
+
   @override
-  List<Object?> get props => [id, email, displayName, userType, studentData, staffData];
+  List<Object?> get props => [
+    id,
+    email,
+    firstName,
+    lastName,
+    role,
+    mobileNumber,
+    createdAt,
+    updatedAt,
+    permissions,
+  ];
 }

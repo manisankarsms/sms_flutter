@@ -12,14 +12,11 @@ class PostRepository {
   Future<List<Post>> fetchPosts() async {
     try {
       final String responseString = await webService.fetchData(ApiEndpoints.adminPosts);
-      if (kDebugMode) {
-        print("Fetch Posts API Response: $responseString");
-      }
       final Map<String, dynamic> response = jsonDecode(responseString);
-      if (response['status'] != 'success') {
+      if (response['success'] != true) {
         throw Exception(response['message'] ?? 'Failed to fetch posts');
       }
-      final List<dynamic> postsJson = response['posts'];
+      final List<dynamic> postsJson = response['data'];
       return postsJson.map((json) => Post.fromJson(json)).toList();
     } catch (e) {
       if (kDebugMode) {
@@ -32,15 +29,11 @@ class PostRepository {
   Future<void> addPost(Post newPost) async {
     try {
       final String postJson = jsonEncode(newPost.toJson());
-      final responseString = await webService.postData('admin/posts', postJson);
-
-      if (kDebugMode) {
-        print("Add Post API Response: $responseString");
-      }
+      final responseString = await webService.postData(ApiEndpoints.adminPosts, postJson);
 
       final Map<String, dynamic> response = jsonDecode(responseString);
 
-      if (response['status'] != 'success') {
+      if (response['success'] != true) {
         throw Exception(response['message'] ?? response['description'] ?? 'Failed to add post');
       }
     } catch (e) {
@@ -54,12 +47,12 @@ class PostRepository {
   Future<void> updatePost(Post post) async {
     try {
       final String postJson = jsonEncode(post.toJson());
-      final responseString = await webService.putData('admin/posts/${post.id}', postJson);
+      final responseString = await webService.putData('posts/${post.id}', postJson);
       if (kDebugMode) {
         print("Update Post API Response: $responseString");
       }
       final Map<String, dynamic> response = jsonDecode(responseString);
-      if (response['status'] != 'success') {
+      if (response['success'] != true) {
         throw Exception(response['message'] ?? 'Failed to update post');
       }
     } catch (e) {
@@ -75,12 +68,12 @@ class PostRepository {
       if (postId == null) {
         throw Exception('Post ID is null');
       }
-      final responseString = await webService.deleteData('admin/posts/$postId');
+      final responseString = await webService.deleteData('posts/$postId');
       if (kDebugMode) {
         print("Delete Post API Response: $responseString");
       }
       final Map<String, dynamic> response = jsonDecode(responseString);
-      if (response['status'] != 'success') {
+      if (response['success'] != true) {
         throw Exception(response['message'] ?? 'Failed to delete post');
       }
     } catch (e) {

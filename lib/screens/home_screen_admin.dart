@@ -151,7 +151,7 @@ class _HomeScreenAdminState extends State<HomeScreenAdmin> {
     ];
 
     // If user is admin with no specific permissions or contains '*', show all items
-    if (widget.user.userType == "Admin" &&
+    if (widget.user.role.toLowerCase() == "admin" &&
         (widget.user.permissions == null ||
             widget.user.permissions!.isEmpty ||
             widget.user.permissions!.contains('*'))) {

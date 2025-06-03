@@ -13,6 +13,8 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     on<LoginButtonPressed>(_onLoginButtonPressed);
     on<LogoutRequested>(_onLogoutRequested);
     on<UserSelected>(_onUserSelected);
+    on<GetOtpRequested>(_onGetOtpRequested);
+    on<VerifyOtpRequested>(_onVerifyOtpRequested);
   }
 
   void _onLoginButtonPressed(LoginButtonPressed event, Emitter<AuthState> emit) async {
@@ -47,5 +49,33 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
   void _onLogoutRequested(LogoutRequested event, Emitter<AuthState> emit) async {
     await authRepository.logout(); // Ensure logout clears session/token
     emit(AuthUnauthenticated()); // Emit unauthenticated state
+  }
+
+  void _onGetOtpRequested(GetOtpRequested event, Emitter<AuthState> emit) async {
+    emit(AuthLoading());
+    try {
+      await authRepository.getOtp(event.email);
+      emit(OtpSent());
+    } catch (error) {
+      emit(OtpFailure(error.toString()));
+    }
+  }
+
+  void _onVerifyOtpRequested(VerifyOtpRequested event, Emitter<AuthState> emit) async {
+    emit(AuthLoading());
+    try {
+      final users = await authRepository.sendOtp(event.email, event.otp);
+      if (users.isNotEmpty) {
+        if (users.length == 1) {
+          emit(OtpVerified(users, users[0]));
+        } else {
+          emit(AuthMultipleUsers(users));
+        }
+      } else {
+        emit(OtpFailure("No users found."));
+      }
+    } catch (error) {
+      emit(OtpFailure(error.toString()));
+    }
   }
 }

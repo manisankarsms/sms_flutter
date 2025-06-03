@@ -27,7 +27,7 @@ class ComplaintListScreen extends StatelessWidget {
                 return Card(
                   margin: EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                   child: ListTile(
-                    title: Text(complaint.subject,
+                    title: Text(complaint.title,
                         style: TextStyle(fontWeight: FontWeight.bold)),
                     subtitle: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -72,7 +72,7 @@ class ComplaintListScreen extends StatelessWidget {
         return StatefulBuilder(
           builder: (context, setState) {
             return AlertDialog(
-              title: Text(complaint.subject),
+              title: Text(complaint.title),
               content: SingleChildScrollView(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -83,7 +83,7 @@ class ComplaintListScreen extends StatelessWidget {
                     Text(AppLocalizations.of(context)?.status ?? "Status:", style: TextStyle(fontWeight: FontWeight.bold)),
                     DropdownButton<String>(
                       value: _selectedStatus,
-                      items: ["Pending", "In Progress", "Resolved"]
+                      items: ["Open", "In Progress", "Resolved"]
                           .map((status) => DropdownMenuItem(
                         value: status,
                         child: Text(status),
@@ -101,7 +101,7 @@ class ComplaintListScreen extends StatelessWidget {
                     SizedBox(height: 8),
                     Text(AppLocalizations.of(context)?.complaint_description ?? "Description:", style: TextStyle(fontWeight: FontWeight.bold)),
                     SizedBox(height: 4),
-                    Text(complaint.description),
+                    Text(complaint.content),
                     if (complaint.isAnonymous)
                       Text(AppLocalizations.of(context)?.complaint_anonymous ?? "(Anonymous Complaint)",
                           style: TextStyle(fontSize: 12, color: Colors.red)),
