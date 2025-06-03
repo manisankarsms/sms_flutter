@@ -50,4 +50,7 @@ class ApiEndpoints {
 
   static const String features = 'admin/features';
   static const String staff = 'admin/staffs/permissions';
+
+  static const String rules = 'rules-and-regulations';
+
 }

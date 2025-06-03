@@ -66,7 +66,7 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
       ProfileScreen(),
       // UserFeesScreen(studentClass: _activeUser.studentData!.studentStandard), // Pass active user type
       ThemeScreen(),
-      RulesScreen(),
+      RulesScreen(user: widget.selectedUser),
       GamesScreen(),
       ComplaintScreen(user: widget.selectedUser),
     ];

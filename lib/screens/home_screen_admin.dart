@@ -13,6 +13,7 @@ import 'package:sms/screens/library/library_screen.dart';
 import 'package:sms/screens/new_staff_screen.dart';
 import 'package:sms/screens/new_student_screen.dart';
 import 'package:sms/screens/posts_screen.dart';
+import 'package:sms/screens/rules_screen.dart';
 import 'package:sms/screens/staffs_screen.dart';
 import 'package:sms/screens/subjects_screen.dart';
 import 'package:sms/screens/theme_screen.dart';
@@ -119,6 +120,12 @@ class _HomeScreenAdminState extends State<HomeScreenAdmin> {
         permissionKey: 'fees',
       ),
       NavigationItem(
+        name: 'Rules',
+        imagePath: 'assets/images/fees.png',
+        icon: Icons.rule,
+        permissionKey: 'rules',
+      ),
+      NavigationItem(
         name: 'Themes',
         imagePath: 'assets/images/themes.png',
         icon: Icons.color_lens_rounded,
@@ -183,6 +190,7 @@ class _HomeScreenAdminState extends State<HomeScreenAdmin> {
       HolidayScreen(user: user),
       PostsScreen(),
       AdminFeesScreen(),
+      RulesScreen(user: user),
       ThemeScreen(),
       ComplaintListScreen(),
       LibraryHomeScreen(),

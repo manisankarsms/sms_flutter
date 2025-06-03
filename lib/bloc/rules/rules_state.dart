@@ -1,13 +1,35 @@
-abstract class RulesState {}
+import 'package:equatable/equatable.dart';
 
-class RulesLoading extends RulesState {}
+enum RulesStatus { initial, loading, success, failure }
 
-class RulesLoaded extends RulesState {
+class RulesState extends Equatable {
+  final RulesStatus status;
   final List<String> rules;
-  RulesLoaded(this.rules);
-}
+  final bool isOperating;
+  final String? errorMessage;
 
-class RulesError extends RulesState {
-  final String message;
-  RulesError(this.message);
+  const RulesState({
+    this.status = RulesStatus.initial,
+    this.rules = const [],
+    this.isOperating = false,
+    this.errorMessage,
+  });
+
+  RulesState copyWith({
+    RulesStatus? status,
+    List<String>? rules,
+    bool? isOperating,
+    String? errorMessage,
+    bool clearError = false,
+  }) {
+    return RulesState(
+      status: status ?? this.status,
+      rules: rules ?? this.rules,
+      isOperating: isOperating ?? this.isOperating,
+      errorMessage: clearError ? null : (errorMessage ?? this.errorMessage),
+    );
+  }
+
+  @override
+  List<Object?> get props => [status, rules, isOperating, errorMessage];
 }

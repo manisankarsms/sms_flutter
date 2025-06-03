@@ -17,6 +17,7 @@ import 'package:sms/bloc/new_staff/new_staff_bloc.dart';
 import 'package:sms/bloc/new_student/new_student_bloc.dart';
 import 'package:sms/bloc/permissions/permissions_bloc.dart';
 import 'package:sms/bloc/post/post_bloc.dart';
+import 'package:sms/bloc/rules/rules_bloc.dart';
 import 'package:sms/bloc/subjects/subjects_bloc.dart';
 import 'package:sms/repositories/auth_repository.dart';
 import 'package:sms/repositories/class_repository.dart';
@@ -30,6 +31,7 @@ import 'package:sms/repositories/holiday_repository.dart';
 import 'package:sms/repositories/library_repository.dart';
 import 'package:sms/repositories/permission_repository.dart';
 import 'package:sms/repositories/post_repository.dart';
+import 'package:sms/repositories/rules_repository.dart';
 import 'package:sms/repositories/staff_repository.dart';
 import 'package:sms/repositories/student_repository.dart';
 import 'package:sms/repositories/students_repository.dart';
@@ -65,6 +67,7 @@ void main() async{
   final ExamRepository examRepository = ExamRepository(webService: webService);
   final ConfigurationRepository configurationRepository = ConfigurationRepository(webService: webService);
   final PermissionRepository permissionRepository = PermissionRepository(webService: webService);
+  final RulesRepository rulesRepository = RulesRepository(webService: webService);
 
   final app =
     MultiBlocProvider(
@@ -119,6 +122,9 @@ void main() async{
         ),
         BlocProvider(
           create: (context) => PermissionBloc(repo: permissionRepository),
+        ),
+        BlocProvider(
+          create: (context) => RulesBloc(repository: rulesRepository),
         ),
         RepositoryProvider(
           create: (context) => studentsRepository,

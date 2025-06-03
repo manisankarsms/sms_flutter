@@ -1,27 +1,101 @@
+import 'dart:convert';
+import '../models/rule.dart';
+import '../services/web_service.dart';
+import '../utils/constants.dart';
+
 class RulesRepository {
-  Future<List<String>> getRules() async {
-    await Future.delayed(Duration(seconds: 1)); // Simulate network delay
-    return [
-      "Students must wear the school uniform properly.",
-      "Punctuality is mandatory; students must be on time for school.",
-      "Respect teachers, staff, and fellow students at all times.",
-      "Maintain cleanliness and discipline in classrooms and school premises.",
-      "Mobile phones and electronic gadgets are not allowed without permission.",
-      "Homework and assignments must be submitted on time.",
-      "Bullying, misconduct, and disruptive behavior will not be tolerated.",
-      "Students must participate in school activities and events with discipline.",
-      "Damaging school property is strictly prohibited.",
-      "Follow all safety and emergency procedures as instructed.",
-      "Attend all classes and engage actively.",
-      "Maintain silence in libraries and study areas.",
-      "Adhere to the school's dress code for special events and sports activities.",
-      "Show kindness and inclusivity towards peers.",
-      "Seek permission before leaving the premises during school hours.",
-      "Use school resources responsibly.",
-      "Practice good hygiene, including regular handwashing.",
-      "Report issues such as bullying, damage, or safety concerns to authorities.",
-      "Participate in environmental initiatives like recycling drives.",
-      "Foster a culture of learning by helping each other and working collaboratively."
-    ];
+  final WebService webService;
+  List<Rule> _cachedRules = [];
+
+  RulesRepository({required this.webService});
+
+  Future<List<String>> fetchRules() async {
+    try {
+      final response = await webService.fetchData(ApiEndpoints.rules);
+      final Map<String, dynamic> responseData = jsonDecode(response);
+
+      if (responseData['success'] == true) {
+        final List<dynamic> rulesJson = responseData['data'] ?? [];
+        _cachedRules = rulesJson.map((json) => Rule.fromJson(json)).toList();
+
+        // Return only the rule text for backward compatibility with your current implementation
+        return _cachedRules.map((rule) => rule.rule).toList();
+      } else {
+        throw Exception('API returned success: false');
+      }
+    } catch (e) {
+      throw Exception('Failed to fetch rules: $e');
+    }
+  }
+
+  Future<String> addRule(String rule) async {
+    try {
+      final requestBody = jsonEncode({
+        'rule': rule,
+      });
+
+      final response = await webService.postData(
+        ApiEndpoints.rules,
+        requestBody,
+      );
+      final Map<String, dynamic> responseData = jsonDecode(response);
+
+      if (responseData['success'] == true) {
+        return responseData['message'] ?? 'Rule added successfully';
+      } else {
+        throw Exception(responseData['message'] ?? 'Failed to add rule');
+      }
+    } catch (e) {
+      throw Exception('Failed to add rule: $e');
+    }
+  }
+
+  Future<String> updateRule(int index, String rule) async {
+    try {
+      // Get the rule ID from cached rules using the index
+      if (index >= _cachedRules.length) {
+        throw Exception('Rule index out of bounds');
+      }
+
+      final ruleId = _cachedRules[index].id;
+      final requestBody = jsonEncode({
+        'rule': rule,
+      });
+
+      final response = await webService.putData(
+        '${ApiEndpoints.rules}/$ruleId',
+        requestBody,
+      );
+      final Map<String, dynamic> responseData = jsonDecode(response);
+
+      if (responseData['success'] == true) {
+        return responseData['message'] ?? 'Rule updated successfully';
+      } else {
+        throw Exception(responseData['message'] ?? 'Failed to update rule');
+      }
+    } catch (e) {
+      throw Exception('Failed to update rule: $e');
+    }
+  }
+
+  Future<String> deleteRule(int index) async {
+    try {
+      // Get the rule ID from cached rules using the index
+      if (index >= _cachedRules.length) {
+        throw Exception('Rule index out of bounds');
+      }
+
+      final ruleId = _cachedRules[index].id;
+      final response = await webService.deleteData('${ApiEndpoints.rules}/$ruleId');
+      final Map<String, dynamic> responseData = jsonDecode(response);
+
+      if (responseData['success'] == true) {
+        return responseData['message'] ?? 'Rule deleted successfully';
+      } else {
+        throw Exception(responseData['message'] ?? 'Failed to delete rule');
+      }
+    } catch (e) {
+      throw Exception('Failed to delete rule: $e');
+    }
   }
 }
