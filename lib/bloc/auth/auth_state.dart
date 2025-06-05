@@ -1,57 +1,51 @@
-// auth_state.dart
-
-import 'package:equatable/equatable.dart';
 import '../../models/user.dart';
 
-abstract class AuthState extends Equatable {
-  const AuthState();
-
-  @override
-  List<Object> get props => [];
-}
+abstract class AuthState {}
 
 class AuthInitial extends AuthState {}
 
 class AuthLoading extends AuthState {}
 
 class AuthAuthenticated extends AuthState {
-  final List<User> users;  // Keep all users
-  final User activeUser;   // The selected user
+  final List<User> users;
+  final User activeUser;
+  final int remainingHours;
 
-  AuthAuthenticated(this.users, this.activeUser);
+  AuthAuthenticated({
+    required this.users,
+    required this.activeUser,
+    this.remainingHours = 0,
+  });
 }
-
 
 class AuthMultipleUsers extends AuthState {
   final List<User> users;
-
   AuthMultipleUsers(this.users);
 }
 
-// New States
+class AuthUnauthenticated extends AuthState {}
+
+class AuthFailure extends AuthState {
+  final String error;
+  AuthFailure(this.error);
+}
+
 class OtpSent extends AuthState {}
 
 class OtpVerified extends AuthState {
   final List<User> users;
-  final User selectedUser;
-
+  final User? selectedUser;
   OtpVerified(this.users, this.selectedUser);
 }
 
 class OtpFailure extends AuthState {
   final String error;
-
   OtpFailure(this.error);
 }
 
+class SessionExpired extends AuthState {}
 
-class AuthFailure extends AuthState {
-  final String error;
-
-  const AuthFailure({required this.error});
-
-  @override
-  List<Object> get props => [error];
+class SessionExtended extends AuthState {
+  final int newRemainingHours;
+  SessionExtended(this.newRemainingHours);
 }
-
-class AuthUnauthenticated extends AuthState {} // New Logout State

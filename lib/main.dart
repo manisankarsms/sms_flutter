@@ -1,11 +1,9 @@
 import 'dart:ui';
 
-import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:sms/bloc/auth/auth_bloc.dart';
-import 'package:sms/bloc/classes_staff/staff_classes_bloc.dart';
 import 'package:sms/bloc/configuration/configuration_bloc.dart';
 import 'package:sms/bloc/exam/exam_bloc.dart';
 import 'package:sms/bloc/feed/feed_bloc.dart';
@@ -41,6 +39,7 @@ import 'package:sms/services/web_service.dart';
 import 'package:sms/utils/constants.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
+import 'bloc/auth/auth_event.dart';
 import 'bloc/complaint/complaint_bloc.dart';
 import 'bloc/dashboard/dashboard_bloc.dart';
 import 'bloc/language/language_state.dart';
@@ -73,7 +72,8 @@ void main() async{
     MultiBlocProvider(
       providers: [
         BlocProvider<AuthBloc>(
-          create: (context) => AuthBloc(authRepository: authRepository),
+          create: (context) => AuthBloc(authRepository: authRepository)
+            ..add(AppStarted()), // 🔥 Trigger session check on app start
         ),
         BlocProvider<DashboardBloc>(
           create: (context) => DashboardBloc(repository: dashboardRepository),

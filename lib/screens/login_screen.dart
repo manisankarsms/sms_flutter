@@ -49,11 +49,13 @@ class _LoginScreenState extends State<LoginScreen>
   // Mobile/Password Login Fields
   String _mobile = '';
   String _password = '';
+  bool _rememberMeMobile = false;
 
   // Email/OTP Login Fields
   String _email = '';
   String _otp = '';
   bool _isOtpSent = false;
+  bool _rememberMeOtp = false;
 
   bool _isLoading = false;
   bool _obscurePassword = true;
@@ -83,6 +85,7 @@ class _LoginScreenState extends State<LoginScreen>
     });
     _loadEnvironmentSetting();
     _loadClientData();
+    _loadRememberMeSettings();
   }
 
   @override
@@ -99,6 +102,44 @@ class _LoginScreenState extends State<LoginScreen>
     _isOtpSent = false;
     _mobileFormKey.currentState?.reset();
     _otpFormKey.currentState?.reset();
+  }
+
+  // Load Remember Me settings
+  Future<void> _loadRememberMeSettings() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      _rememberMeMobile = prefs.getBool('rememberMeMobile') ?? false;
+      _rememberMeOtp = prefs.getBool('rememberMeOtp') ?? false;
+
+      // Load saved credentials if remember me was enabled
+      if (_rememberMeMobile) {
+        _mobile = prefs.getString('savedMobile') ?? '';
+      }
+      if (_rememberMeOtp) {
+        _email = prefs.getString('savedEmail') ?? '';
+      }
+    });
+  }
+
+  // Save Remember Me settings
+  Future<void> _saveRememberMeSettings() async {
+    final prefs = await SharedPreferences.getInstance();
+
+    // Save mobile form settings
+    await prefs.setBool('rememberMeMobile', _rememberMeMobile);
+    if (_rememberMeMobile) {
+      await prefs.setString('savedMobile', _mobile);
+    } else {
+      await prefs.remove('savedMobile');
+    }
+
+    // Save email form settings
+    await prefs.setBool('rememberMeOtp', _rememberMeOtp);
+    if (_rememberMeOtp) {
+      await prefs.setString('savedEmail', _email);
+    } else {
+      await prefs.remove('savedEmail');
+    }
   }
 
   // Load client data from SharedPreferences
@@ -281,6 +322,10 @@ class _LoginScreenState extends State<LoginScreen>
           _navigateToHomeScreen(context, state.users, state.selectedUser);
         } else if (state is OtpFailure) {
           _showErrorSnackbar(state.error);
+        } else if (state is SessionExpired) {
+          _showWarningSnackbar('Your session has expired. Please login again.');
+        } else if (state is SessionExtended) {
+          _showSuccessSnackbar('Session extended successfully');
         }
       },
       child: Scaffold(
@@ -296,24 +341,6 @@ class _LoginScreenState extends State<LoginScreen>
               onPressed: () => _toggleDebugConsole(),
               tooltip: 'Debug Console',
             ),
-            /*if (!kIsWeb && (!_isLoadingClients || _clients.isNotEmpty))
-              IconButton(
-                icon: Icon(
-                  Icons.refresh,
-                  color: theme.colorScheme.primary,
-                ),
-                onPressed: _isLoadingClients ? null : () => _showResetConfirmationDialog(),
-                tooltip: 'Reset Client Data',
-              ),
-            if (!kIsWeb && (!_isLoadingClients || _clients.isNotEmpty))
-              IconButton(
-                icon: Icon(
-                  Icons.school,
-                  color: theme.colorScheme.primary,
-                ),
-                onPressed: _isLoadingClients ? null : () => _showClientSelectionDialog(),
-                tooltip: 'Change School',
-              ),*/
             IconButton(
               icon: Icon(
                 Icons.settings,
@@ -593,7 +620,7 @@ class _LoginScreenState extends State<LoginScreen>
 
         // Tab Bar View
         SizedBox(
-          height: 350,
+          height: 400,
           child: TabBarView(
             controller: _tabController,
             children: [
@@ -664,6 +691,32 @@ class _LoginScreenState extends State<LoginScreen>
               },
             ),
           ),
+          const SizedBox(height: 16),
+
+          // Remember Me Checkbox
+          Row(
+            children: [
+              Checkbox(
+                value: _rememberMeMobile,
+                onChanged: (value) {
+                  setState(() {
+                    _rememberMeMobile = value ?? false;
+                  });
+                },
+                activeColor: theme.colorScheme.primary,
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  'Remember me (7 days)',
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: theme.colorScheme.onSurface.withOpacity(0.7),
+                  ),
+                ),
+              ),
+            ],
+          ),
+
           const SizedBox(height: 24),
           ElevatedButton(
             onPressed: _isLoading
@@ -778,6 +831,32 @@ class _LoginScreenState extends State<LoginScreen>
               },
               keyboardType: TextInputType.number,
             ),
+            const SizedBox(height: 16),
+
+            // Remember Me Checkbox for OTP
+            Row(
+              children: [
+                Checkbox(
+                  value: _rememberMeOtp,
+                  onChanged: (value) {
+                    setState(() {
+                      _rememberMeOtp = value ?? false;
+                    });
+                  },
+                  activeColor: theme.colorScheme.primary,
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    'Remember me (7 days)',
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: theme.colorScheme.onSurface.withOpacity(0.7),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+
             const SizedBox(height: 16),
             Row(
               children: [
@@ -971,6 +1050,20 @@ class _LoginScreenState extends State<LoginScreen>
   }
 
   void _showSuccessSnackbar(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: Theme.of(context).colorScheme.error,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(10),
+        ),
+        margin: const EdgeInsets.all(16),
+      ),
+    );
+  }
+
+  void _showWarningSnackbar(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(message),
