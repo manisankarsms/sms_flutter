@@ -4,21 +4,28 @@ import 'package:sms/models/staff.dart';
 import 'package:sms/services/web_service.dart';
 import 'package:sms/utils/constants.dart';
 
+import '../models/user.dart';
+
 class StaffRepository {
   final WebService webService;
 
   StaffRepository({required this.webService});
 
   /// Fetches the list of staff members
-  Future<List<Staff>> fetchStaff() async {
+  Future<List<User>> fetchStaff() async {
     if (kDebugMode) print("Fetching staff list...");
 
     try {
-      final response = await webService.fetchData(ApiEndpoints.adminStaffs);
+      final response = await webService.fetchData(ApiEndpoints.staffUsers);
       if (kDebugMode) print("API Response: $response");
 
-      final List<dynamic> staffJson = jsonDecode(response);
-      return staffJson.map((json) => Staff.fromJson(json)).toList();
+      final Map<String, dynamic> responseJson = jsonDecode(response); // Parse JSON here
+      final List<dynamic> classesJson = responseJson['data'];
+      return classesJson.map((json) => User.fromJson(json)).toList();
+
+      /*final Map<String, dynamic> responseJson = jsonDecode(response); // Parse JSON here
+      final List<dynamic> staffJson = jsonDecode(responseJson['data']);
+      return staffJson.map((json) => User.fromJson(json)).toList();*/
     } catch (e) {
       if (kDebugMode) print("Error fetching staff: $e");
       throw Exception('Failed to fetch staff: $e');

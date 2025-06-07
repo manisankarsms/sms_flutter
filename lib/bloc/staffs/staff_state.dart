@@ -1,12 +1,13 @@
 import 'package:equatable/equatable.dart';
 import '../../models/staff.dart';
+import '../../models/user.dart';
 
 enum StaffsStatus { initial, loading, success, failure }
 
 class StaffsState extends Equatable {
   final StaffsStatus status;
-  final List<Staff> staff;
-  final List<Staff> filteredStaffs; // Add this
+  final List<User> staff;
+  final List<User> filteredStaffs; // Add this
 
   StaffsState({
     this.status = StaffsStatus.initial,
@@ -16,8 +17,8 @@ class StaffsState extends Equatable {
 
   StaffsState copyWith({
     StaffsStatus? status,
-    List<Staff>? staff,
-    List<Staff>? filteredStaffs,
+    List<User>? staff,
+    List<User>? filteredStaffs,
   }) {
     return StaffsState(
       status: status ?? this.status,

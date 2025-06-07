@@ -141,18 +141,6 @@ class SubjectsScreen extends StatelessWidget {
                         ),
                       ],
                     ),
-                    if (subject.description.isNotEmpty) ...[
-                      const SizedBox(height: 12),
-                      Text(
-                        subject.description,
-                        style: TextStyle(
-                          color: Colors.grey.shade700,
-                          fontSize: 14,
-                        ),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ],
                   ],
                 ),
               ),
@@ -262,14 +250,12 @@ class _SubjectDialogState extends State<SubjectDialog> {
     super.initState();
     _nameController = TextEditingController(text: widget.subject?.name ?? '');
     _codeController = TextEditingController(text: widget.subject?.code ?? '');
-    _descController = TextEditingController(text: widget.subject?.description ?? '');
   }
 
   @override
   void dispose() {
     _nameController.dispose();
     _codeController.dispose();
-    _descController.dispose();
     super.dispose();
   }
 
@@ -277,13 +263,11 @@ class _SubjectDialogState extends State<SubjectDialog> {
     if (_formKey.currentState!.validate()) {
       final name = _nameController.text.trim();
       final code = _codeController.text.trim();
-      final description = _descController.text.trim();
 
       final subject = Subject(
-        id: 1,
+        id: "",
         name: name,
-        code: code,
-        description: description,
+        code: code
       );
 
       final event = widget.subject == null ? AddSubject(subject) : UpdateSubject(subject);
@@ -366,19 +350,6 @@ class _SubjectDialogState extends State<SubjectDialog> {
               },
             ),
             const SizedBox(height: 16),
-            TextFormField(
-              controller: _descController,
-              decoration: InputDecoration(
-                labelText: 'Description (Optional)',
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                prefixIcon: const Icon(Icons.description),
-                alignLabelWithHint: true,
-              ),
-              maxLines: 3,
-            ),
-            const SizedBox(height: 24),
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(

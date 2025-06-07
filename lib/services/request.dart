@@ -2,6 +2,8 @@ import 'dart:convert';
 
 import 'package:sms/models/student.dart';
 
+import '../models/class.dart';
+
 String frameLoginRequest(String mobile, String password) {
   Map<String, dynamic> jsonMap = {
     'mobileNumber': mobile,
@@ -44,6 +46,14 @@ String frameAddStudentRequest(
     'email': student.email,
     'address': student.address,
     'studentStandard': student.studentStandard,
+  };
+  return jsonEncode(jsonMap);
+}
+
+String frameAddClassRequest(Class myClass) {
+  Map<String, dynamic> jsonMap = {
+    'className': myClass.className,
+    'sectionName': myClass.sectionName
   };
   return jsonEncode(jsonMap);
 }

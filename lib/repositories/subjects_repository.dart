@@ -13,7 +13,7 @@ class SubjectRepository {
     try {
       final responseString = await webService.fetchData(ApiEndpoints.subjects);
       final Map<String, dynamic> response = jsonDecode(responseString); // Decode as Map
-      final List<dynamic> subjectsJson = response['subjects']; // Extract subjects list
+      final List<dynamic> subjectsJson = response['data']; // Extract subjects list
       return subjectsJson.map((json) => Subject.fromJson(json)).toList();
     } catch (e) {
       if (kDebugMode) {
@@ -22,7 +22,6 @@ class SubjectRepository {
       throw Exception('Failed to fetch subjects: $e');
     }
   }
-
 
   Future<bool> addSubject(Subject subject) async {
     try {
@@ -48,7 +47,7 @@ class SubjectRepository {
     }
   }
 
-  Future<bool> deleteSubject(int id) async {
+  Future<bool> deleteSubject(String id) async {
     try {
       final responseString = await webService.deleteData('subjects/$id');
       return responseString.isEmpty;

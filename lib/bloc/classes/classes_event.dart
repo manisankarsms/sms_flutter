@@ -52,3 +52,7 @@ class SearchClasses extends ClassesEvent {
 class FetchStaffAndSubjects extends ClassesEvent {
   const FetchStaffAndSubjects();
 }
+
+class ClearMessages extends ClassesEvent {
+  const ClearMessages();
+}

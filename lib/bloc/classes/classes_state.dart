@@ -1,4 +1,6 @@
 import '../../models/class.dart';
+import '../../models/subject.dart';
+import '../../models/user.dart';
 
 enum ClassesStatus { initial, loading, success, failure }
 
@@ -7,12 +9,16 @@ class ClassesState {
   final List<Class> classes;
   final List<Class> filteredClasses;
   final String searchQuery;
+  final String? error;
+  final String? message;
 
   const ClassesState({
     this.status = ClassesStatus.initial,
     this.classes = const [],
     this.filteredClasses = const [],
     this.searchQuery = '',
+    this.error,
+    this.message,
   });
 
   ClassesState copyWith({
@@ -20,12 +26,24 @@ class ClassesState {
     List<Class>? classes,
     List<Class>? filteredClasses,
     String? searchQuery,
+    String? error,
+    String? message,
   }) {
     return ClassesState(
       status: status ?? this.status,
       classes: classes ?? this.classes,
       filteredClasses: filteredClasses ?? this.filteredClasses,
       searchQuery: searchQuery ?? this.searchQuery,
+      error: error,
+      message: message,
+    );
+  }
+
+  // Clear temporary messages
+  ClassesState clearMessages() {
+    return copyWith(
+      error: null,
+      message: null,
     );
   }
 }
@@ -33,12 +51,12 @@ class ClassesState {
 class StaffAndSubjectsLoading extends ClassesState {}
 
 class StaffAndSubjectsLoaded extends ClassesState {
-  final List<Map<String, dynamic>> staff;
-  final List<Map<String, dynamic>> subjects;
+  final List<User> staff;
+  final List<Subject> subjects;
 
   const StaffAndSubjectsLoaded({
     required this.staff,
-    required this.subjects
+    required this.subjects,
   });
 
   @override
@@ -46,10 +64,10 @@ class StaffAndSubjectsLoaded extends ClassesState {
 }
 
 class ClassesError extends ClassesState {
-  final String message;
+  final String errorMessage;
 
-  const ClassesError(this.message);
+  const ClassesError(this.errorMessage);
 
   @override
-  List<Object> get props => [message];
+  List<Object> get props => [errorMessage];
 }

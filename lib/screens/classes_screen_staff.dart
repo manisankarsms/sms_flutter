@@ -183,7 +183,7 @@ class ContentSizedClassCard extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            classData.name ?? 'Unnamed Class',
+                            classData.className ?? 'Unnamed Class',
                             style: Theme.of(context)
                                 .textTheme
                                 .titleMedium
@@ -193,7 +193,7 @@ class ContentSizedClassCard extends StatelessWidget {
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                           ),
-                          if (classData.staff != null &&
+                          /*if (classData.staff != null &&
                               classData.staff!.isNotEmpty)
                             Text(
                               classData.staff!,
@@ -205,7 +205,7 @@ class ContentSizedClassCard extends StatelessWidget {
                                   ),
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
-                            ),
+                            ),*/
                         ],
                       ),
                     ),
@@ -296,12 +296,12 @@ class ContentSizedClassCard extends StatelessWidget {
           create: (context) => StudentsBloc(
             repository: context.read<StudentsRepository>(),
           ),
-          child: StudentsMarksScreen(
-            standard: classData.name,
+          /*child: StudentsMarksScreen(
+            standard: classData.className,
             classId: classData.id,
             subjectId: classData.subjectId!,
             subjectName: classData.subjectName!,
-          ),
+          ),*/
         ),
       ),
     );
@@ -315,7 +315,7 @@ class ContentSizedClassCard extends StatelessWidget {
             repository: context.read<StudentsRepository>(),
           ),
           child: StudentsScreen(
-            standard: classData.name,
+            standard: classData.className,
             classId: classData.id,
             userRole: user.role,
           ),

@@ -4,6 +4,7 @@ import '../bloc/staffs/staff_bloc.dart';
 import '../bloc/staffs/staff_event.dart';
 import '../bloc/staffs/staff_state.dart';
 import '../models/staff.dart';
+import '../models/user.dart';
 
 class StaffsScreen extends StatefulWidget {
   @override
@@ -157,7 +158,7 @@ class _StaffsScreenState extends State<StaffsScreen> {
 }
 
 class StaffCard extends StatelessWidget {
-  final Staff staffData;
+  final User staffData;
 
   const StaffCard({super.key, required this.staffData});
 
@@ -167,10 +168,10 @@ class StaffCard extends StatelessWidget {
       margin: const EdgeInsets.symmetric(vertical: 5),
       child: ListTile(
         title: Text(
-          staffData.name,
+          staffData.firstName,
           style: const TextStyle(fontWeight: FontWeight.bold),
         ),
-        subtitle: Text('Role: ${staffData.role}\nDepartment: ${staffData.department}'),
+        subtitle: Text('Role: ${staffData.role}'),
         trailing: IconButton(
           icon: const Icon(Icons.delete, color: Colors.red),
           onPressed: () {

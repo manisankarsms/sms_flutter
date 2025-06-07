@@ -9,6 +9,7 @@ import '../bloc/classes/classes_state.dart';
 import '../bloc/students/students_bloc.dart';
 import '../models/class.dart';
 import '../models/user.dart';
+import '../models/subject.dart';
 import '../repositories/students_repository.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
@@ -22,7 +23,7 @@ class ClassDetailsScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('${classData.name} ${AppLocalizations.of(context)?.details ?? 'Details'}'),
+        title: Text('${classData.className} ${AppLocalizations.of(context)?.details ?? 'Details'}'),
       ),
       body: SingleChildScrollView(
         child: Padding(
@@ -30,7 +31,6 @@ class ClassDetailsScreen extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Main header - Class name and details
               // Class information section
               Container(
                 decoration: BoxDecoration(
@@ -68,7 +68,7 @@ class ClassDetailsScreen extends StatelessWidget {
                     ),
                     const SizedBox(height: 16),
 
-                    // Subjects row with edit button
+                    // Subjects row
                     Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -139,7 +139,6 @@ class ClassDetailsScreen extends StatelessWidget {
               ),
 
               const SizedBox(height: 32),
-
             ],
           ),
         ),
@@ -247,11 +246,11 @@ class ClassDetailsScreen extends StatelessWidget {
 
   void _showEditClassDialog(BuildContext context) {
     // Controllers for simple text fields
-    final nameController = TextEditingController(text: classData.name);
+    final nameController = TextEditingController(text: classData.className);
 
     // Selected values for dropdowns
     String? selectedInstructorId = classData.staffId;
-    List<String> selectedSubjectIds = classData.subjectIds ?? [];
+    List<String> selectedSubjectIds = List.from(classData.subjectIds ?? []);
 
     // Get the ClassesBloc instance before opening the dialog
     final classesBloc = context.read<ClassesBloc>();
@@ -265,201 +264,202 @@ class ClassDetailsScreen extends StatelessWidget {
         // Provide the ClassesBloc to the dialog's widget tree
         return BlocProvider.value(
           value: classesBloc, // Reuse the existing bloc
-          child: BlocBuilder<ClassesBloc, ClassesState>(
-            builder: (context, state) {
-              // Handle different states
-              if (state is StaffAndSubjectsLoading) {
-                return AlertDialog(
-                  title: Text(AppLocalizations.of(context)?.edit_class ?? 'Edit Class'),
-                  content: Container(
-                    height: 100,
-                    alignment: Alignment.center,
-                    child: const CircularProgressIndicator(),
-                  ),
-                );
-              } else if (state is StaffAndSubjectsLoaded) {
-                // Data is loaded, build the form
-                return AlertDialog(
-                  title: Text(AppLocalizations.of(context)?.edit_class ?? 'Edit Class'),
-                  content: SingleChildScrollView(
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // Class Name field
-                        TextField(
-                          controller: nameController,
-                          decoration: InputDecoration(
-                            labelText: AppLocalizations.of(context)?.class_name ?? 'Class Name',
-                            border: const OutlineInputBorder(),
-                          ),
-                        ),
-                        const SizedBox(height: 16),
+          child: StatefulBuilder(
+            builder: (context, setState) {
+              return BlocBuilder<ClassesBloc, ClassesState>(
+                builder: (context, state) {
+                  // Handle different states
+                  if (state is StaffAndSubjectsLoading) {
+                    return AlertDialog(
+                      title: Text(AppLocalizations.of(context)?.edit_class ?? 'Edit Class'),
+                      content: Container(
+                        height: 100,
+                        alignment: Alignment.center,
+                        child: const CircularProgressIndicator(),
+                      ),
+                    );
+                  } else if (state is StaffAndSubjectsLoaded) {
+                    // Data is loaded, build the form
+                    return AlertDialog(
+                      title: Text(AppLocalizations.of(context)?.edit_class ?? 'Edit Class'),
+                      content: SingleChildScrollView(
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            // Class Name field
+                            TextField(
+                              controller: nameController,
+                              decoration: InputDecoration(
+                                labelText: AppLocalizations.of(context)?.class_name ?? 'Class Name',
+                                border: const OutlineInputBorder(),
+                              ),
+                            ),
+                            const SizedBox(height: 16),
 
-                        // Instructor Dropdown
-                        Text(
-                          AppLocalizations.of(context)?.instructor ?? 'Instructor',
-                          style: TextStyle(fontSize: 14, color: Colors.grey[700]),
-                        ),
-                        const SizedBox(height: 8),
-                        StatefulBuilder(
-                            builder: (context, setState) {
-                              return Container(
-                                decoration: BoxDecoration(
-                                  border: Border.all(color: Colors.grey),
-                                  borderRadius: BorderRadius.circular(4),
-                                ),
-                                child: DropdownButtonHideUnderline(
-                                  child: DropdownButton<String>(
-                                    value: selectedInstructorId,
-                                    isExpanded: true,
-                                    hint: Text(AppLocalizations.of(context)?.select_instructor ?? 'Select Instructor'),
-                                    padding: const EdgeInsets.symmetric(horizontal: 12),
-                                    items: [
-                                      // Add a "None" option
-                                      const DropdownMenuItem<String>(
-                                        value: null,
-                                        child: Text('None'),
-                                      ),
-                                      // Add staff members from API
-                                      ...state.staff.map((staff) {
-                                        return DropdownMenuItem<String>(
-                                          value: staff['staffId'] as String,
-                                          child: Text(staff['name'] as String),
-                                        );
-                                      }).toList(),
-                                    ],
-                                    onChanged: (String? newValue) {
-                                      setState(() {
-                                        selectedInstructorId = newValue;
-                                      });
-                                    },
-                                  ),
-                                ),
-                              );
-                            }
-                        ),
-                        const SizedBox(height: 16),
-
-                        // Subjects Multiselect
-                        Text(
-                          AppLocalizations.of(context)?.subjects ?? 'Subjects',
-                          style: TextStyle(fontSize: 14, color: Colors.grey[700]),
-                        ),
-                        const SizedBox(height: 8),
-                        StatefulBuilder(
-                            builder: (context, setState) {
-                              return Container(
-                                decoration: BoxDecoration(
-                                  border: Border.all(color: Colors.grey),
-                                  borderRadius: BorderRadius.circular(4),
-                                ),
-                                constraints: const BoxConstraints(
-                                  maxHeight: 200,
-                                ),
-                                child: SingleChildScrollView(
-                                  child: Column(
-                                    children: state.subjects.map((subject) {
-                                      final subjectId = subject['id'] as String;
-                                      final isSelected = selectedSubjectIds.contains(subjectId);
-
-                                      return CheckboxListTile(
-                                        title: Text(subject['name'] as String),
-                                        subtitle: Text(subject['code'] as String),
-                                        value: isSelected,
-                                        onChanged: (bool? value) {
-                                          setState(() {
-                                            if (value == true) {
-                                              selectedSubjectIds.add(subjectId);
-                                            } else {
-                                              selectedSubjectIds.remove(subjectId);
-                                            }
-                                          });
-                                        },
-                                        dense: true,
-                                        controlAffinity: ListTileControlAffinity.leading,
+                            // Instructor Dropdown
+                            Text(
+                              AppLocalizations.of(context)?.instructor ?? 'Instructor',
+                              style: TextStyle(fontSize: 14, color: Colors.grey[700]),
+                            ),
+                            const SizedBox(height: 8),
+                            Container(
+                              decoration: BoxDecoration(
+                                border: Border.all(color: Colors.grey),
+                                borderRadius: BorderRadius.circular(4),
+                              ),
+                              child: DropdownButtonHideUnderline(
+                                child: DropdownButton<String>(
+                                  value: selectedInstructorId,
+                                  isExpanded: true,
+                                  hint: Text(AppLocalizations.of(context)?.select_instructor ?? 'Select Instructor'),
+                                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                                  items: [
+                                    // Add a "None" option
+                                    const DropdownMenuItem<String>(
+                                      value: null,
+                                      child: Text('None'),
+                                    ),
+                                    // Add staff members from API
+                                    ...state.staff.map((staff) {
+                                      return DropdownMenuItem<String>(
+                                        value: staff.id,
+                                        child: Text('${staff.firstName} ${staff.lastName}'),
                                       );
                                     }).toList(),
-                                  ),
+                                  ],
+                                  onChanged: (String? newValue) {
+                                    setState(() {
+                                      selectedInstructorId = newValue;
+                                    });
+                                  },
                                 ),
+                              ),
+                            ),
+                            const SizedBox(height: 16),
+
+                            // Subjects Multiselect
+                            Text(
+                              AppLocalizations.of(context)?.subjects ?? 'Subjects',
+                              style: TextStyle(fontSize: 14, color: Colors.grey[700]),
+                            ),
+                            const SizedBox(height: 8),
+                            Container(
+                              decoration: BoxDecoration(
+                                border: Border.all(color: Colors.grey),
+                                borderRadius: BorderRadius.circular(4),
+                              ),
+                              constraints: const BoxConstraints(
+                                maxHeight: 200,
+                              ),
+                              child: SingleChildScrollView(
+                                child: Column(
+                                  children: state.subjects.map((subject) {
+                                    final isSelected = selectedSubjectIds.contains(subject.id);
+
+                                    return CheckboxListTile(
+                                      title: Text(subject.name),
+                                      subtitle: Text(subject.code),
+                                      value: isSelected,
+                                      onChanged: (bool? value) {
+                                        setState(() {
+                                          if (value == true) {
+                                            selectedSubjectIds.add(subject.id);
+                                          } else {
+                                            selectedSubjectIds.remove(subject.id);
+                                          }
+                                        });
+                                      },
+                                      dense: true,
+                                      controlAffinity: ListTileControlAffinity.leading,
+                                    );
+                                  }).toList(),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      actions: [
+                        TextButton(
+                          onPressed: () => Navigator.of(dialogContext).pop(),
+                          child: Text(AppLocalizations.of(context)?.cancel ?? 'Cancel'),
+                        ),
+                        ElevatedButton(
+                          onPressed: () {
+                            if (nameController.text.isNotEmpty) {
+                              // Get staff name from staff ID
+                              String? staffName;
+                              if (selectedInstructorId != null) {
+                                final selectedStaff = state.staff.firstWhere(
+                                      (staff) => staff.id == selectedInstructorId,
+                                  orElse: () => User(
+                                    id: '',
+                                    email: '',
+                                    mobileNumber: '',
+                                    role: '',
+                                    firstName: '',
+                                    lastName: '', permissions: [],
+                                  ),
+                                );
+                                staffName = selectedStaff.id.isNotEmpty
+                                    ? '${selectedStaff.firstName} ${selectedStaff.lastName}'
+                                    : null;
+                              }
+
+                              // Get subject names from subject IDs
+                              List<String> subjectNames = selectedSubjectIds.map((id) {
+                                final subject = state.subjects.firstWhere(
+                                      (subject) => subject.id == id,
+                                  orElse: () => Subject(id: '', name: '', code: ''),
+                                );
+                                return subject.name;
+                              }).where((name) => name.isNotEmpty).toList();
+
+                              final updatedClass = Class(
+                                id: classData.id,
+                                className: nameController.text,
+                                sectionName: nameController.text,
+                                academicYearId: classData.academicYearId,
+                                academicYearName: classData.academicYearName,
+                              );
+
+                              // Update class in the bloc using the context from BlocProvider.value
+                              context.read<ClassesBloc>().add(UpdateClass(updatedClass));
+
+                              // Close dialog and pass back the updated class
+                              Navigator.of(dialogContext).pop(updatedClass);
+                            } else {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(content: Text(AppLocalizations.of(context)?.class_name_required ?? 'Class name is required')),
                               );
                             }
+                          },
+                          child: Text(AppLocalizations.of(context)?.save ?? 'Save'),
                         ),
                       ],
-                    ),
-                  ),
-                  actions: [
-                    TextButton(
-                      onPressed: () => Navigator.of(dialogContext).pop(),
-                      child: Text(AppLocalizations.of(context)?.cancel ?? 'Cancel'),
-                    ),
-                    ElevatedButton(
-                      onPressed: () {
-                        if (nameController.text.isNotEmpty) {
-                          // Get staff name from staff ID
-                          String? staffName;
-                          if (selectedInstructorId != null) {
-                            final selectedStaff = state.staff.firstWhere(
-                                  (staff) => staff['staffId'] == selectedInstructorId,
-                              orElse: () => <String, dynamic>{},
-                            );
-                            staffName = selectedStaff.isNotEmpty
-                                ? selectedStaff['name'] as String
-                                : null;
-                          }
-
-                          // Get subject names from subject IDs
-                          List<String> subjectNames = selectedSubjectIds.map((id) {
-                            final subject = state.subjects.firstWhere(
-                                  (subject) => subject['id'] == id,
-                              orElse: () => <String, dynamic>{'name': ''},
-                            );
-                            return subject['name'] as String;
-                          }).toList();
-
-                          final updatedClass = Class(
-                            id: classData.id,
-                            name: nameController.text,
-                            staffId: selectedInstructorId,
-                            staff: staffName,
-                            subjectIds: selectedSubjectIds,
-                            subjectNames: subjectNames,
-                          );
-
-                          // Update class in the bloc using the context from BlocProvider.value
-                          context.read<ClassesBloc>().add(UpdateClass(updatedClass));
-
-                          // Close dialog and pass back the updated class
-                          Navigator.of(dialogContext).pop(updatedClass);
-                        } else {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(content: Text(AppLocalizations.of(context)?.class_name_required ?? 'Class name is required')),
-                          );
-                        }
-                      },
-                      child: Text(AppLocalizations.of(context)?.save ?? 'Save'),
-                    ),
-                  ],
-                );
-              } else if (state is ClassesError) {
-                // Show error message
-                return AlertDialog(
-                  title: const Text('Error'),
-                  content: Text(state.message),
-                  actions: [
-                    TextButton(
-                      onPressed: () => Navigator.of(dialogContext).pop(),
-                      child: Text(AppLocalizations.of(context)?.close ?? 'Close'),
-                    ),
-                  ],
-                );
-              } else {
-                // Fallback dialog (initial state or other states)
-                return AlertDialog(
-                  title: Text(AppLocalizations.of(context)?.edit_class ?? 'Edit Class'),
-                  content: const Text('Loading data...'),
-                );
-              }
+                    );
+                  } else if (state is ClassesError) {
+                    // Show error message
+                    return AlertDialog(
+                      title: const Text('Error'),
+                      content: Text(state.errorMessage),
+                      actions: [
+                        TextButton(
+                          onPressed: () => Navigator.of(dialogContext).pop(),
+                          child: Text(AppLocalizations.of(context)?.close ?? 'Close'),
+                        ),
+                      ],
+                    );
+                  } else {
+                    // Fallback dialog (initial state or other states)
+                    return AlertDialog(
+                      title: Text(AppLocalizations.of(context)?.edit_class ?? 'Edit Class'),
+                      content: const Text('Loading data...'),
+                    );
+                  }
+                },
+              );
             },
           ),
         );
@@ -489,7 +489,7 @@ class ClassDetailsScreen extends StatelessWidget {
             repository: context.read<StudentsRepository>(),
           ),
           child: StudentsScreen(
-            standard: classData.name,
+            standard: classData.className,
             classId: classData.id,
             userRole: user.role,
           ),
