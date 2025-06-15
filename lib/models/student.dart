@@ -4,7 +4,7 @@ class Student {
   final String lastName;
   final String dateOfBirth;
   final String gender;
-  final String contactNumber;
+  final String mobileNumber;
   final String email;
   final String address;
   final String studentStandard;
@@ -16,7 +16,7 @@ class Student {
     required this.lastName,
     required this.dateOfBirth,
     required this.gender,
-    required this.contactNumber,
+    required this.mobileNumber,
     required this.email,
     required this.address,
     required this.studentStandard,
@@ -32,7 +32,7 @@ class Student {
       lastName: json['lastName'] ?? '',
       dateOfBirth: json['dateOfBirth'] ?? '',
       gender: json['gender'] ?? '',
-      contactNumber: json['contactNumber'] ?? '',
+      mobileNumber: json['mobileNumber'] ?? '',
       email: json['email'] ?? '',
       address: json['address'] ?? '',
       studentStandard: json['studentStandard'] ?? '',
@@ -48,7 +48,7 @@ class Student {
       'lastName': lastName,
       'dateOfBirth': dateOfBirth,
       'gender': gender,
-      'contactNumber': contactNumber,
+      'contactNumber': mobileNumber,
       'email': email,
       'address': address,
       'studentStandard': studentStandard,

@@ -12,96 +12,172 @@ class WebService {
 
   Future<String> postData(String endpoint, String data) async {
     try {
-    String aesKey = AESUtil.generateKey();
-    final encryptedBody = AESUtil.encrypt(jsonEncode(data), aesKey);
-    if (kDebugMode) {
-      print('$baseUrl/$endpoint');
-      print(data);
-      print(encryptedBody);
-      print(aesKey);
-    }
-    final response = await http.post(
-      Uri.parse('$baseUrl/$endpoint'),
-      headers: <String, String>{
-        'Content-Type': 'application/json; charset=UTF-8',
-      },
-      body: data,
-    );
-    if (response.statusCode == 200 || response.statusCode == 201) {
+      // Remove the encryption part that was causing issues
       if (kDebugMode) {
-        print(response.body);
+        print('POST URL: $baseUrl/$endpoint');
+        print('POST Data: $data');
       }
-      return response.body;
-    } else {
-      throw Exception('Failed to fetch data');
-    }
-  } catch(e){
+
+      final response = await http.post(
+        Uri.parse('$baseUrl/$endpoint'),
+        headers: <String, String>{
+          'Content-Type': 'application/json; charset=UTF-8',
+        },
+        body: data, // Send data directly, not double-encoded
+      );
+
+      if (kDebugMode) {
+        print('Response Status: ${response.statusCode}');
+        print('Response Body: ${response.body}');
+      }
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        return response.body;
+      } else {
+        // Handle error responses properly
+        try {
+          final errorData = jsonDecode(response.body);
+          if (errorData['error'] != null) {
+            throw Exception(errorData['error']['message'] ?? 'Server error');
+          } else {
+            throw Exception('HTTP ${response.statusCode}: ${response.reasonPhrase}');
+          }
+        } catch (e) {
+          if (e is Exception) rethrow;
+          throw Exception('HTTP ${response.statusCode}: ${response.reasonPhrase}');
+        }
+      }
+    } catch (e) {
       if (kDebugMode) {
         print("Error in postData: $e");
       }
-      throw Exception('Network error: $e');
+      rethrow; // Rethrow the original exception
     }
   }
 
   Future<String> fetchData(String endpoint) async {
-    if (kDebugMode) {
-      print('$baseUrl/$endpoint');
-    }
-    final response = await http.get(
-      Uri.parse('$baseUrl/$endpoint'),
-      headers: <String, String>{
-        'Content-Type': 'application/json; charset=UTF-8',
-      },
-    );
+    try {
+      if (kDebugMode) {
+        print('GET URL: $baseUrl/$endpoint');
+      }
 
-    if (response.statusCode == 200)
-    {
+      final response = await http.get(
+        Uri.parse('$baseUrl/$endpoint'),
+        headers: <String, String>{
+          'Content-Type': 'application/json; charset=UTF-8',
+        },
+      );
+
       if (kDebugMode) {
-        print(response.body);
+        print('Response Status: ${response.statusCode}');
+        print('Response Body: ${response.body}');
       }
-      return response.body; // Return raw JSON string instead of decoding
-    } else {
+
+      if (response.statusCode == 200) {
+        return response.body;
+      } else {
+        // Handle error responses properly
+        try {
+          final errorData = jsonDecode(response.body);
+          if (errorData['error'] != null) {
+            throw Exception(errorData['error']['message'] ?? 'Server error');
+          } else {
+            throw Exception('HTTP ${response.statusCode}: ${response.reasonPhrase}');
+          }
+        } catch (e) {
+          if (e is Exception) rethrow;
+          throw Exception('HTTP ${response.statusCode}: ${response.reasonPhrase}');
+        }
+      }
+    } catch (e) {
       if (kDebugMode) {
-        print(response.body);
+        print("Error in getData: $e");
       }
-      throw Exception('Failed to fetch data');
+      rethrow;
     }
   }
 
-  // New method for PUT requests
   Future<String> putData(String endpoint, String data) async {
-    if (kDebugMode) {
-      print('$baseUrl/$endpoint');
-    }
-    final response = await http.put(
-      Uri.parse('$baseUrl/$endpoint'),
-      headers: <String, String>{
-        'Content-Type': 'application/json; charset=UTF-8',
-      },
-      body: data,
-    );
-    if (response.statusCode == 200) {
-      return response.body;
-    } else {
-      throw Exception('Failed to update data');
+    try {
+      if (kDebugMode) {
+        print('PUT URL: $baseUrl/$endpoint');
+        print('PUT Data: $data');
+      }
+
+      final response = await http.put(
+        Uri.parse('$baseUrl/$endpoint'),
+        headers: <String, String>{
+          'Content-Type': 'application/json; charset=UTF-8',
+        },
+        body: data,
+      );
+
+      if (kDebugMode) {
+        print('Response Status: ${response.statusCode}');
+        print('Response Body: ${response.body}');
+      }
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        return response.body;
+      } else {
+        try {
+          final errorData = jsonDecode(response.body);
+          if (errorData['error'] != null) {
+            throw Exception(errorData['error']['message'] ?? 'Server error');
+          } else {
+            throw Exception('HTTP ${response.statusCode}: ${response.reasonPhrase}');
+          }
+        } catch (e) {
+          if (e is Exception) rethrow;
+          throw Exception('HTTP ${response.statusCode}: ${response.reasonPhrase}');
+        }
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print("Error in putData: $e");
+      }
+      rethrow;
     }
   }
 
-  // New method for DELETE requests
   Future<String> deleteData(String endpoint) async {
-    if (kDebugMode) {
-      print('$baseUrl/$endpoint');
-    }
-    final response = await http.delete(
-      Uri.parse('$baseUrl/$endpoint'),
-      headers: <String, String>{
-        'Content-Type': 'application/json; charset=UTF-8',
-      },
-    );
-    if (response.statusCode == 200 || response.statusCode == 204) {
-      return response.statusCode == 204 ? '' : response.body;
-    } else {
-      throw Exception('Failed to delete data');
+    try {
+      if (kDebugMode) {
+        print('DELETE URL: $baseUrl/$endpoint');
+      }
+
+      final response = await http.delete(
+        Uri.parse('$baseUrl/$endpoint'),
+        headers: <String, String>{
+          'Content-Type': 'application/json; charset=UTF-8',
+        },
+      );
+
+      if (kDebugMode) {
+        print('Response Status: ${response.statusCode}');
+        print('Response Body: ${response.body}');
+      }
+
+      if (response.statusCode == 200 || response.statusCode == 204) {
+        return response.statusCode == 204 ? '' : response.body;
+      } else {
+        try {
+          final errorData = jsonDecode(response.body);
+          if (errorData['error'] != null) {
+            throw Exception(errorData['error']['message'] ?? 'Server error');
+          } else {
+            throw Exception('HTTP ${response.statusCode}: ${response.reasonPhrase}');
+          }
+        } catch (e) {
+          if (e is Exception) rethrow;
+          throw Exception('HTTP ${response.statusCode}: ${response.reasonPhrase}');
+        }
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print("Error in deleteData: $e");
+      }
+      rethrow;
     }
   }
 }

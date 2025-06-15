@@ -288,57 +288,59 @@ class ClassCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
 
-    return Card(
-      margin: const EdgeInsets.only(bottom: 12),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              classData.className,
-              style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            if (classData.sectionName.isNotEmpty) ...[
-              const SizedBox(height: 4),
-              Text(
-                'Section: ${classData.sectionName}',
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: Colors.grey[600],
-                ),
-              ),
-            ],
-            const SizedBox(height: 16),
-            Row(
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      decoration: BoxDecoration(
+        border: Border.all(color: Colors.grey.shade300),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Text section
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Expanded(
-                  child: OutlinedButton.icon(
-                    onPressed: () => _navigateToClassDetails(context),
-                    icon: const Icon(Icons.info_outline),
-                    label: Text(l10n?.details ?? 'Details'),
+                Text(
+                  classData.className,
+                  style: Theme.of(context).textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.w600),
+                ),
+                if (classData.sectionName.isNotEmpty)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 2),
+                    child: Text(
+                      'Section: ${classData.sectionName}',
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Colors.grey[600]),
+                    ),
                   ),
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: FilledButton.icon(
-                    onPressed: () => _navigateToStudents(context),
-                    icon: const Icon(Icons.people),
-                    label: Text(l10n?.view_students ?? 'Students'),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                IconButton(
-                  onPressed: () => _showDeleteDialog(context),
-                  icon: const Icon(Icons.delete_outline),
-                  color: Colors.red,
-                  tooltip: l10n?.delete ?? 'Delete',
-                ),
               ],
             ),
-          ],
-        ),
+          ),
+          // Actions
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              IconButton(
+                onPressed: () => _navigateToClassDetails(context),
+                icon: const Icon(Icons.info_outline, size: 20),
+                tooltip: l10n?.details ?? 'Details',
+              ),
+              IconButton(
+                onPressed: () => _navigateToStudents(context),
+                icon: const Icon(Icons.people, size: 20),
+                tooltip: l10n?.view_students ?? 'Students',
+              ),
+              IconButton(
+                onPressed: () => _showDeleteDialog(context),
+                icon: const Icon(Icons.delete_outline, size: 20),
+                color: Colors.red[600],
+                tooltip: l10n?.delete ?? 'Delete',
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }

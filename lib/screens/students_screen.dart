@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:pluto_grid/pluto_grid.dart';
 import 'package:sms/screens/print_preview_screen.dart';
+import 'package:sms/utils/constants.dart';
 import '../bloc/students/students_bloc.dart';
 import '../bloc/students/students_event.dart';
 import '../bloc/students/students_state.dart';
@@ -53,7 +54,7 @@ class _StudentsScreenState extends State<StudentsScreen> {
           ],
         ),
         actions: [
-          if (widget.userRole == "Admin") ...[
+          if (widget.userRole.toLowerCase() == Constants.admin) ...[
             IconButton(
                 icon: const Icon(Icons.print),
                 onPressed: () => _printStudentList(context)),
@@ -68,11 +69,11 @@ class _StudentsScreenState extends State<StudentsScreen> {
                     .read<StudentsBloc>()
                     .add(RefreshStudents(widget.classId));
               }),
-          if (widget.userRole == "Admin")
+          if (widget.userRole.toLowerCase() == Constants.admin)
             IconButton(
                 icon: const Icon(Icons.add),
                 onPressed: () => _showAddStudentDialog(context)),
-          if (widget.userRole == "Staff") ...[
+          if (widget.userRole.toLowerCase() == Constants.staff) ...[
             IconButton(
               icon: const Icon(Icons.calendar_today),
               onPressed: () => _pickDate(),
@@ -130,14 +131,14 @@ class _StudentsScreenState extends State<StudentsScreen> {
           if (state is StudentsLoaded) {
             return Column(
               children: [
-                if (widget.userRole == "Staff") _buildAttendanceSummary(),
+                if (widget.userRole.toLowerCase() == Constants.staff) _buildAttendanceSummary(),
                 // ✅ Show only for Staff
                 Expanded(
                   child: PlutoGrid(
-                    columns: widget.userRole == "Admin"
+                    columns: widget.userRole.toLowerCase() == Constants.admin
                         ? _buildAdminGridColumns()
                         : _buildStaffGridColumns(),
-                    rows: widget.userRole == "Admin"
+                    rows: widget.userRole.toLowerCase() == Constants.admin
                         ? _buildAdminGridRows(state.students)
                         : _buildStaffGridRows(state.students),
                     configuration: const PlutoGridConfiguration(
@@ -200,7 +201,7 @@ class _StudentsScreenState extends State<StudentsScreen> {
               'email': PlutoCell(value: student.email),
               'dob': PlutoCell(value: student.dateOfBirth),
               'gender': PlutoCell(value: student.gender),
-              'contact': PlutoCell(value: student.contactNumber),
+              'contact': PlutoCell(value: student.mobileNumber),
               'address': PlutoCell(value: student.address),
             }))
         .toList();
@@ -301,7 +302,7 @@ class _StudentsScreenState extends State<StudentsScreen> {
                       s.email,
                       s.dateOfBirth,
                       s.gender,
-                      s.contactNumber,
+                      s.mobileNumber,
                       s.address
                     ])
                 .toList(),
@@ -322,7 +323,7 @@ class _StudentsScreenState extends State<StudentsScreen> {
                 s.email,
                 s.dateOfBirth,
                 s.gender,
-                s.contactNumber,
+                s.mobileNumber,
                 s.address
               ])
           .toList();

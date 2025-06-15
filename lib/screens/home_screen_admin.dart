@@ -15,6 +15,7 @@ import 'package:sms/screens/new_student_screen.dart';
 import 'package:sms/screens/posts_screen.dart';
 import 'package:sms/screens/rules_screen.dart';
 import 'package:sms/screens/staffs_screen.dart';
+import 'package:sms/screens/student_admin_screen.dart';
 import 'package:sms/screens/subjects_screen.dart';
 import 'package:sms/screens/theme_screen.dart';
 
@@ -185,7 +186,7 @@ class _HomeScreenAdminState extends State<HomeScreenAdmin> {
       ),
       SubjectsScreen(),
       StaffsScreen(),
-      const Center(child: Text('Students - Development In Progress')),
+      UserAdminScreen(),
       ExamsListScreen(),
       HolidayScreen(user: user),
       PostsScreen(),

@@ -1,9 +1,12 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:intl/intl.dart';
 
 import '../bloc/new_student/new_student_bloc.dart';
 import '../bloc/new_student/new_student_event.dart';
+import '../bloc/new_student/new_student_state.dart';
+import '../utils/ExportUtil.dart';
+import '../utils/ImportUtil.dart';
 
 class NewStudentScreen extends StatefulWidget {
   const NewStudentScreen({super.key});
@@ -15,709 +18,488 @@ class NewStudentScreen extends StatefulWidget {
 class _NewStudentScreenState extends State<NewStudentScreen> {
   final _formKey = GlobalKey<FormState>();
 
-  // Student Details Controllers
+  // Form controllers
   final _firstNameController = TextEditingController();
   final _lastNameController = TextEditingController();
-  final _dobController = TextEditingController();
-  final _motherTongueController = TextEditingController();
-  final _aadhaarController = TextEditingController();
-  final _nationalityController = TextEditingController();
-  final _previousSchoolController = TextEditingController();
-  final _bloodGroupController = TextEditingController();
+  final _emailController = TextEditingController();
+  final _mobileController = TextEditingController();
+  final _passwordController = TextEditingController();
 
-  // Family Details Controllers
-  final _fatherNameController = TextEditingController();
-  final _fatherEducationController = TextEditingController();
-  final _fatherOccupationController = TextEditingController();
-  final _fatherAadhaarController = TextEditingController();
-  final _motherNameController = TextEditingController();
-  final _motherEducationController = TextEditingController();
-  final _motherOccupationController = TextEditingController();
-  final _motherAadhaarController = TextEditingController();
-  final _guardianNameController = TextEditingController();
-  final _guardianRelationController = TextEditingController();
-
-  // Contact Details Controllers
-  final _primaryMobileController = TextEditingController();
-  final _alternateMobileController = TextEditingController();
-  final _primaryEmailController = TextEditingController();
-  final _alternateEmailController = TextEditingController();
-  final _addressLine1Controller = TextEditingController();
-  final _addressLine2Controller = TextEditingController();
-  final _cityController = TextEditingController();
-  final _stateController = TextEditingController();
-  final _pincodeController = TextEditingController();
-
-  // Dropdown values
-  String? _selectedGender;
-  String? _selectedClass;
-  String? _selectedReligion;
-  String? _selectedCommunity;
-  String? _selectedBloodGroup;
-  String? _selectedIncome;
-
-  // File upload status
-  bool _birthCertificateUploaded = false;
-  bool _photographUploaded = false;
-  bool _fatherEducationProofUploaded = false;
-  bool _motherEducationProofUploaded = false;
+  bool _obscurePassword = true;
 
   @override
   void dispose() {
-    // Dispose all controllers
     _firstNameController.dispose();
     _lastNameController.dispose();
-    // ... dispose all other controllers
+    _emailController.dispose();
+    _mobileController.dispose();
+    _passwordController.dispose();
     super.dispose();
   }
 
-  Future<void> _selectDate(BuildContext context) async {
-    final DateTime? picked = await showDatePicker(
-      context: context,
-      initialDate: DateTime.now().subtract(const Duration(days: 365 * 4)),
-      // Default to 4 years ago
-      firstDate: DateTime.now().subtract(const Duration(days: 365 * 20)),
-      // 20 years ago
-      lastDate: DateTime.now(),
-      builder: (context, child) {
-        return Theme(
-          data: Theme.of(context).copyWith(
-            colorScheme: ColorScheme.light(
-              primary: Theme.of(context).primaryColor,
-              onPrimary: Colors.white,
-              surface: Colors.white,
-              onSurface: Colors.black,
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.grey.shade50,
+      appBar: AppBar(
+        title: const Text('Student Registration'),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        foregroundColor: Colors.black87,
+      ),
+      body: BlocListener<StudentBloc, StudentState>(
+        listener: (context, state) {
+          // Close any open dialogs
+          if (Navigator.canPop(context)) {
+            Navigator.pop(context);
+          }
+
+          if (state is StudentSuccessState) {
+            _showSuccessDialog();
+          } else if (state is StudentErrorState) {
+            _showErrorDialog(state.message);
+          } else if (state is BulkStudentProgressState) {
+            _showProgressDialog(state.processed, state.total);
+          } else if (state is BulkStudentSuccessState) {
+            _showBulkSuccessDialog(state.successCount, state.failedCount, state.failedStudents);
+          }
+        },
+        child: SafeArea(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Header
+                Text(
+                  'Student Registration',
+                  style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black87,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Register students individually or upload in bulk',
+                  style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                    color: Colors.grey.shade600,
+                  ),
+                ),
+                const SizedBox(height: 24),
+
+                // Bulk Upload Section
+                _buildBulkUploadSection(),
+
+                // Divider
+                const SizedBox(height: 24),
+                Row(
+                  children: [
+                    const Expanded(child: Divider()),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      child: Text(
+                        'OR',
+                        style: TextStyle(
+                          color: Colors.grey.shade600,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ),
+                    const Expanded(child: Divider()),
+                  ],
+                ),
+                const SizedBox(height: 24),
+
+                // Individual Registration Form
+                Text(
+                  'Individual Registration',
+                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.w600,
+                    color: Colors.black87,
+                  ),
+                ),
+                const SizedBox(height: 16),
+
+                Form(
+                  key: _formKey,
+                  child: Column(
+                    children: [
+                      _buildTextField(
+                        controller: _firstNameController,
+                        label: 'First Name',
+                        icon: Icons.person_outline,
+                      ),
+                      const SizedBox(height: 16),
+
+                      _buildTextField(
+                        controller: _lastNameController,
+                        label: 'Last Name',
+                        icon: Icons.person_outline,
+                      ),
+                      const SizedBox(height: 16),
+
+                      _buildTextField(
+                        controller: _emailController,
+                        label: 'Email Address',
+                        icon: Icons.email_outlined,
+                        keyboardType: TextInputType.emailAddress,
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return 'Email is required';
+                          }
+                          if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(value)) {
+                            return 'Enter a valid email address';
+                          }
+                          return null;
+                        },
+                      ),
+                      const SizedBox(height: 16),
+
+                      _buildTextField(
+                        controller: _mobileController,
+                        label: 'Mobile Number',
+                        icon: Icons.phone_outlined,
+                        keyboardType: TextInputType.phone,
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return 'Mobile number is required';
+                          }
+                          if (value.length != 10) {
+                            return 'Enter a valid 10-digit mobile number';
+                          }
+                          return null;
+                        },
+                      ),
+                      const SizedBox(height: 16),
+
+                      _buildPasswordField(),
+                      const SizedBox(height: 32),
+
+                      // Submit Button
+                      BlocBuilder<StudentBloc, StudentState>(
+                        builder: (context, state) {
+                          return SizedBox(
+                            width: double.infinity,
+                            height: 56,
+                            child: ElevatedButton(
+                              onPressed: state is StudentLoadingState ? null : _handleSubmit,
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Theme.of(context).primaryColor,
+                                foregroundColor: Colors.white,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                elevation: 2,
+                              ),
+                              child: state is StudentLoadingState
+                                  ? const SizedBox(
+                                height: 20,
+                                width: 20,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                ),
+                              )
+                                  : const Text(
+                                'Create Account',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ),
           ),
-          child: child!,
-        );
-      },
+        ),
+      ),
     );
-    if (picked != null) {
-      setState(() {
-        _dobController.text = DateFormat('dd-MM-yyyy').format(picked);
-      });
-    }
   }
 
-  Widget _buildSectionTitle(String title) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 16.0),
+  Widget _buildBulkUploadSection() {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.blue.shade50,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.blue.shade200),
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            title,
-            style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                  fontWeight: FontWeight.bold,
+          Row(
+            children: [
+              Icon(Icons.upload_file, color: Colors.blue.shade700),
+              const SizedBox(width: 8),
+              Text(
+                'Bulk Student Upload',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.blue.shade700,
                 ),
+              ),
+            ],
           ),
-          const Divider(thickness: 2),
+          const SizedBox(height: 12),
+          Text(
+            'Upload multiple students at once using Excel or CSV files',
+            style: TextStyle(color: Colors.blue.shade600),
+          ),
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              Expanded(
+                child: OutlinedButton.icon(
+                  onPressed: _downloadTemplate,
+                  icon: const Icon(Icons.download),
+                  label: const Text('Download Template'),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: Colors.blue.shade700,
+                    side: BorderSide(color: Colors.blue.shade300),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: ElevatedButton.icon(
+                  onPressed: _uploadBulkStudents,
+                  icon: const Icon(Icons.upload),
+                  label: const Text('Upload File'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.blue.shade600,
+                    foregroundColor: Colors.white,
+                  ),
+                ),
+              ),
+            ],
+          ),
         ],
       ),
-    );
-  }
-
- /* Widget _buildTextField({
-    required TextEditingController controller,
-    required String label,
-    bool isRequired = true,
-    TextInputType keyboardType = TextInputType.text,
-    String? Function(String?)? validator,
-    bool readOnly = false,
-    VoidCallback? onTap,
-    Widget? suffix,
-  }) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8.0),
-      child: TextFormField(
-        controller: controller,
-        decoration: InputDecoration(
-          labelText: '$label${isRequired ? '*' : ''}',
-          border: const OutlineInputBorder(),
-          suffix: suffix,
-          filled: true,
-        ),
-        keyboardType: keyboardType,
-        validator: validator ??
-            (value) {
-              if (isRequired && (value == null || value.isEmpty)) {
-                return 'This field is required';
-              }
-              return null;
-            },
-        readOnly: readOnly,
-        onTap: onTap,
-      ),
-    );
-  }*/
-
-  Widget _buildDropdown({
-    required String label,
-    required List<String> items,
-    required String? value,
-    required Function(String?) onChanged,
-    bool isRequired = true,
-  }) {
-    return DropdownButtonFormField<String>(
-      decoration: InputDecoration(
-        labelText: '$label${isRequired ? '*' : ''}',
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
-        ),
-        filled: true,
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      ),
-      value: value,
-      items: items.map((String item) {
-        return DropdownMenuItem<String>(
-          value: item,
-          child: Text(item),
-        );
-      }).toList(),
-      onChanged: onChanged,
-      validator: isRequired
-          ? (value) => value == null || value == '-Select-'
-          ? 'Please select $label'
-          : null
-          : null,
     );
   }
 
   Widget _buildTextField({
     required TextEditingController controller,
     required String label,
-    bool isRequired = true,
+    required IconData icon,
     TextInputType keyboardType = TextInputType.text,
     String? Function(String?)? validator,
-    bool readOnly = false,
-    VoidCallback? onTap,
-    Widget? suffix,
   }) {
     return TextFormField(
       controller: controller,
-      decoration: InputDecoration(
-        labelText: '$label${isRequired ? '*' : ''}',
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
-        ),
-        suffix: suffix,
-        filled: true,
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      ),
       keyboardType: keyboardType,
+      decoration: InputDecoration(
+        labelText: label,
+        prefixIcon: Icon(icon, color: Colors.grey.shade600),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: Colors.grey.shade300),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: Colors.grey.shade300),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: Theme.of(context).primaryColor, width: 2),
+        ),
+        filled: true,
+        fillColor: Colors.grey.shade50,
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+      ),
       validator: validator ?? (value) {
-        if (isRequired && (value == null || value.isEmpty)) {
-          return 'This field is required';
+        if (value == null || value.isEmpty) {
+          return '$label is required';
         }
         return null;
       },
-      readOnly: readOnly,
-      onTap: onTap,
     );
   }
 
-  Widget _buildFileUpload({
-    required String label,
-    required bool isUploaded,
-    required Function(bool) onUploadComplete,
-    bool isRequired = true,
-  }) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8.0),
-      child: Row(
-        children: [
-          Expanded(
-            child: Text('$label${isRequired ? '*' : ''}'),
+  Widget _buildPasswordField() {
+    return TextFormField(
+      controller: _passwordController,
+      obscureText: _obscurePassword,
+      decoration: InputDecoration(
+        labelText: 'Password',
+        prefixIcon: Icon(Icons.lock_outline, color: Colors.grey.shade600),
+        suffixIcon: IconButton(
+          icon: Icon(
+            _obscurePassword ? Icons.visibility_off : Icons.visibility,
+            color: Colors.grey.shade600,
           ),
-          ElevatedButton.icon(
-            onPressed: () async {
-              // Implement file picker logic here
-              // For now, just toggle the status
-              onUploadComplete(!isUploaded);
+          onPressed: () {
+            setState(() {
+              _obscurePassword = !_obscurePassword;
+            });
+          },
+        ),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: Colors.grey.shade300),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: Colors.grey.shade300),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: Theme.of(context).primaryColor, width: 2),
+        ),
+        filled: true,
+        fillColor: Colors.grey.shade50,
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+      ),
+      validator: (value) {
+        if (value == null || value.isEmpty) {
+          return 'Password is required';
+        }
+        if (value.length < 6) {
+          return 'Password must be at least 6 characters';
+        }
+        return null;
+      },
+    );
+  }
+
+  void _handleSubmit() {
+    if (_formKey.currentState!.validate()) {
+      final formData = {
+        "email": _emailController.text.trim(),
+        "mobileNumber": _mobileController.text.trim(),
+        "password": _passwordController.text,
+        "role": "STUDENT",
+        "firstName": _firstNameController.text.trim(),
+        "lastName": _lastNameController.text.trim(),
+      };
+
+      BlocProvider.of<StudentBloc>(context).add(SaveStudentEvent(formData));
+    }
+  }
+
+  Future<void> _downloadTemplate() async {
+    try {
+      final templateData = ImportUtil.getSampleStudentTemplate();
+      await ExportUtil.exportToExcel(
+        fileName: 'student_upload_template',
+        headers: templateData.first.cast<String>(),
+        data: templateData.skip(1).toList(),
+        includeTimestamp: false,
+      );
+
+      _showInfoDialog('Template Downloaded',
+          'Student upload template has been downloaded successfully. Fill in your student data and upload the file.');
+    } catch (e) {
+      _showErrorDialog('Failed to download template: $e');
+    }
+  }
+
+  Future<void> _uploadBulkStudents() async {
+    try {
+      _showLoadingDialog();
+
+      List<Map<String, dynamic>>? studentsData;
+
+      if (kIsWeb) {
+        studentsData = await ImportUtil.pickAndReadStudentFileForWeb();
+      } else {
+        studentsData = await ImportUtil.pickAndReadStudentFile();
+      }
+
+      if (Navigator.canPop(context)) {
+        Navigator.pop(context);
+      }
+
+      if (studentsData == null || studentsData.isEmpty) {
+        _showErrorDialog('No valid student data found in the uploaded file.');
+        return;
+      }
+
+      _showBulkUploadPreview(studentsData);
+
+    } catch (e) {
+      if (Navigator.canPop(context)) {
+        Navigator.pop(context);
+      }
+
+      String errorMessage = 'Upload failed: ${e.toString()}';
+      if (e.toString().contains('File picker not supported')) {
+        errorMessage = 'File upload not supported on this browser. Please try using Chrome, Firefox, or Safari.';
+      } else if (e.toString().contains('Unsupported file format')) {
+        errorMessage = 'Please upload a valid Excel (.xlsx, .xls) or CSV (.csv) file.';
+      }
+
+      _showErrorDialog(errorMessage);
+    }
+  }
+
+  void _showBulkUploadPreview(List<Map<String, dynamic>> students) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Confirm Bulk Upload'),
+        content: SizedBox(
+          width: double.maxFinite,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('Found ${students.length} students to upload:'),
+              const SizedBox(height: 12),
+              SizedBox(
+                height: 200,
+                child: ListView.builder(
+                  itemCount: students.length,
+                  itemBuilder: (context, index) {
+                    final student = students[index];
+                    return ListTile(
+                      dense: true,
+                      title: Text('${student['firstName']} ${student['lastName']}'),
+                      subtitle: Text(student['email']),
+                    );
+                  },
+                ),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(context);
+              BlocProvider.of<StudentBloc>(context).add(BulkSaveStudentsEvent(students));
             },
-            icon: Icon(isUploaded ? Icons.check : Icons.upload),
-            label: Text(isUploaded ? 'Uploaded' : 'Upload'),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: isUploaded ? Colors.green : null,
-            ),
+            child: const Text('Upload All'),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildResponsiveRow(List<Widget> children) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8.0),
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          if (constraints.maxWidth > 600) {
-            // Desktop/Tablet layout
-            return Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: children.map((child) => Expanded(child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 8.0),
-                child: child,
-              ))).toList(),
-            );
-          } else {
-            // Mobile layout
-            return Column(
-              children: children.map((child) => Padding(
-                padding: const EdgeInsets.symmetric(vertical: 4.0),
-                child: child,
-              )).toList(),
-            );
-          }
-        },
-      ),
-    );
-  }
-
-  Widget _buildCard(String title, List<Widget> children) {
-    return Card(
-      elevation: 2,
-      margin: const EdgeInsets.symmetric(vertical: 8.0),
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              title,
-              style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.bold,
-                color: Theme.of(context).primaryColor,
-              ),
-            ),
-            const Divider(thickness: 2),
-            const SizedBox(height: 16),
-            ...children,
-          ],
-        ),
-      ),
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.grey.shade100,
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(16),
-          child: Form(
-            key: _formKey,
-            child: Column(
-              children: [
-                // Student Basic Details Card
-                _buildCard(
-                  'Student Basic Details',
-                  [
-                    _buildResponsiveRow([
-                      _buildTextField(
-                        controller: _firstNameController,
-                        label: 'First Name',
-                      ),
-                      _buildTextField(
-                        controller: _lastNameController,
-                        label: 'Last Name',
-                      ),
-                    ]),
-                    _buildResponsiveRow([
-                      _buildTextField(
-                        controller: _dobController,
-                        label: 'Date of Birth',
-                        readOnly: true,
-                        onTap: () => _selectDate(context),
-                        suffix: const Icon(Icons.calendar_today, size: 20),
-                      ),
-                      _buildDropdown(
-                        label: 'Gender',
-                        items: const ['-Select-', 'Male', 'Female', 'Other'],
-                        value: _selectedGender,
-                        onChanged: (value) => setState(() => _selectedGender = value),
-                      ),
-                      _buildDropdown(
-                        label: 'Blood Group',
-                        items: const ['-Select-', 'A+', 'A-', 'B+', 'B-', 'O+', 'O-', 'AB+', 'AB-'],
-                        value: _selectedBloodGroup,
-                        onChanged: (value) => setState(() => _selectedBloodGroup = value),
-                      ),
-                    ]),
-                  ],
-                ),
-
-                // Academic Details Card
-                _buildCard(
-                  'Academic Details',
-                  [
-                    _buildResponsiveRow([
-                      _buildDropdown(
-                        label: 'Class applying for',
-                        items: const ['-Select-', 'LKG', 'UKG', 'I', 'II', 'III', 'IV', 'V'],
-                        value: _selectedClass,
-                        onChanged: (value) => setState(() => _selectedClass = value),
-                      ),
-                      _buildTextField(
-                        controller: _previousSchoolController,
-                        label: 'Previous School',
-                        isRequired: false,
-                      ),
-                    ]),
-                    _buildResponsiveRow([
-                      _buildDropdown(
-                        label: 'Religion',
-                        items: const ['-Select-', 'Hindu', 'Muslim', 'Christian', 'Others'],
-                        value: _selectedReligion,
-                        onChanged: (value) => setState(() => _selectedReligion = value),
-                      ),
-                      _buildDropdown(
-                        label: 'Community',
-                        items: const ['-Select-', 'General', 'OBC', 'SC', 'ST', 'Others'],
-                        value: _selectedCommunity,
-                        onChanged: (value) => setState(() => _selectedCommunity = value),
-                      ),
-                    ]),
-                  ],
-                ),
-
-                // Personal Details Card
-                _buildCard(
-                  'Personal Details',
-                  [
-                    _buildResponsiveRow([
-                      _buildTextField(
-                        controller: _motherTongueController,
-                        label: 'Mother Tongue',
-                      ),
-                      _buildTextField(
-                        controller: _nationalityController,
-                        label: 'Nationality',
-                      ),
-                    ]),
-                    _buildResponsiveRow([
-                      _buildTextField(
-                        controller: _aadhaarController,
-                        label: 'Aadhaar Number',
-                        keyboardType: TextInputType.number,
-                      ),
-                    ]),
-                    // Document Upload Section with modern design
-                    Container(
-                      margin: const EdgeInsets.only(top: 16),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Required Documents',
-                            style: Theme.of(context).textTheme.titleMedium,
-                          ),
-                          const SizedBox(height: 8),
-                          _buildResponsiveRow([
-                            _buildUploadCard(
-                              'Birth Certificate',
-                              _birthCertificateUploaded,
-                                  (value) => setState(() => _birthCertificateUploaded = value),
-                            ),
-                            _buildUploadCard(
-                              'Photograph',
-                              _photographUploaded,
-                                  (value) => setState(() => _photographUploaded = value),
-                            ),
-                          ]),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-
-                // Family Details Card
-                _buildCard(
-                  'Family Details',
-                  [
-                    // Father's Details
-                    Text(
-                      'Father\'s Details',
-                      style: Theme.of(context).textTheme.titleMedium,
-                    ),
-                    const SizedBox(height: 16),
-                    _buildResponsiveRow([
-                      _buildTextField(
-                        controller: _fatherNameController,
-                        label: 'Name',
-                      ),
-                      _buildTextField(
-                        controller: _fatherEducationController,
-                        label: 'Education',
-                      ),
-                    ]),
-                    _buildResponsiveRow([
-                      _buildTextField(
-                        controller: _fatherOccupationController,
-                        label: 'Occupation',
-                      ),
-                      _buildTextField(
-                        controller: _fatherAadhaarController,
-                        label: 'Aadhaar Number',
-                        keyboardType: TextInputType.number,
-                      ),
-                    ]),
-
-                    const SizedBox(height: 24),
-
-                    // Mother's Details
-                    Text(
-                      'Mother\'s Details',
-                      style: Theme.of(context).textTheme.titleMedium,
-                    ),
-                    const SizedBox(height: 16),
-                    _buildResponsiveRow([
-                      _buildTextField(
-                        controller: _motherNameController,
-                        label: 'Name',
-                      ),
-                      _buildTextField(
-                        controller: _motherEducationController,
-                        label: 'Education',
-                      ),
-                    ]),
-                    _buildResponsiveRow([
-                      _buildTextField(
-                        controller: _motherOccupationController,
-                        label: 'Occupation',
-                      ),
-                      _buildTextField(
-                        controller: _motherAadhaarController,
-                        label: 'Aadhaar Number',
-                        keyboardType: TextInputType.number,
-                      ),
-                    ]),
-
-                    const SizedBox(height: 24),
-
-                    // Guardian's Details
-                    Text(
-                      'Guardian\'s Details (Optional)',
-                      style: Theme.of(context).textTheme.titleMedium,
-                    ),
-                    const SizedBox(height: 16),
-                    _buildResponsiveRow([
-                      _buildTextField(
-                        controller: _guardianNameController,
-                        label: 'Name',
-                        isRequired: false,
-                      ),
-                      _buildTextField(
-                        controller: _guardianRelationController,
-                        label: 'Relation',
-                        isRequired: false,
-                      ),
-                    ]),
-                  ],
-                ),
-
-                // Contact Details Card
-                _buildCard(
-                  'Contact Details',
-                  [
-                    _buildResponsiveRow([
-                      _buildTextField(
-                        controller: _primaryMobileController,
-                        label: 'Primary Mobile',
-                        keyboardType: TextInputType.phone,
-                      ),
-                      _buildTextField(
-                        controller: _alternateMobileController,
-                        label: 'Alternate Mobile',
-                        keyboardType: TextInputType.phone,
-                        isRequired: false,
-                      ),
-                    ]),
-                    _buildResponsiveRow([
-                      _buildTextField(
-                        controller: _primaryEmailController,
-                        label: 'Primary Email',
-                        keyboardType: TextInputType.emailAddress,
-                      ),
-                      _buildTextField(
-                        controller: _alternateEmailController,
-                        label: 'Alternate Email',
-                        keyboardType: TextInputType.emailAddress,
-                        isRequired: false,
-                      ),
-                    ]),
-                    _buildResponsiveRow([
-                      _buildTextField(
-                        controller: _addressLine1Controller,
-                        label: 'Address Line 1',
-                      ),
-                      _buildTextField(
-                        controller: _addressLine2Controller,
-                        label: 'Address Line 2',
-                        isRequired: false,
-                      ),
-                    ]),
-                    _buildResponsiveRow([
-                      _buildTextField(
-                        controller: _cityController,
-                        label: 'City',
-                      ),
-                      _buildTextField(
-                        controller: _stateController,
-                        label: 'State',
-                      ),
-                      _buildTextField(
-                        controller: _pincodeController,
-                        label: 'Pincode',
-                        keyboardType: TextInputType.number,
-                      ),
-                    ]),
-                  ],
-                ),
-
-                const SizedBox(height: 32),
-
-                // Submit Button
-                SizedBox(
-                  width: double.infinity,
-                  height: 50,
-                  child: ElevatedButton(
-                    onPressed: _handleSubmit,
-                    style: ElevatedButton.styleFrom(
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                    ),
-                    child: const Text(
-                      'Submit Application',
-                      style: TextStyle(fontSize: 16),
-                    ),
-                  ),
-                ),
-
-                const SizedBox(height: 32),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildUploadCard(String title, bool isUploaded, Function(bool) onUploadComplete) {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(title),
-            const SizedBox(height: 8),
-            Row(
-              children: [
-                Icon(
-                  isUploaded ? Icons.check_circle : Icons.upload_file,
-                  color: isUploaded ? Colors.green : Colors.grey,
-                ),
-                const SizedBox(width: 8),
-                Text(
-                  isUploaded ? 'Uploaded' : 'Upload File',
-                  style: TextStyle(
-                    color: isUploaded ? Colors.green : Colors.grey,
-                  ),
-                ),
-                const Spacer(),
-                TextButton(
-                  onPressed: () => onUploadComplete(!isUploaded),
-                  child: Text(isUploaded ? 'Change' : 'Upload'),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  void _handleSubmit() {
-    if (_formKey.currentState!.validate()) {
-      // Create a map of all the form data
-      final formData = {
-        'studentDetails': {
-          'firstName': _firstNameController.text,
-          'lastName': _lastNameController.text,
-          'gender': _selectedGender,
-          'dateOfBirth': _dobController.text,
-          'bloodGroup': _selectedBloodGroup,
-          'nationality': _nationalityController.text,
-          'previousSchool': _previousSchoolController.text,
-          'class': _selectedClass,
-          'religion': _selectedReligion,
-          'community': _selectedCommunity,
-          'motherTongue': _motherTongueController.text,
-          'aadhaar': _aadhaarController.text,
-          'documentsUploaded': {
-            'birthCertificate': _birthCertificateUploaded,
-            'photograph': _photographUploaded,
-          }
-        },
-        'familyDetails': {
-          'father': {
-            'name': _fatherNameController.text,
-            'education': _fatherEducationController.text,
-            'occupation': _fatherOccupationController.text,
-            'aadhaar': _fatherAadhaarController.text,
-            'educationProofUploaded': _fatherEducationProofUploaded,
-          },
-          'mother': {
-            'name': _motherNameController.text,
-            'education': _motherEducationController.text,
-            'occupation': _motherOccupationController.text,
-            'aadhaar': _motherAadhaarController.text,
-            'educationProofUploaded': _motherEducationProofUploaded,
-          },
-          'guardian': {
-            'name': _guardianNameController.text,
-            'relation': _guardianRelationController.text,
-          },
-          'annualIncome': _selectedIncome,
-        },
-        'contactDetails': {
-          'mobile': {
-            'primary': _primaryMobileController.text,
-            'alternate': _alternateMobileController.text,
-          },
-          'email': {
-            'primary': _primaryEmailController.text,
-            'alternate': _alternateEmailController.text,
-          },
-          'address': {
-            'line1': _addressLine1Controller.text,
-            'line2': _addressLine2Controller.text,
-            'city': _cityController.text,
-            'state': _stateController.text,
-            'pincode': _pincodeController.text,
-          },
-        },
-      };
-
-      // Dispatch event to the bloc
-      BlocProvider.of<StudentBloc>(context).add(SaveStudentEvent(formData));
-    }
-  }
-
   void _showLoadingDialog() {
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (BuildContext context) {
-        return const Center(
-          child: CircularProgressIndicator(),
-        );
-      },
+      builder: (context) => const AlertDialog(
+        content: Row(
+          children: [
+            CircularProgressIndicator(),
+            SizedBox(width: 16),
+            Text('Processing file...'),
+          ],
+        ),
+      ),
     );
   }
 
@@ -726,16 +508,13 @@ class _NewStudentScreenState extends State<NewStudentScreen> {
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: const Text('Success'),
-          content:
-              const Text('Student registration form submitted successfully!'),
+          title: const Text('Success!'),
+          content: const Text('Student account created successfully!'),
           actions: <Widget>[
             TextButton(
               child: const Text('OK'),
               onPressed: () {
                 Navigator.of(context).pop();
-                // Optionally navigate back or to another screen
-                // Navigator.of(context).pop();
               },
             ),
           ],
@@ -744,10 +523,98 @@ class _NewStudentScreenState extends State<NewStudentScreen> {
     );
   }
 
-  @override
-  void initState() {
-    super.initState();
-    // Initialize controllers with default values if needed
-    _nationalityController.text = 'Indian'; // Default nationality
+  void _showErrorDialog(String message) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Error'),
+          content: Text(message),
+          actions: <Widget>[
+            TextButton(
+              child: const Text('OK'),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _showInfoDialog(String title, String message) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(title),
+        content: Text(message),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('OK'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showBulkSuccessDialog(int successCount, int failedCount, List<String> failedStudents) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Bulk Upload Complete'),
+        content: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text('Successfully uploaded: $successCount students'),
+              if (failedCount > 0) ...[
+                const SizedBox(height: 8),
+                Text('Failed: $failedCount students'),
+                if (failedStudents.isNotEmpty) ...[
+                  const SizedBox(height: 8),
+                  const Text('Failed students:'),
+                  ...failedStudents.take(5).map((student) =>
+                      Padding(
+                        padding: const EdgeInsets.only(left: 8.0),
+                        child: Text('• $student', style: const TextStyle(fontSize: 12)),
+                      )
+                  ),
+                  if (failedStudents.length > 5)
+                    Text('... and ${failedStudents.length - 5} more'),
+                ],
+              ],
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('OK'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showProgressDialog(int processed, int total) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => AlertDialog(
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            CircularProgressIndicator(
+              value: processed / total,
+            ),
+            const SizedBox(height: 16),
+            Text('Processing students: $processed / $total'),
+          ],
+        ),
+      ),
+    );
   }
 }

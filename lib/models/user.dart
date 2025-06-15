@@ -51,6 +51,31 @@ class User extends Equatable {
     };
   }
 
+  // Add the copyWith method that the bloc needs
+  User copyWith({
+    String? id,
+    String? email,
+    String? firstName,
+    String? lastName,
+    String? role,
+    String? mobileNumber,
+    DateTime? createdAt,
+    DateTime? updatedAt,
+    List<String>? permissions,
+  }) {
+    return User(
+      id: id ?? this.id,
+      email: email ?? this.email,
+      firstName: firstName ?? this.firstName,
+      lastName: lastName ?? this.lastName,
+      role: role ?? this.role,
+      mobileNumber: mobileNumber ?? this.mobileNumber,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+      permissions: permissions ?? this.permissions,
+    );
+  }
+
   String get displayName => '$firstName $lastName';
 
   @override

@@ -17,6 +17,7 @@ import 'package:sms/bloc/new_student/new_student_bloc.dart';
 import 'package:sms/bloc/permissions/permissions_bloc.dart';
 import 'package:sms/bloc/post/post_bloc.dart';
 import 'package:sms/bloc/rules/rules_bloc.dart';
+import 'package:sms/bloc/student_admin/student_bloc.dart';
 import 'package:sms/bloc/subjects/subjects_bloc.dart';
 import 'package:sms/repositories/auth_repository.dart';
 import 'package:sms/repositories/class_details_repository.dart';
@@ -33,6 +34,7 @@ import 'package:sms/repositories/permission_repository.dart';
 import 'package:sms/repositories/post_repository.dart';
 import 'package:sms/repositories/rules_repository.dart';
 import 'package:sms/repositories/staff_repository.dart';
+import 'package:sms/repositories/student_admin_repository.dart';
 import 'package:sms/repositories/student_repository.dart';
 import 'package:sms/repositories/students_repository.dart';
 import 'package:sms/repositories/subjects_repository.dart';
@@ -69,6 +71,7 @@ void main() async{
   final ConfigurationRepository configurationRepository = ConfigurationRepository(webService: webService);
   final PermissionRepository permissionRepository = PermissionRepository(webService: webService);
   final RulesRepository rulesRepository = RulesRepository(webService: webService);
+  final StudentAdminRepository studentAdminRepository = StudentAdminRepository(webService: webService);
   final ClassDetailsRepository classDetailsRepository = ClassDetailsRepository(webService: webService);
 
   final app =
@@ -131,6 +134,9 @@ void main() async{
         ),
         BlocProvider(
           create: (context) => RulesBloc(repository: rulesRepository),
+        ),
+        BlocProvider(
+          create: (context) => UserBloc(userRepository: studentAdminRepository),
         ),
         BlocProvider<ClassDetailsBloc>(
           create: (context) => ClassDetailsBloc(

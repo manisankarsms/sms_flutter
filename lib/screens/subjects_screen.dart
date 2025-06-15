@@ -56,98 +56,65 @@ class SubjectsScreen extends StatelessWidget {
   }
 
   Widget _buildSubjectsList(BuildContext context, List<Subject> subjects) {
-    return Padding(
-      padding: const EdgeInsets.all(16),
-      child: ListView.builder(
-        itemCount: subjects.length,
-        itemBuilder: (context, index) {
-          final subject = subjects[index];
-          return Card(
-            margin: const EdgeInsets.only(bottom: 16),
-            elevation: 2,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: InkWell(
-              borderRadius: BorderRadius.circular(12),
-              onTap: () {
-                // Navigate to subject details or show more info
-              },
-              child: Padding(
-                padding: const EdgeInsets.all(16),
+    return ListView.separated(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      itemCount: subjects.length,
+      separatorBuilder: (_, __) => const SizedBox(height: 8),
+      itemBuilder: (context, index) {
+        final subject = subjects[index];
+
+        return Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          decoration: BoxDecoration(
+            border: Border.all(color: Colors.grey.shade300),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Subject text
+              Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(12),
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          child: Icon(
-                            Icons.book,
-                            color: Theme.of(context).primaryColor,
-                            size: 28,
-                          ),
-                        ),
-                        const SizedBox(width: 16),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                subject.name,
-                                style: const TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 18,
-                                ),
-                              ),
-                              const SizedBox(height: 4),
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 8,
-                                  vertical: 2,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: Colors.grey.shade200,
-                                  borderRadius: BorderRadius.circular(4),
-                                ),
-                                child: Text(
-                                  subject.code,
-                                  style: TextStyle(
-                                    color: Colors.grey.shade800,
-                                    fontSize: 12,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        Row(
-                          children: [
-                            IconButton(
-                              icon: const Icon(Icons.edit_outlined),
-                              color: Colors.green,
-                              onPressed: () => _showSubjectDialog(context, subject),
-                            ),
-                            IconButton(
-                              icon: const Icon(Icons.delete_outline),
-                              color: Colors.red,
-                              onPressed: () => _showDeleteConfirmation(context, subject),
-                            ),
-                          ],
-                        ),
-                      ],
+                    Text(
+                      subject.name,
+                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.w600),
                     ),
+                    if (subject.code.isNotEmpty)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 2),
+                        child: Text(
+                          'Code: ${subject.code}',
+                          style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Colors.grey[600]),
+                        ),
+                      ),
                   ],
                 ),
               ),
-            ),
-          );
-        },
-      ),
+
+              // Actions
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  IconButton(
+                    onPressed: () => _showSubjectDialog(context, subject),
+                    icon: const Icon(Icons.edit_outlined, size: 20),
+                    color: Colors.green,
+                    tooltip: 'Edit',
+                  ),
+                  IconButton(
+                    onPressed: () => _showDeleteConfirmation(context, subject),
+                    icon: const Icon(Icons.delete_outline, size: 20),
+                    color: Colors.red[600],
+                    tooltip: 'Delete',
+                  ),
+                ],
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 

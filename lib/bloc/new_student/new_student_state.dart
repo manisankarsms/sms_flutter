@@ -1,21 +1,55 @@
-import 'package:equatable/equatable.dart';
+abstract class StudentState {}
 
-abstract class StudentState extends Equatable {
+class StudentInitialState extends StudentState {}
+
+class StudentLoadingState extends StudentState {}
+
+class StudentSuccessState extends StudentState {
+  final String message;
+  final dynamic data;
+
+  StudentSuccessState({required this.message, this.data});
+
   @override
-  List<Object?> get props => [];
+  String toString() => 'StudentSuccessState { message: $message }';
 }
 
-class StudentInitial extends StudentState {}
-
-class StudentSaving extends StudentState {}
-
-class StudentSaved extends StudentState {}
-
-class StudentError extends StudentState {
+class StudentErrorState extends StudentState {
   final String message;
+  final String? error;
 
-  StudentError(this.message);
+  StudentErrorState({required this.message, this.error});
 
   @override
-  List<Object?> get props => [message];
+  String toString() => 'StudentErrorState { message: $message, error: $error }';
+}
+
+// Add these new states for bulk upload:
+class BulkStudentProgressState extends StudentState {
+  final int processed;
+  final int total;
+
+  BulkStudentProgressState(this.processed, this.total);
+
+  @override
+  String toString() => 'BulkStudentProgressState { processed: $processed, total: $total }';
+}
+
+class BulkStudentSuccessState extends StudentState {
+  final int successCount;
+  final int failedCount;
+  final List<String> failedStudents;
+  final List<String> duplicateEmails;
+  final List<String> duplicateMobiles;
+
+  BulkStudentSuccessState({
+    required this.successCount,
+    required this.failedCount,
+    this.failedStudents = const [],
+    this.duplicateEmails = const [],
+    this.duplicateMobiles = const [],
+  });
+
+  @override
+  String toString() => 'BulkStudentSuccessState { success: $successCount, failed: $failedCount }';
 }

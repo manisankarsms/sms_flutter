@@ -42,7 +42,7 @@ String frameAddStudentRequest(
     'lastName': student.lastName,
     'dateOfBirth': student.dateOfBirth,
     'gender': student.gender,
-    'contactNumber': student.contactNumber,
+    'contactNumber': student.mobileNumber,
     'email': student.email,
     'address': student.address,
     'studentStandard': student.studentStandard,

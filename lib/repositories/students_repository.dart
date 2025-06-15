@@ -15,10 +15,15 @@ class StudentsRepository {
   // Fetch students for Admin
   Future<List<Student>> getAdminStudents(String classId) async {
     try {
-      final requestBody = jsonEncode({'classId': classId});
-      final response = await webService.postData(ApiEndpoints.adminStudents, requestBody);
+      final responseString = await webService.fetchData('${ApiEndpoints.adminStudentsClass}/$classId/students');
 
-      final List<dynamic> studentsJson = jsonDecode(response);
+      final Map<String, dynamic> response = jsonDecode(responseString);
+
+      if (response['success'] != true) {
+        throw Exception(response['message'] ?? 'Failed to fetch users');
+      }
+
+      final List<dynamic> studentsJson = response['data'];
       return studentsJson.map((json) => Student.fromJson(json)).toList();
     } catch (error) {
       throw Exception('Failed to fetch students: ${error.toString()}');
@@ -42,7 +47,7 @@ class StudentsRepository {
           lastName: '',
           dateOfBirth: '',
           gender: '',
-          contactNumber: '',
+          mobileNumber: '',
           email: '',
           address: '',
           studentStandard: '',

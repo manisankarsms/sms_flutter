@@ -26,7 +26,8 @@ class ApiEndpoints {
   static const String adminPosts = 'posts';
   static const String adminStaffs = 'admin/staffs';
   static const String staffUsers = 'users/role/STAFF';
-  static const String adminStudents = 'admin/students';
+  static const String adminStudents = 'student-assignments/academic-year/active/unassigned-students';
+  static const String adminStudentsClass = 'student-assignments/class';
   static const String staffAttendance = 'staff/attendance';
 
   static const String complaints = "complaints";
@@ -40,7 +41,7 @@ class ApiEndpoints {
   static const String returnBook = 'books/return';
   static const String issuedBooks = 'books/issued';
 
-  static const String studentAdmission = 'student/admission';
+  static const String studentAdmission = 'users';
   static const String staffRegistration = 'admin/staffs/register';
   static const String staffDelete = 'admin/staff/delete';
 

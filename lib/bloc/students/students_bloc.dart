@@ -1,5 +1,6 @@
 // bloc/students/students_bloc.dart
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:sms/utils/constants.dart';
 import '../../models/student.dart';
 import '../../models/exams.dart';
 import '../../models/student_marks.dart';
@@ -27,7 +28,7 @@ class StudentsBloc extends Bloc<StudentsEvent, StudentsState> {
     try {
       List<Student> students;
 
-      if (event.userRole == "Admin") {
+      if (event.userRole.toLowerCase() == Constants.admin) {
         students = await repository.getAdminStudents(event.classId);
       } else {
         students = await repository.getStaffAttendance(event.classId, event.date);
