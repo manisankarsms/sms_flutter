@@ -1,27 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:sms/widgets/section_header.dart';
 import '../bloc/dashboard/dashboard_bloc.dart';
 import '../bloc/dashboard/dashboard_event.dart';
 import '../bloc/dashboard/dashboard_state.dart';
 import '../models/dashboard_model.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
-
-class DashboardCard {
-  final String title;
-  final String value;
-  final IconData icon;
-  final Color color;
-  final String description;
-
-  DashboardCard({
-    required this.title,
-    required this.value,
-    required this.icon,
-    required this.color,
-    required this.description,
-  });
-}
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({Key? key}) : super(key: key);
@@ -30,71 +15,97 @@ class DashboardScreen extends StatefulWidget {
   _DashboardScreenState createState() => _DashboardScreenState();
 }
 
-class _DashboardScreenState extends State<DashboardScreen> with SingleTickerProviderStateMixin {
+class _DashboardScreenState extends State<DashboardScreen>
+    with SingleTickerProviderStateMixin, WidgetsBindingObserver {
   late AnimationController _animationController;
+  bool _hasAnimated = false;
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _animationController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 500),
+      duration: const Duration(milliseconds: 1200),
     );
     context.read<DashboardBloc>().add(FetchDashboardData());
   }
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _animationController.dispose();
     super.dispose();
   }
 
   @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);
+    if (state == AppLifecycleState.resumed) {
+      // Reset and restart animation when app resumes
+      _resetAndStartAnimation();
+    }
+  }
+
+  // Add this method to handle navigation back
+  @override
   void didChangeDependencies() {
     super.didChangeDependencies();
+    // This gets called every time the widget's dependencies change,
+    // including when navigating back to this screen
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        final state = context.read<DashboardBloc>().state;
+        if (state is DashboardLoaded) {
+          _resetAndStartAnimation();
+        }
+      }
+    });
+  }
 
-    // Reset and start animation when returning to the screen
-    final state = context.read<DashboardBloc>().state;
-    if (state is DashboardLoaded && !_animationController.isAnimating) {
+// Enhanced reset and start animation method
+  void _resetAndStartAnimation() {
+    print('Resetting animation - Controller status: ${_animationController.status}');
+    if (mounted) {
+      // Always reset the controller first
       _animationController.reset();
-      _animationController.forward();
+
+      // Use a small delay to ensure the widget tree is ready
+      Future.delayed(const Duration(milliseconds: 50), () {
+        if (mounted) {
+          _animationController.forward();
+          print('Animation restarted');
+        }
+      });
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final ColorScheme colorScheme = Theme.of(context).colorScheme;
-
     return BlocListener<DashboardBloc, DashboardState>(
       listener: (context, state) {
         if (state is DashboardError) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(state.message),
-              behavior: SnackBarBehavior.floating,
-              backgroundColor: Colors.red.shade700,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+              backgroundColor: Colors.red.shade600,
             ),
           );
         } else if (state is DashboardLoaded) {
-          _animationController.forward();
+          // Always restart animation when data is loaded
+          _resetAndStartAnimation();
         }
       },
       child: Scaffold(
         backgroundColor: Colors.grey.shade50,
         body: BlocBuilder<DashboardBloc, DashboardState>(
-          builder: (context, state) {
-            return AnimatedSwitcher(
-              duration: const Duration(milliseconds: 300),
-              child: _buildContent(state, colorScheme),
-            );
-          },
+          builder: (context, state) => _buildContent(state),
         ),
       ),
     );
   }
 
-  Widget _buildContent(DashboardState state, ColorScheme colorScheme) {
+  Widget _buildContent(DashboardState state) {
     if (state is DashboardLoading) {
       return Center(
         child: Column(
@@ -102,996 +113,878 @@ class _DashboardScreenState extends State<DashboardScreen> with SingleTickerProv
           children: [
             const CircularProgressIndicator(),
             const SizedBox(height: 16),
-            Text(
-              'Loading dashboard data...',
-              style: TextStyle(color: colorScheme.onSurface.withOpacity(0.7)),
-            ),
+            Text('Loading dashboard data...',
+                style: TextStyle(color: Colors.grey.shade600, fontSize: 16)),
           ],
         ),
       );
-    } else if (state is DashboardError) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.error_outline, size: 48, color: Colors.red.shade300),
-            const SizedBox(height: 16),
-            Text(
-              'Error: ${state.message}',
-              style: TextStyle(color: colorScheme.error),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 24),
-            ElevatedButton.icon(
-              onPressed: () {
-                context.read<DashboardBloc>().add(FetchDashboardData());
-              },
-              icon: const Icon(Icons.refresh),
-              label: Text(AppLocalizations.of(context)?.try_again ?? 'Try Again'),
-              style: ElevatedButton.styleFrom(
-                foregroundColor: Colors.white,
-                backgroundColor: colorScheme.primary,
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-              ),
-            ),
-          ],
-        ),
-      );
-    } else if (state is DashboardLoaded) {
-      return _buildDashboardContent(state.data, colorScheme);
+    }
+
+    if (state is DashboardError) {
+      return _buildErrorState(state.message);
+    }
+
+    if (state is DashboardLoaded) {
+      return _buildDashboard(state.data);
     }
 
     return Center(
       child: Text(
         AppLocalizations.of(context)?.no_data_available ?? 'No data available',
-        style: TextStyle(color: colorScheme.onSurface.withOpacity(0.7)),
+        style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+          color: Colors.grey.shade600,
+          fontSize: 16,
+        ),
       ),
     );
   }
 
-  Widget _buildDashboardContent(DashboardModel data, ColorScheme colorScheme) {
-    // Create dashboard cards from the API data
-    final List<DashboardCard> overviewCards = [
-      DashboardCard(
-        title: AppLocalizations.of(context)?.total_students ?? 'Total Students',
-        value: data.students.totalCount,
-        icon: Icons.people,
-        color: Colors.blue.shade700,
-        description: '${data.students.newAdmissionsThisMonth} new this month',
+  Widget _buildErrorState(String message) {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(Icons.error_outline, size: 48, color: Colors.red.shade400),
+          const SizedBox(height: 16),
+          Text(message, textAlign: TextAlign.center, style: const TextStyle(fontSize: 16)),
+          const SizedBox(height: 16),
+          ElevatedButton.icon(
+            onPressed: () => context.read<DashboardBloc>().add(FetchDashboardData()),
+            icon: const Icon(Icons.refresh),
+            label: const Text('Try Again', style: TextStyle(fontSize: 16)), // AppLocalizations.of(context)?.try_again ?? 'Try Again'
+          ),
+        ],
       ),
-      DashboardCard(
-        title: AppLocalizations.of(context)?.active_students ?? 'Active Students',
-        value: data.students.activeCount,
-        icon: Icons.person,
-        color: Colors.green.shade700,
-        description: '${data.students.activeCount} of ${data.students.totalCount}',
-      ),
-      DashboardCard(
-        title: AppLocalizations.of(context)?.total_teachers ?? 'Total Teachers',
-        value: data.staff.totalTeachers,
-        icon: Icons.school,
-        color: Colors.purple.shade700,
-        description: '${data.staff.onLeaveToday} on leave today',
-      ),
-      DashboardCard(
-        title: AppLocalizations.of(context)?.admin_staff ?? 'Admin Staff',
-        value: data.staff.totalAdminStaff,
-        icon: Icons.admin_panel_settings,
-        color: Colors.orange.shade700,
-        description: 'Support personnel',
-      ),
-    ];
+    );
+  }
 
-    // Create pie chart sections for gender distribution
-    final genderDistribution = data.students.genderDistribution;
-    final List<PieChartSectionData> pieChartSections = [
-      PieChartSectionData(
-        color: Colors.blue.shade600,
-        value: double.parse(genderDistribution.boys),
-        title: '${double.parse(genderDistribution.boys).toInt()}',
-        titleStyle: const TextStyle(
-          fontSize: 16,
-          fontWeight: FontWeight.bold,
-          color: Colors.white,
-        ),
-        radius: 100,
-        titlePositionPercentageOffset: 0.55,
-      ),
-      PieChartSectionData(
-        color: Colors.pink.shade600,
-        value: double.parse(genderDistribution.girls),
-        title: '${double.parse(genderDistribution.girls).toInt()}',
-        titleStyle: const TextStyle(
-          fontSize: 16,
-          fontWeight: FontWeight.bold,
-          color: Colors.white,
-        ),
-        radius: 100,
-        titlePositionPercentageOffset: 0.55,
-      ),
-      PieChartSectionData(
-        color: Colors.purple.shade600,
-        value: double.parse(genderDistribution.other),
-        title: '${double.parse(genderDistribution.other).toInt()}',
-        titleStyle: const TextStyle(
-          fontSize: 16,
-          fontWeight: FontWeight.bold,
-          color: Colors.white,
-        ),
-        radius: double.parse(genderDistribution.other) > 5 ? 100 : 80,
-        titlePositionPercentageOffset: 0.55,
-      ),
-    ];
-
-    // Create bar chart data for complaints by status
-    final complaintsData = data.complaints.byStatus;
-    final List<BarChartGroupData> complaintsBarGroups = [
-      BarChartGroupData(
-        x: 0,
-        barRods: [
-          BarChartRodData(
-            toY: double.parse(complaintsData.open),
-            color: Colors.red.shade500,
-            borderRadius: const BorderRadius.only(
-              topLeft: Radius.circular(6),
-              topRight: Radius.circular(6),
-            ),
-          ),
-        ],
-      ),
-      BarChartGroupData(
-        x: 1,
-        barRods: [
-          BarChartRodData(
-            toY: double.parse(complaintsData.pending),
-            color: Colors.amber.shade600,
-            borderRadius: const BorderRadius.only(
-              topLeft: Radius.circular(6),
-              topRight: Radius.circular(6),
-            ),
-          ),
-        ],
-      ),
-      BarChartGroupData(
-        x: 2,
-        barRods: [
-          BarChartRodData(
-            toY: double.parse(complaintsData.resolved),
-            color: Colors.green.shade500,
-            borderRadius: const BorderRadius.only(
-              topLeft: Radius.circular(6),
-              topRight: Radius.circular(6),
-            ),
-          ),
-        ],
-      ),
-    ];
+  Widget _buildDashboard(DashboardModel dashboardModel) {
+    final data = dashboardModel.data;
 
     return SafeArea(
       child: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Overview Cards Section
-              _buildSectionHeader(
-                  AppLocalizations.of(context)?.overview ?? 'Overview',
-                  colorScheme
-              ),
-              const SizedBox(height: 16),
-
-              // Animated cards with FadeTransition
-              _buildResponsiveCardGrid(
-                overviewCards.asMap().entries.map((entry) {
-                  int idx = entry.key;
-                  DashboardCard card = entry.value;
-
-                  return FadeTransition(
-                    opacity: Tween<double>(begin: 0.0, end: 1.0).animate(
-                      CurvedAnimation(
-                        parent: _animationController,
-                        curve: Interval(
-                          0.1 * idx, // Stagger the animations
-                          0.1 * idx + 0.6,
-                          curve: Curves.easeOut,
-                        ),
-                      ),
-                    ),
-                    child: SlideTransition(
-                      position: Tween<Offset>(
-                        begin: const Offset(0.0, 0.3),
-                        end: Offset.zero,
-                      ).animate(
-                        CurvedAnimation(
-                          parent: _animationController,
-                          curve: Interval(
-                            0.1 * idx,
-                            0.1 * idx + 0.6,
-                            curve: Curves.easeOut,
-                          ),
-                        ),
-                      ),
-                      child: _buildDashboardCard(card, colorScheme),
-                    ),
-                  );
-                }).toList(),
-              ),
-
-              // Quick Actions Section
-              const SizedBox(height: 32),
-              _buildSectionHeader(
-                  AppLocalizations.of(context)?.quick_actions ?? 'Quick Actions',
-                  colorScheme
-              ),
-              const SizedBox(height: 16),
-              _buildQuickActionsGrid(colorScheme),
-
-              const SizedBox(height: 32),
-              _buildSectionHeader(
-                  'Plan Usage',
-                  colorScheme
-              ),
-              const SizedBox(height: 16),
-              _buildPlanUsageSection(data.planUsage, colorScheme),
-
-              // Analytics Charts Section
-              const SizedBox(height: 32),
-              _buildSectionHeader(
-                  AppLocalizations.of(context)?.analytics ?? 'Analytics',
-                  colorScheme
-              ),
-              const SizedBox(height: 16),
-
-              // Analytics layout that's responsive for both web and mobile
-              LayoutBuilder(
-                builder: (context, constraints) {
-                  // For wider screens (tablets and desktops), use a row layout
-                  if (constraints.maxWidth > 800) {
-                    return Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // Left chart: Gender Distribution
-                        Expanded(
-                          flex: 1,
-                          child: _buildChartCard(
-                            child: PieChart(
-                              PieChartData(
-                                sections: pieChartSections,
-                                centerSpaceRadius: 40,
-                                sectionsSpace: 4,
-                                pieTouchData: PieTouchData(
-                                  touchCallback: (FlTouchEvent event, pieTouchResponse) {
-                                    // Handle touch events
-                                  },
-                                ),
-                              ),
-                            ),
-                            title: AppLocalizations.of(context)?.gender_distribution ?? 'Gender Distribution',
-                            colorScheme: colorScheme,
-                          ),
-                        ),
-                        const SizedBox(width: 16),
-                        // Right chart: Complaints Status
-                        Expanded(
-                          flex: 1,
-                          child: _buildChartCard(
-                            title: 'Complaints Status',
-                            colorScheme: colorScheme,
-                            child: Column(
-                              children: [
-                                Expanded(
-                                  child: BarChart(
-                                    BarChartData(
-                                      alignment: BarChartAlignment.spaceAround,
-                                      maxY: double.parse(complaintsData.open) > double.parse(complaintsData.pending) ?
-                                      (double.parse(complaintsData.open) > double.parse(complaintsData.resolved) ?
-                                      double.parse(complaintsData.open) * 1.2 : double.parse(complaintsData.resolved) * 1.2) :
-                                      (double.parse(complaintsData.pending) > double.parse(complaintsData.resolved) ?
-                                      double.parse(complaintsData.pending) * 1.2 : double.parse(complaintsData.resolved) * 1.2),
-                                      barGroups: complaintsBarGroups,
-                                      titlesData: FlTitlesData(
-                                        leftTitles: AxisTitles(
-                                          sideTitles: SideTitles(
-                                            showTitles: true,
-                                            getTitlesWidget: (value, meta) {
-                                              return SideTitleWidget(
-                                                axisSide: meta.axisSide,
-                                                child: Text('${value.toInt()}'),
-                                              );
-                                            },
-                                            reservedSize: 30,
-                                          ),
-                                        ),
-                                        bottomTitles: AxisTitles(
-                                          sideTitles: SideTitles(
-                                            showTitles: true,
-                                            getTitlesWidget: (value, meta) {
-                                              const statuses = ['Open', 'Pending', 'Resolved'];
-                                              if (value.toInt() >= 0 && value.toInt() < statuses.length) {
-                                                return SideTitleWidget(
-                                                  axisSide: meta.axisSide,
-                                                  child: Text(
-                                                    statuses[value.toInt()],
-                                                    style: const TextStyle(
-                                                      fontWeight: FontWeight.bold,
-                                                      fontSize: 12,
-                                                    ),
-                                                  ),
-                                                );
-                                              }
-                                              return const SizedBox.shrink();
-                                            },
-                                            reservedSize: 30,
-                                          ),
-                                        ),
-                                        rightTitles: AxisTitles(
-                                          sideTitles: SideTitles(showTitles: false),
-                                        ),
-                                        topTitles: AxisTitles(
-                                          sideTitles: SideTitles(showTitles: false),
-                                        ),
-                                      ),
-                                      borderData: FlBorderData(show: false),
-                                      gridData: FlGridData(
-                                        show: true,
-                                        drawHorizontalLine: true,
-                                        drawVerticalLine: false,
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                                const SizedBox(height: 16),
-                                // Resolution rate indicator
-                                Wrap(
-                                  alignment: WrapAlignment.center,
-                                  children: [
-                                    Text(
-                                      'Resolution Rate: ',
-                                      style: TextStyle(
-                                        fontWeight: FontWeight.bold,
-                                        color: colorScheme.onSurface,
-                                      ),
-                                    ),
-                                    Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                                      decoration: BoxDecoration(
-                                        color: double.parse(data.complaints.resolutionRate) > 50
-                                            ? Colors.green.shade100
-                                            : double.parse(data.complaints.resolutionRate) > 25
-                                            ? Colors.amber.shade100
-                                            : Colors.red.shade100,
-                                        borderRadius: BorderRadius.circular(16),
-                                      ),
-                                      child: Text(
-                                        '${data.complaints.resolutionRate}%',
-                                        style: TextStyle(
-                                          fontWeight: FontWeight.bold,
-                                          color: double.parse(data.complaints.resolutionRate) > 50
-                                              ? Colors.green.shade800
-                                              : double.parse(data.complaints.resolutionRate) > 25
-                                              ? Colors.amber.shade800
-                                              : Colors.red.shade800,
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ],
-                    );
-                  } else {
-                    // For mobile screens, use a column layout
-                    return Column(
-                      children: [
-                        // Gender Distribution Chart
-                        _buildChartCard(
-                          child: PieChart(
-                            PieChartData(
-                              sections: pieChartSections,
-                              centerSpaceRadius: 40,
-                              sectionsSpace: 4,
-                              pieTouchData: PieTouchData(
-                                touchCallback: (FlTouchEvent event, pieTouchResponse) {
-                                  // Handle touch events
-                                },
-                              ),
-                            ),
-                          ),
-                          title: AppLocalizations.of(context)?.gender_distribution ?? 'Gender Distribution',
-                          colorScheme: colorScheme,
-                        ),
-                        const SizedBox(height: 24),
-                        // Complaints Chart
-                        _buildChartCard(
-                          title: 'Complaints Status',
-                          colorScheme: colorScheme,
-                          child: Column(
-                            children: [
-                              SizedBox(
-                                height: 200,
-                                child: BarChart(
-                                  BarChartData(
-                                    alignment: BarChartAlignment.spaceAround,
-                                    maxY: double.parse(complaintsData.open) > double.parse(complaintsData.pending) ?
-                                    (double.parse(complaintsData.open) > double.parse(complaintsData.resolved) ?
-                                    double.parse(complaintsData.open) * 1.2 : double.parse(complaintsData.resolved) * 1.2) :
-                                    (double.parse(complaintsData.pending) > double.parse(complaintsData.resolved) ?
-                                    double.parse(complaintsData.pending) * 1.2 : double.parse(complaintsData.resolved) * 1.2),
-                                    barGroups: complaintsBarGroups,
-                                    titlesData: FlTitlesData(
-                                      leftTitles: AxisTitles(
-                                        sideTitles: SideTitles(
-                                          showTitles: true,
-                                          getTitlesWidget: (value, meta) {
-                                            return SideTitleWidget(
-                                              axisSide: meta.axisSide,
-                                              child: Text('${value.toInt()}'),
-                                            );
-                                          },
-                                          reservedSize: 30,
-                                        ),
-                                      ),
-                                      bottomTitles: AxisTitles(
-                                        sideTitles: SideTitles(
-                                          showTitles: true,
-                                          getTitlesWidget: (value, meta) {
-                                            const statuses = ['Open', 'Pending', 'Resolved'];
-                                            if (value.toInt() >= 0 && value.toInt() < statuses.length) {
-                                              return SideTitleWidget(
-                                                axisSide: meta.axisSide,
-                                                child: Text(
-                                                  statuses[value.toInt()],
-                                                  style: const TextStyle(
-                                                    fontWeight: FontWeight.bold,
-                                                    fontSize: 12,
-                                                  ),
-                                                ),
-                                              );
-                                            }
-                                            return const SizedBox.shrink();
-                                          },
-                                          reservedSize: 30,
-                                        ),
-                                      ),
-                                      rightTitles: AxisTitles(
-                                        sideTitles: SideTitles(showTitles: false),
-                                      ),
-                                      topTitles: AxisTitles(
-                                        sideTitles: SideTitles(showTitles: false),
-                                      ),
-                                    ),
-                                    borderData: FlBorderData(show: false),
-                                    gridData: FlGridData(
-                                      show: true,
-                                      drawHorizontalLine: true,
-                                      drawVerticalLine: false,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(height: 16),
-                              // Resolution rate indicator
-                              Wrap(
-                                alignment: WrapAlignment.center,
-                                children: [
-                                  Text(
-                                    'Resolution Rate: ',
-                                    style: TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      color: colorScheme.onSurface,
-                                    ),
-                                  ),
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                                    decoration: BoxDecoration(
-                                      color: double.parse(data.complaints.resolutionRate) > 50
-                                          ? Colors.green.shade100
-                                          : double.parse(data.complaints.resolutionRate) > 25
-                                          ? Colors.amber.shade100
-                                          : Colors.red.shade100,
-                                      borderRadius: BorderRadius.circular(16),
-                                    ),
-                                    child: Text(
-                                      '${data.complaints.resolutionRate}%',
-                                      style: TextStyle(
-                                        fontWeight: FontWeight.bold,
-                                        color: double.parse(data.complaints.resolutionRate) > 50
-                                            ? Colors.green.shade800
-                                            : double.parse(data.complaints.resolutionRate) > 25
-                                            ? Colors.amber.shade800
-                                            : Colors.red.shade800,
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    );
-                  }
-                },
-              ),
-              const SizedBox(height: 32),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-  // Reusable section header widget
-  Widget _buildSectionHeader(String title, ColorScheme colorScheme) {
-    return Row(
-      children: [
-        Container(
-          width: 4,
-          height: 20,
-          decoration: BoxDecoration(
-            color: colorScheme.primary,
-            borderRadius: BorderRadius.circular(2),
-          ),
-        ),
-        const SizedBox(width: 8),
-        Text(
-          title,
-          style: TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-            color: colorScheme.onSurface,
-          ),
-        ),
-      ],
-    );
-  }
-
-  // Build dashboard card with more modern design
-  Widget _buildDashboardCard(DashboardCard card, ColorScheme colorScheme) {
-    return Card(
-      elevation: 2,
-      shadowColor: card.color.withOpacity(0.3),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      child: Container(
-        width: 240,
-        padding: const EdgeInsets.all(20),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(16),
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              card.color.withOpacity(0.8),
-              card.color.withOpacity(0.9),
-            ],
-          ),
-        ),
+        padding: const EdgeInsets.all(12),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  card.title,
-                  style: const TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w500,
-                    color: Colors.white,
-                  ),
-                ),
-                Icon(card.icon, color: Colors.white.withOpacity(0.9), size: 28),
-              ],
-            ),
+            _buildOverviewCards(data),
             const SizedBox(height: 16),
-            Text(
-              card.value,
-              style: const TextStyle(
-                fontSize: 30,
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
-              ),
-            ),
-            const SizedBox(height: 12),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-              decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.15),
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: Text(
-                card.description,
-                style: TextStyle(
-                  fontSize: 12,
-                  color: Colors.white.withOpacity(0.9),
-                ),
-              ),
-            ),
+            _buildQuickActions(),
+            const SizedBox(height: 16),
+            _buildChartsSection(data),
+            const SizedBox(height: 16),
+            _buildRecentActivities(data),
+            const SizedBox(height: 16),
+            _buildUpcomingEvents(data.holidayStatistics),
           ],
         ),
       ),
     );
   }
 
-  // Quick actions grid with responsiveness
-  Widget _buildQuickActionsGrid(ColorScheme colorScheme) {
-    final List<Map<String, dynamic>> actions = [
-      {
-        'icon': Icons.person_add,
-        'label': AppLocalizations.of(context)?.add_student ?? 'Add Student',
-        'onPressed': () {
-          // Navigate to add student screen
-        },
-      },
-      {
-        'icon': Icons.add_box,
-        'label': AppLocalizations.of(context)?.add_new_class ?? 'Create Class',
-        'onPressed': () {
-          // Navigate to create class screen
-        },
-      },
-      {
-        'icon': Icons.people,
-        'label': AppLocalizations.of(context)?.manage_staff ?? 'Manage Staff',
-        'onPressed': () {
-          // Navigate to staff management
-        },
-      },
-      {
-        'icon': Icons.assessment,
-        'label': AppLocalizations.of(context)?.reports ?? 'Reports',
-        'onPressed': () {
-          // Navigate to reports screen
-        },
-      },
+// Updated _buildOverviewCards method with larger text sizes
+  Widget _buildOverviewCards(DashboardData data) {
+    final cards = [
+      _CardData(
+        AppLocalizations.of(context)?.total_students ?? 'Total Students',
+        data.overview.totalStudents.toString(),
+        Icons.people,
+        Colors.blue,
+        '${data.studentStatistics.recentEnrollments.length} recent',
+      ),
+      _CardData(
+        'Total Staff',
+        data.overview.totalStaff.toString(),
+        Icons.school,
+        Colors.purple,
+        '${data.staffStatistics.classTeachers} teachers',
+      ),
+      _CardData(
+        'Today\'s Attendance',
+        '${data.overview.todayAttendanceRate.toStringAsFixed(1)}%',
+        Icons.check_circle,
+        data.overview.todayAttendanceRate >= 80 ? Colors.green : Colors.orange,
+        'Daily rate',
+      ),
+      _CardData(
+        'Pending Complaints',
+        data.overview.pendingComplaints.toString(),
+        Icons.report_problem,
+        data.overview.pendingComplaints > 5 ? Colors.red : Colors.amber,
+        '${data.overview.totalComplaints} total',
+      ),
+      _CardData(
+        'Total Classes',
+        data.overview.totalClasses.toString(),
+        Icons.class_,
+        Colors.indigo,
+        '${data.overview.totalSubjects} subjects',
+      ),
+      _CardData(
+        'Upcoming Exams',
+        data.overview.upcomingExams.toString(),
+        Icons.quiz,
+        Colors.teal,
+        '${data.examStatistics.totalExams} total',
+      ),
     ];
-
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        if (constraints.maxWidth > 700) {
-          // Grid layout for larger screens
-          return Align(
-            alignment: Alignment.centerLeft,
-            child: Wrap(
-              spacing: 16,
-              runSpacing: 16,
-              children: actions.map((action) {
-                return _buildQuickActionButton(
-                  icon: action['icon'],
-                  label: action['label'],
-                  onPressed: action['onPressed'],
-                  colorScheme: colorScheme,
-                );
-              }).toList(),
-            ),
-          );
-        } else {
-          // Row with horizontal scrolling for smaller screens
-          return SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: Row(
-              children: actions.map((action) {
-                return Padding(
-                  padding: const EdgeInsets.only(right: 16.0),
-                  child: _buildQuickActionButton(
-                    icon: action['icon'],
-                    label: action['label'],
-                    onPressed: action['onPressed'],
-                    colorScheme: colorScheme,
-                  ),
-                );
-              }).toList(),
-            ),
-          );
-        }
-      },
-    );
-  }
-
-  // Build responsive card grid
-  Widget _buildResponsiveCardGrid(List<Widget> children) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        // Use grid layout for wider screens
-        if (constraints.maxWidth > 700) {
-          return GridView.count(
-            crossAxisCount: constraints.maxWidth > 1100 ? 4 : 2,
-            childAspectRatio: 1.5,
-            crossAxisSpacing: 16,
-            mainAxisSpacing: 16,
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            children: children,
-          );
-        } else {
-          // Use horizontal scrolling for smaller screens
-          return SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: Row(
-              children: children.map((child) {
-                return Padding(
-                  padding: const EdgeInsets.only(right: 16.0),
-                  child: child,
-                );
-              }).toList(),
-            ),
-          );
-        }
-      },
-    );
-  }
-
-  // Build quick action buttons with improved design
-  Widget _buildQuickActionButton({
-    required IconData icon,
-    required String label,
-    required VoidCallback onPressed,
-    required ColorScheme colorScheme,
-  }) {
-    return ElevatedButton(
-      onPressed: onPressed,
-      style: ElevatedButton.styleFrom(
-        foregroundColor: colorScheme.onPrimary,
-        backgroundColor: colorScheme.primary,
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-        ),
-        elevation: 2,
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 20),
-          const SizedBox(width: 8),
-          Text(
-            label,
-            style: const TextStyle(
-              fontWeight: FontWeight.w600,
-              fontSize: 14,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  // Reusable chart card widget
-  Widget _buildChartCard({
-    required Widget child,
-    required String title,
-    required ColorScheme colorScheme,
-  }) {
-    return SizedBox(
-      height: 400, // 💡 Set the same fixed height for all cards
-      child: Card(
-        elevation: 2,
-        shadowColor: Colors.black.withOpacity(0.1),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-        ),
-        child: Padding(
-          padding: const EdgeInsets.all(20.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Title Row
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Flexible(
-                    child: Text(
-                      title,
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: colorScheme.onSurface,
-                      ),
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.more_vert),
-                    onPressed: () {
-                      // Show chart options
-                    },
-                    tooltip: 'More options',
-                    padding: EdgeInsets.zero,
-                    constraints: const BoxConstraints(),
-                  ),
-                ],
-              ),
-
-              // Chart content (fill available space)
-              Expanded(
-                child: child,
-              ),
-
-              // Legend for gender distribution
-              if (title == (AppLocalizations.of(context)?.gender_distribution ?? 'Gender Distribution'))
-                Padding(
-                  padding: const EdgeInsets.only(top: 16.0),
-                  child: Wrap(
-                    alignment: WrapAlignment.center,
-                    spacing: 12,
-                    runSpacing: 8,
-                    children: [
-                      _buildLegendItem(Colors.blue.shade600, AppLocalizations.of(context)?.boys ?? 'Boys', colorScheme),
-                      _buildLegendItem(Colors.pink.shade600, AppLocalizations.of(context)?.girls ?? 'Girls', colorScheme),
-                      _buildLegendItem(Colors.purple.shade600, AppLocalizations.of(context)?.other ?? 'Other', colorScheme),
-                    ],
-                  ),
-                ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-
-  Widget _buildLegendItem(Color color, String label, ColorScheme colorScheme) {
-    return Row(
-      children: [
-        Container(
-          width: 12,
-          height: 12,
-          decoration: BoxDecoration(
-            color: color,
-            shape: BoxShape.circle,
-          ),
-        ),
-        const SizedBox(width: 8),
-        Text(
-          label,
-          style: TextStyle(color: colorScheme.onSurface),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildPlanUsageSection(PlanUsage planUsage, ColorScheme colorScheme) {
-    return Card(
-      elevation: 2,
-      shadowColor: Colors.black.withOpacity(0.1),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(20.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Replace the Row in the _buildPlanUsageSection function with this more responsive version
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Flexible(
-                  child: Text(
-                    'Plan Usage - ${planUsage.planName}',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: colorScheme.onSurface,
-                    ),
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-                const SizedBox(width: 8), // Add some spacing between the elements
-                Flexible(
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                    decoration: BoxDecoration(
-                      color: colorScheme.primary.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    child: Text(
-                      'Renews: ${planUsage.nextBillingDate}',
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        color: colorScheme.primary,
-                        fontSize: 12,
-                      ),
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 20),
-
-            // Students usage
-            _buildUsageIndicator(
-              title: 'Students',
-              current: double.parse(planUsage.currentStudentCount),
-              max: double.parse(planUsage.studentLimit),
-              color: Colors.blue,
-              colorScheme: colorScheme,
-            ),
-            const SizedBox(height: 12),
-
-            // Staff usage
-            _buildUsageIndicator(
-              title: 'Staff',
-              current: double.parse(planUsage.currentStaffCount),
-              max: double.parse(planUsage.staffLimit),
-              color: Colors.purple,
-              colorScheme: colorScheme,
-            ),
-            const SizedBox(height: 12),
-
-            // Storage usage
-            _buildUsageIndicator(
-              title: 'Storage',
-              current: double.parse(planUsage.usedStorageMB),
-              max: double.parse(planUsage.storageLimitMB),
-              color: Colors.amber,
-              colorScheme: colorScheme,
-              suffix: 'MB',
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildUsageIndicator({
-    required String title,
-    required double current,
-    required double max,
-    required Color color,
-    required ColorScheme colorScheme,
-    String suffix = '',
-  }) {
-    final percentage = current / max;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(
-              title,
-              style: TextStyle(
-                fontWeight: FontWeight.w500,
-                color: colorScheme.onSurface,
+        const SectionHeader(title: 'Overview'),
+        const SizedBox(height: 8),
+        LayoutBuilder(
+          builder: (context, constraints) {
+            // More precise responsive breakpoints with better aspect ratios
+            int crossAxisCount;
+            double childAspectRatio;
+
+            if (constraints.maxWidth > 1200) {
+              // Large desktop - 3 columns
+              crossAxisCount = 3;
+              childAspectRatio = 2.2; // Increased height for larger text
+            } else if (constraints.maxWidth > 900) {
+              // Medium desktop - 3 columns
+              crossAxisCount = 3;
+              childAspectRatio = 2.0; // Increased height for larger text
+            } else if (constraints.maxWidth > 600) {
+              // Tablet landscape - 2 columns
+              crossAxisCount = 2;
+              childAspectRatio = 1.9; // Increased height for larger text
+            } else if (constraints.maxWidth > 480) {
+              // Large mobile/small tablet - 2 columns
+              crossAxisCount = 2;
+              childAspectRatio = 1.7; // Increased height for larger text
+            } else {
+              // Small mobile - 1 column
+              crossAxisCount = 1;
+              childAspectRatio = 3.2; // Increased height for larger text
+            }
+
+            return GridView.builder(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: crossAxisCount,
+                childAspectRatio: childAspectRatio,
+                crossAxisSpacing: 8,
+                mainAxisSpacing: 8,
+              ),
+              itemCount: cards.length,
+              itemBuilder: (context, index) => _buildOverviewCard(cards[index], index, cards.length),
+            );
+          },
+        ),
+      ],
+    );
+  }
+
+// Updated _buildOverviewCard method with larger text sizes
+  Widget _buildOverviewCard(_CardData card, int index, int totalCards) {
+    // Calculate proper interval values that don't exceed 1.0
+    final double startDelay = (index / totalCards) * 0.5;
+    final double endTime = startDelay + 0.5;
+    final double clampedEndTime = endTime > 1.0 ? 1.0 : endTime;
+
+    return FadeTransition(
+      opacity: Tween(begin: 0.0, end: 1.0).animate(
+        CurvedAnimation(
+          parent: _animationController,
+          curve: Interval(startDelay, clampedEndTime, curve: Curves.easeOut),
+        ),
+      ),
+      child: SlideTransition(
+        position: Tween(
+          begin: const Offset(0, 0.2),
+          end: Offset.zero,
+        ).animate(
+          CurvedAnimation(
+            parent: _animationController,
+            curve: Interval(startDelay, clampedEndTime, curve: Curves.easeOut),
+          ),
+        ),
+        child: Card(
+          elevation: 1,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+          child: Container(
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(8),
+              gradient: LinearGradient(
+                colors: [card.color.withOpacity(0.1), card.color.withOpacity(0.05)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
               ),
             ),
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                // Adjust layout based on available space
+                bool isVerySmall = constraints.maxHeight < 140; // Adjusted for larger text
+                bool isNarrowCard = constraints.maxWidth < 150;
+
+                // Adjust padding based on available space
+                double padding = isVerySmall ? 10 : 14; // Increased padding
+
+                return Padding(
+                  padding: EdgeInsets.all(padding),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    mainAxisSize: MainAxisSize.min, // Important: prevents overflow
+                    children: [
+                      // Header row with title and icon
+                      Flexible(
+                        flex: 2,
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Expanded(
+                              child: Text(
+                                card.title,
+                                style: TextStyle(
+                                  fontSize: isVerySmall ? 15 : (isNarrowCard ? 18 : 24), // Increased sizes
+                                  fontWeight: FontWeight.w900,
+                                  height: 1.2, // Tighter line height
+                                ),
+                                overflow: TextOverflow.ellipsis,
+                                maxLines: isVerySmall ? 1 : (isNarrowCard ? 2 : 1),
+                              ),
+                            ),
+                            SizedBox(width: 4),
+                            Icon(
+                              card.icon,
+                              color: card.color,
+                              size: isVerySmall ? 20 : (isNarrowCard ? 22 : 24), // Increased sizes
+                            ),
+                          ],
+                        ),
+                      ),
+
+                      // Spacer - flexible to absorb extra space
+                      if (!isVerySmall)
+                        Flexible(
+                          flex: 1,
+                          child: SizedBox(height: isNarrowCard ? 2 : 4),
+                        ),
+
+                      // Value text
+                      Flexible(
+                        flex: 3,
+                        child: FittedBox(
+                          fit: BoxFit.scaleDown,
+                          alignment: Alignment.centerLeft,
+                          child: Text(
+                            card.value,
+                            style: TextStyle(
+                              fontSize: isVerySmall ? 24 : (isNarrowCard ? 30 : 32), // Increased sizes
+                              fontWeight: FontWeight.w900,
+                              color: card.color,
+                              height: 1.0,
+                            ),
+                          ),
+                        ),
+                      ),
+
+                      // Description text
+                      Flexible(
+                        flex: 1,
+                        child: Text(
+                          card.description,
+                          style: TextStyle(
+                            fontSize: isVerySmall ? 14 : (isNarrowCard ? 16 : 20), // Increased sizes
+                            color: Colors.grey.shade800,
+                            height: 1.2,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              },
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildQuickActions() {
+    final actions = [
+      _ActionData('Add Student', Icons.person_add, Colors.blue),
+      _ActionData('Add Staff', Icons.group_add, Colors.purple),
+      _ActionData('View Reports', Icons.analytics, Colors.green),
+      _ActionData('Schedule Exam', Icons.quiz, Colors.orange),
+    ];
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const SectionHeader(title:'Quick Actions'),
+        const SizedBox(height: 8),
+        SizedBox(
+          height: 70, // Increased height for larger text
+          child: ListView.separated(
+            scrollDirection: Axis.horizontal,
+            itemCount: actions.length,
+            separatorBuilder: (_, __) => const SizedBox(width: 8),
+            itemBuilder: (context, index) => _buildActionButton(actions[index]),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildActionButton(_ActionData action) {
+    return InkWell(
+      onTap: () {}, // Add navigation logic
+      borderRadius: BorderRadius.circular(8),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10), // Increased padding
+        decoration: BoxDecoration(
+          color: action.color.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: action.color.withOpacity(0.3)),
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(action.icon, color: action.color, size: 24), // Increased icon size
+            const SizedBox(height: 4),
             Text(
-              '${current.toInt()}${suffix.isNotEmpty ? ' $suffix' : ''} / ${max.toInt()}${suffix.isNotEmpty ? ' $suffix' : ''}',
+              action.title,
               style: TextStyle(
+                fontSize: 12, // Increased text size
                 fontWeight: FontWeight.w500,
-                color: colorScheme.onSurface.withOpacity(0.7),
-                fontSize: 13,
+                color: action.color,
               ),
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildChartsSection(DashboardData data) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const SectionHeader(title:'Analytics'),
         const SizedBox(height: 8),
-        Container(
-          height: 8,
-          width: double.infinity,
-          decoration: BoxDecoration(
-            color: Colors.grey.shade200,
-            borderRadius: BorderRadius.circular(4),
-          ),
-          child: FractionallySizedBox(
-            alignment: Alignment.centerLeft,
-            widthFactor: percentage > 1 ? 1 : percentage,
-            child: Container(
-              decoration: BoxDecoration(
-                color: percentage > 0.9 ? Colors.red : color,
-                borderRadius: BorderRadius.circular(4),
+        LayoutBuilder(
+          builder: (context, constraints) {
+            if (constraints.maxWidth > 600) {
+              return Column(
+                children: [
+                  Row(
+                    children: [
+                      Expanded(child: _buildStudentsChart(data.studentStatistics)),
+                      const SizedBox(width: 8),
+                      Expanded(child: _buildStaffChart(data.staffStatistics)),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      Expanded(child: _buildComplaintsChart(data.complaintStatistics)),
+                      const SizedBox(width: 8),
+                      Expanded(child: _buildAttendanceChart(data.attendanceStatistics)),
+                    ],
+                  ),
+                ],
+              );
+            }
+            return Column(
+              children: [
+                _buildStudentsChart(data.studentStatistics),
+                const SizedBox(height: 8),
+                _buildStaffChart(data.staffStatistics),
+                const SizedBox(height: 8),
+                _buildComplaintsChart(data.complaintStatistics),
+                const SizedBox(height: 8),
+                _buildAttendanceChart(data.attendanceStatistics),
+              ],
+            );
+          },
+        ),
+      ],
+    );
+  }
+
+  Widget _buildStudentsChart(StudentStatistics stats) {
+    final sections = stats.studentsByClass.take(5).map((classData) {
+      final index = stats.studentsByClass.indexOf(classData);
+      return PieChartSectionData(
+        color: Colors.primaries[index % Colors.primaries.length],
+        value: classData.studentCount.toDouble(),
+        title: '${classData.studentCount}',
+        titleStyle: const TextStyle(
+          fontSize: 12, // Increased chart text size
+          fontWeight: FontWeight.bold,
+          color: Colors.white,
+        ),
+        radius: 45, // Increased radius for better visibility
+      );
+    }).toList();
+
+    return _chartCard(
+      'Students by Class',
+      Column(
+        children: [
+          SizedBox(
+            height: 130, // Increased chart height
+            child: PieChart(
+              PieChartData(
+                sections: sections,
+                centerSpaceRadius: 25, // Increased center space
+                sectionsSpace: 1,
               ),
+            ),
+          ),
+          const SizedBox(height: 8),
+          Wrap(
+            alignment: WrapAlignment.center,
+            spacing: 8,
+            runSpacing: 4,
+            children: stats.studentsByClass.take(5).map((classData) {
+              final index = stats.studentsByClass.indexOf(classData);
+              final color = Colors.primaries[index % Colors.primaries.length];
+              return _buildLegendItem(color, '${classData.className} ${classData.sectionName}');
+            }).toList(),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStaffChart(StaffStatistics stats) {
+    final barGroups = stats.staffByRole.asMap().entries.map((entry) {
+      return BarChartGroupData(
+        x: entry.key,
+        barRods: [
+          BarChartRodData(
+            toY: entry.value.count.toDouble(),
+            color: Colors.primaries[entry.key % Colors.primaries.length],
+            width: 20, // Increased bar width
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(4)),
+          ),
+        ],
+      );
+    }).toList();
+
+    return _chartCard(
+      'Staff by Role',
+      SizedBox(
+        height: 160, // Increased chart height
+        child: BarChart(
+          BarChartData(
+            maxY: stats.staffByRole.isNotEmpty
+                ? stats.staffByRole.map((e) => e.count).reduce((a, b) => a > b ? a : b).toDouble() * 1.2
+                : 10,
+            barGroups: barGroups,
+            titlesData: FlTitlesData(
+              leftTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+              rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+              topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+              bottomTitles: AxisTitles(
+                sideTitles: SideTitles(
+                  showTitles: true,
+                  getTitlesWidget: (value, meta) {
+                    if (value.toInt() < stats.staffByRole.length) {
+                      return Text(
+                        stats.staffByRole[value.toInt()].role,
+                        style: const TextStyle(fontSize: 11), // Increased text size
+                      );
+                    }
+                    return const SizedBox.shrink();
+                  },
+                ),
+              ),
+            ),
+            borderData: FlBorderData(show: false),
+            gridData: FlGridData(show: false),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildComplaintsChart(ComplaintStatistics stats) {
+    final sections = stats.complaintsByStatus.map((statusData) {
+      return PieChartSectionData(
+        color: _getComplaintColor(statusData.status),
+        value: statusData.count.toDouble(),
+        title: '${statusData.count}',
+        titleStyle: const TextStyle(
+          fontSize: 12, // Increased chart text size
+          fontWeight: FontWeight.bold,
+          color: Colors.white,
+        ),
+        radius: 45, // Increased radius
+      );
+    }).toList();
+
+    return _chartCard(
+      'Complaints Status',
+      Column(
+        children: [
+          SizedBox(
+            height: 130, // Increased chart height
+            child: PieChart(
+              PieChartData(
+                sections: sections,
+                centerSpaceRadius: 25, // Increased center space
+                sectionsSpace: 1,
+              ),
+            ),
+          ),
+          const SizedBox(height: 8),
+          Wrap(
+            alignment: WrapAlignment.center,
+            spacing: 8,
+            runSpacing: 4,
+            children: stats.complaintsByStatus.map((statusData) {
+              return _buildLegendItem(_getComplaintColor(statusData.status), statusData.status);
+            }).toList(),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAttendanceChart(AttendanceStatistics stats) {
+    final data = [
+      _ChartData('Today', stats.todayAttendanceRate),
+      _ChartData('Week', stats.weeklyAttendanceRate),
+      _ChartData('Month', stats.monthlyAttendanceRate),
+    ];
+
+    return _chartCard(
+      'Attendance Rates',
+      SizedBox(
+        height: 160, // Increased chart height
+        child: BarChart(
+          BarChartData(
+            maxY: 100,
+            barGroups: data.asMap().entries.map((entry) {
+              return BarChartGroupData(
+                x: entry.key,
+                barRods: [
+                  BarChartRodData(
+                    toY: entry.value.value,
+                    color: entry.value.value >= 80 ? Colors.green :
+                    entry.value.value >= 60 ? Colors.orange : Colors.red,
+                    width: 24, // Increased bar width
+                    borderRadius: const BorderRadius.vertical(top: Radius.circular(4)),
+                  ),
+                ],
+              );
+            }).toList(),
+            titlesData: FlTitlesData(
+              leftTitles: AxisTitles(
+                sideTitles: SideTitles(
+                  showTitles: true,
+                  getTitlesWidget: (value, meta) => Text('${value.toInt()}%', style: const TextStyle(fontSize: 11)), // Increased text size
+                  reservedSize: 30, // Increased reserved space
+                ),
+              ),
+              rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+              topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+              bottomTitles: AxisTitles(
+                sideTitles: SideTitles(
+                  showTitles: true,
+                  getTitlesWidget: (value, meta) {
+                    if (value.toInt() < data.length) {
+                      return Text(
+                        data[value.toInt()].label,
+                        style: const TextStyle(fontSize: 11), // Increased text size
+                      );
+                    }
+                    return const SizedBox.shrink();
+                  },
+                ),
+              ),
+            ),
+            borderData: FlBorderData(show: false),
+            gridData: FlGridData(show: false),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildRecentActivities(DashboardData data) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const SectionHeader(title:'Recent Activities'),
+        const SizedBox(height: 8),
+        Card(
+          elevation: 1,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+          child: Padding(
+            padding: const EdgeInsets.all(12),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                if (data.studentStatistics.recentEnrollments.isNotEmpty) ...[
+                  const Text('Recent Enrollments',
+                      style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600)), // Increased text size
+                  const SizedBox(height: 8),
+                  ...data.studentStatistics.recentEnrollments.take(3).map(
+                        (enrollment) => _activityTile(
+                      Icons.person_add,
+                      '${enrollment.studentName} enrolled in ${enrollment.className} ${enrollment.sectionName}',
+                      enrollment.enrollmentDate,
+                      Colors.blue,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                ],
+                if (data.complaintStatistics.recentComplaints.isNotEmpty) ...[
+                  const Text('Recent Complaints',
+                      style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600)), // Increased text size
+                  const SizedBox(height: 8),
+                  ...data.complaintStatistics.recentComplaints.take(3).map(
+                        (complaint) => _activityTile(
+                      Icons.report,
+                      complaint.title,
+                      'Category: ${complaint.category} - ${complaint.status}',
+                      _getComplaintColor(complaint.status),
+                    ),
+                  ),
+                ],
+              ],
             ),
           ),
         ),
       ],
     );
   }
+
+  Widget _buildUpcomingEvents(HolidayStatistics holidays) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const SectionHeader(title: 'Upcoming Events'),
+        const SizedBox(height: 8),
+        Card(
+          elevation: 1,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+          child: Padding(
+            padding: const EdgeInsets.all(12),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text('Upcoming Holidays',
+                        style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: Colors.blue.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Text(
+                        '${holidays.upcomingHolidays} upcoming',
+                        style: TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.blue.shade700,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                if (holidays.upcomingHolidaysList.isEmpty)
+                  Center(
+                    child: Text(
+                      'No upcoming holidays',
+                      style: TextStyle(color: Colors.grey.shade600, fontSize: 11),
+                    ),
+                  )
+                else
+                  ...holidays.upcomingHolidaysList.take(5).map((holiday) {
+                    return Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 4),
+                      child: Row(
+                        children: [
+                          Container(
+                            width: 28,
+                            height: 28,
+                            decoration: BoxDecoration(
+                              color: holiday.isPublicHoliday ? Colors.red.shade100 : Colors.blue.shade100,
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: Icon(
+                              holiday.isPublicHoliday ? Icons.public : Icons.school,
+                              color: holiday.isPublicHoliday ? Colors.red.shade600 : Colors.blue.shade600,
+                              size: 16,
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  holiday.name,
+                                  style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w500),
+                                ),
+                                Text(
+                                  holiday.description,
+                                  style: TextStyle(fontSize: 9, color: Colors.grey.shade600),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ],
+                            ),
+                          ),
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.end,
+                            children: [
+                              Text(
+                                holiday.date,
+                                style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w500),
+                              ),
+                              Text(
+                                '${holiday.daysUntilHoliday} days',
+                                style: TextStyle(fontSize: 9, color: Colors.grey.shade600),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    );
+                  }).toList(),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _activityTile(IconData icon, String title, String subtitle, Color color) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        children: [
+          Icon(icon, color: color, size: 16),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w500),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                Text(
+                  subtitle,
+                  style: TextStyle(fontSize: 9, color: Colors.grey.shade600),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _chartCard(String title, Widget chart) {
+    return Card(
+      elevation: 1,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              title,
+              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+            ),
+            const SizedBox(height: 8),
+            chart,
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildLegendItem(Color color, String label) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          width: 8,
+          height: 8,
+          decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+        ),
+        const SizedBox(width: 4),
+        Text(
+          label,
+          style: const TextStyle(fontSize: 9),
+        ),
+      ],
+    );
+  }
+
+  Widget _sectionTitle(String title) {
+    return Text(
+      title,
+      style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+    );
+  }
+
+  int _getCrossAxisCount(BuildContext context) {
+    final width = MediaQuery.of(context).size.width;
+    if (width > 800) return 3;
+    if (width > 400) return 2;
+    return 1;
+  }
+
+  Color _getComplaintColor(String status) {
+    switch (status.toLowerCase()) {
+      case 'resolved': return Colors.green.shade600;
+      case 'pending': return Colors.amber.shade600;
+      default: return Colors.red.shade600;
+    }
+  }
+}
+
+// Helper classes for data structure
+class _CardData {
+  final String title;
+  final String value;
+  final IconData icon;
+  final Color color;
+  final String description;
+
+  _CardData(this.title, this.value, this.icon, this.color, this.description);
+}
+
+class _ActionData {
+  final String title;
+  final IconData icon;
+  final Color color;
+
+  _ActionData(this.title, this.icon, this.color);
+}
+
+class _ChartData {
+  final String label;
+  final double value;
+
+  _ChartData(this.label, this.value);
 }
