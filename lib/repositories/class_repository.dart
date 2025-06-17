@@ -32,18 +32,14 @@ class ClassRepository {
     }
   }
 
-  Future<List<Class>> fetchClasses(String id) async {
+  Future<Map<String, dynamic>> fetchClasses(String id) async {
     try {
-      final requestBody = jsonEncode({'id': id});
-      final String responseString = await webService.postData(
-          'classes', requestBody);
+      final String responseString = await webService.fetchData('staff/$id/class-subject-details/active-year');
       if (kDebugMode) {
         print("API Response: $responseString");
       }
-
       final Map<String, dynamic> response = jsonDecode(responseString);
-      final List<dynamic> classesJson = response['classes'];
-      return classesJson.map((json) => Class.fromJson(json)).toList();
+      return response;
     } catch (e) {
       if (kDebugMode) {
         print("Error fetching classes: $e");
@@ -51,6 +47,7 @@ class ClassRepository {
       throw Exception('Failed to fetch classes: $e');
     }
   }
+
 
   Future<void> addClass(Class newClass) async {
     try {

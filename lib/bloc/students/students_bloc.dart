@@ -1,4 +1,3 @@
-// bloc/students/students_bloc.dart
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:sms/utils/constants.dart';
 import '../../models/student.dart';
@@ -15,8 +14,8 @@ class StudentsBloc extends Bloc<StudentsEvent, StudentsState> {
     on<LoadStudents>(_onLoadStudents);
     on<LoadExams>(_onLoadExams);
     on<LoadStudentMarks>(_onLoadStudentMarks);
-    // on<SaveStudentMarks>(_onSaveStudentMarks);
-    // on<RefreshStudents>(_onRefreshStudents);
+    on<SubmitAttendance>(_onSubmitAttendance); // Add this line
+    on<RefreshStudents>(_onRefreshStudents); // Add this if not already present
   }
 
   Future<void> _onLoadStudents(
@@ -52,7 +51,6 @@ class StudentsBloc extends Bloc<StudentsEvent, StudentsState> {
     }
   }
 
-  // Add these new handlers
   Future<void> _onLoadStudentMarks(
       LoadStudentMarks event,
       Emitter<StudentsState> emit,
@@ -75,32 +73,42 @@ class StudentsBloc extends Bloc<StudentsEvent, StudentsState> {
     }
   }
 
-  /*Future<void> _onSaveStudentMarks(
-      SaveStudentMarks event,
+  // Add this new handler
+  Future<void> _onSubmitAttendance(
+      SubmitAttendance event,
       Emitter<StudentsState> emit,
       ) async {
-    // Keep the current state to restore it after save operation
-    final currentState = state;
+    emit(AttendanceSubmitting());
 
     try {
-      emit(StudentsLoading());
-      await repository.saveStudentMarks(event.payload);
+      final success = await repository.submitAttendance(
+        event.classId,
+        event.date,
+        event.attendanceMap,
+      );
 
-      // After successful save, if we were in a MarksLoaded state, reload the marks
-      if (currentState is MarksLoaded) {
-        final payload = event.payload;
-        final marks = await repository.getStudentMarks(
-          payload['classId'] as String,
-          payload['examId'] as String,
-          payload['subjectId'] as String,
-        );
-        emit(MarksLoaded(marks, payload['examId'] as String));
+      if (success) {
+        emit(AttendanceSubmitted('Attendance submitted successfully!'));
       } else {
-        // Otherwise just restore the previous state
-        emit(currentState);
+        emit(AttendanceSubmissionError('Failed to submit attendance'));
       }
+    } catch (error) {
+      emit(AttendanceSubmissionError(error.toString()));
+    }
+  }
+
+  // Add this handler if RefreshStudents event exists
+  Future<void> _onRefreshStudents(
+      RefreshStudents event,
+      Emitter<StudentsState> emit,
+      ) async {
+    emit(StudentsLoading());
+
+    try {
+      final students = await repository.getAdminStudents(event.standard);
+      emit(StudentsLoaded(students));
     } catch (error) {
       emit(StudentsError(error.toString()));
     }
-  }*/
+  }
 }

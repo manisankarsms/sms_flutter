@@ -9,6 +9,7 @@ class Student {
   final String address;
   final String studentStandard;
   final String? marksScored; // ✅ Optional marksScored field
+  final String? attendanceStatus; // ✅ Optional marksScored field
 
   Student({
     required this.studentId,
@@ -21,6 +22,7 @@ class Student {
     required this.address,
     required this.studentStandard,
     this.marksScored,
+    this.attendanceStatus,
   });
 
   String get fullName => '$firstName $lastName';
@@ -37,6 +39,7 @@ class Student {
       address: json['address'] ?? '',
       studentStandard: json['studentStandard'] ?? '',
       marksScored: json['marksScored']?.toString(), // Nullable
+      attendanceStatus: json['status']?.toString(), // Nullable
     );
   }
 
@@ -53,6 +56,7 @@ class Student {
       'address': address,
       'studentStandard': studentStandard,
       if (marksScored != null) 'marksScored': int.tryParse(marksScored!) ?? 0,
+      'attendanceStatus':attendanceStatus
     };
   }
 

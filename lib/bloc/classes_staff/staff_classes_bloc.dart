@@ -21,15 +21,18 @@ class StaffClassesBloc extends Bloc<StaffClassesEvent, StaffClassesState> {
       Emitter<StaffClassesState> emit,
       ) async {
     emit(state.copyWith(status: StaffClassesStatus.loading));
-    /*try {
+    try {
       final response = await repository.fetchClasses(user.id);
 
-      // Handle myClass as a list
-      final myClassList = (response['myClass'] as List?)?.map((json) => Class.fromJson(json)).toList() ?? [];
+      final data = response['data'] ?? {};
 
-      final teachingClasses = (response['teachingClasses'] as List)
-          .map((json) => Class.fromJson(json))
-          .toList();
+      final myClassList = (data['myClass'] as List?)
+          ?.map((json) => Class.fromJson(json))
+          .toList() ?? [];
+
+      final teachingClasses = (data['teachingClasses'] as List?)
+          ?.map((json) => Class.fromJson(json))
+          .toList() ?? [];
 
       emit(state.copyWith(
         status: StaffClassesStatus.success,
@@ -39,6 +42,7 @@ class StaffClassesBloc extends Bloc<StaffClassesEvent, StaffClassesState> {
     } catch (e) {
       print("Error loading staff classes: $e");
       emit(state.copyWith(status: StaffClassesStatus.failure));
-    }*/
+    }
   }
+
 }

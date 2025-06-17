@@ -6,8 +6,8 @@ class Class {
   final String academicYearName;
   final String? staffId;
   final String? staff;
-  final List<String>? subjectIds;
-  final List<String>? subjectNames;
+  final String? subjectId;
+  final String? subjectName;
 
   Class({
     required this.id,
@@ -17,8 +17,8 @@ class Class {
     required this.academicYearName,
     this.staffId,
     this.staff,
-    this.subjectIds,
-    this.subjectNames,
+    this.subjectId,
+    this.subjectName,
   });
 
   factory Class.fromJson(Map<String, dynamic> json) {
@@ -30,12 +30,8 @@ class Class {
       academicYearName: json['academicYearName'] ?? '',
       staffId: json['staffId'],
       staff: json['staff'],
-      subjectIds: json['subjectIds'] != null
-          ? List<String>.from(json['subjectIds'])
-          : null,
-      subjectNames: json['subjectNames'] != null
-          ? List<String>.from(json['subjectNames'])
-          : null,
+      subjectId: json['subjectId'] ?? '',
+      subjectName: json['subjectName'] ?? '',
     );
   }
 
@@ -48,8 +44,8 @@ class Class {
       'academicYearName': academicYearName,
       'staffId': staffId,
       'staff': staff,
-      'subjectIds': subjectIds,
-      'subjectNames': subjectNames,
+      'subjectId': subjectId,
+      'subjectName': subjectName,
     };
   }
 }

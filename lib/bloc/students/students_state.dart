@@ -48,3 +48,23 @@ class MarksLoaded extends StudentsState {
 class NoStudentsFound extends StudentsState {}
 
 class MarksSaved extends StudentsState {}
+
+class AttendanceSubmitting extends StudentsState {}
+
+class AttendanceSubmitted extends StudentsState {
+  final String message;
+
+  const AttendanceSubmitted(this.message);
+
+  @override
+  List<Object> get props => [message];
+}
+
+class AttendanceSubmissionError extends StudentsState {
+  final String message;
+
+  const AttendanceSubmissionError(this.message);
+
+  @override
+  List<Object> get props => [message];
+}

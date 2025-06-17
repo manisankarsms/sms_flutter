@@ -7,11 +7,15 @@ class StaffClassesState extends Equatable {
   final StaffClassesStatus status;
   final List<Class> myClasses;
   final List<Class> teachingClasses;
+  final String? error;
+  final String? message;
 
   const StaffClassesState({
     this.status = StaffClassesStatus.initial,
     this.myClasses = const [],
     this.teachingClasses = const [],
+    this.error,
+    this.message,
   });
 
   StaffClassesState copyWith({

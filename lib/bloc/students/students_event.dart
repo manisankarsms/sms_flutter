@@ -46,3 +46,14 @@ class SaveStudentMarks extends StudentsEvent {
 
   SaveStudentMarks(this.payload);
 }
+
+class SubmitAttendance extends StudentsEvent {
+  final String classId;
+  final String date;
+  final Map<String, String> attendanceMap;
+
+  const SubmitAttendance(this.classId, this.date, this.attendanceMap);
+
+  @override
+  List<Object> get props => [classId, date, attendanceMap];
+}

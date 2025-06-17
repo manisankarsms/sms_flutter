@@ -1,4 +1,3 @@
-// repository/class_repository.dart
 import 'dart:convert';
 
 import '../models/exams.dart';
@@ -33,28 +32,53 @@ class StudentsRepository {
   // Fetch attendance data for Staff
   Future<List<Student>> getStaffAttendance(String classId, String date) async {
     try {
-      final requestBody = jsonEncode({'classId': classId, 'date': date});
-      final response = await webService.postData(ApiEndpoints.staffAttendance, requestBody);
+      final response = await webService.fetchData('attendance/class/$classId/date/$date');
 
       final Map<String, dynamic> responseData = jsonDecode(response);
-      final List<dynamic> attendanceJson = responseData["attendance"] ?? [];
+      final List<dynamic> attendanceJson = responseData["data"] ?? [];
 
       // Convert attendance response into Student objects
       return attendanceJson.map((json) {
         return Student(
           studentId: json['studentId'] ?? '',
-          firstName: json['studentName'] ?? json['name'] ?? '', // Handle both cases
+          firstName: json['studentName'] ?? '',
           lastName: '',
           dateOfBirth: '',
           gender: '',
           mobileNumber: '',
-          email: '',
+          email: json['studentEmail'] ?? '',
           address: '',
-          studentStandard: '',
+          attendanceStatus: json['status'] ?? '',
+          studentStandard: '${json['className'] ?? ''} ${json['sectionName'] ?? ''}'.trim(),
         );
       }).toList();
     } catch (error) {
       throw Exception('Failed to fetch attendance: ${error.toString()}');
+    }
+  }
+
+  // Submit attendance data
+  Future<bool> submitAttendance(String classId, String date, Map<String, String> attendanceMap) async {
+    try {
+      final attendanceRecords = attendanceMap.entries.map((entry) {
+        return {
+          "studentId": entry.key,
+          "status": entry.value.toUpperCase(), // Convert to uppercase (PRESENT, ABSENT, etc.)
+        };
+      }).toList();
+
+      final requestBody = jsonEncode({
+        "classId": classId,
+        "date": date,
+        "attendanceRecords": attendanceRecords,
+      });
+
+      final response = await webService.postData('attendance/bulk', requestBody);
+      final Map<String, dynamic> responseData = jsonDecode(response);
+
+      return responseData['success'] == true;
+    } catch (error) {
+      throw Exception('Failed to submit attendance: ${error.toString()}');
     }
   }
 
@@ -64,7 +88,6 @@ class StudentsRepository {
     return data.map((json) => Exam.fromJson(json)).toList();
   }
 
-  // Add these new methods
   Future<List<StudentMark>> getStudentMarks(
       String classId,
       String examId,
@@ -86,13 +109,4 @@ class StudentsRepository {
       throw Exception('Failed to fetch student marks: ${error.toString()}');
     }
   }
-
-  /*Future<void> saveStudentMarks(Map<String, dynamic> payload) async {
-    try {
-      final requestBody = jsonEncode(payload);
-      await webService.postData(ApiEndpoints.saveMarks, requestBody);
-    } catch (error) {
-      throw Exception('Failed to save student marks: ${error.toString()}');
-    }
-  }*/
 }

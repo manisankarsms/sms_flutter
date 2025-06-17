@@ -27,16 +27,56 @@ class StudentsScreen extends StatefulWidget {
 }
 
 class _StudentsScreenState extends State<StudentsScreen> {
-  DateTime selectedDate = DateTime.now(); // ✅ Default to today
-  late PlutoGridStateManager _stateManager; // ✅ State Manager for PlutoGrid
-  Map<String, String> attendanceMap = {}; // ✅ Ensure it's initialized
+  DateTime selectedDate = DateTime.now();
+  late PlutoGridStateManager _stateManager;
+  Map<String, String> attendanceMap = {};
+  List<Student> currentStudents = []; // Track current students
 
   @override
   void initState() {
     super.initState();
-    context
-        .read<StudentsBloc>()
-        .add(LoadStudents(widget.classId, widget.userRole, DateFormat('yyyy-MM-dd').format(selectedDate).toString()));
+    _loadStudents();
+  }
+
+  void _loadStudents() {
+    context.read<StudentsBloc>().add(LoadStudents(
+        widget.classId,
+        widget.userRole,
+        DateFormat('yyyy-MM-dd').format(selectedDate)
+    ));
+  }
+
+  // Initialize attendance map when students are loaded
+  void _initializeAttendanceMap(List<Student> students) {
+    attendanceMap.clear();
+    for (var student in students) {
+      // Use the actual attendance status from API, default to 'Absent' if empty
+      String? status = student.attendanceStatus;
+
+    // Normalize null and unexpected values first
+      if (status == null || status.isEmpty ||
+          !['PRESENT', 'ABSENT', 'HALFDAY', 'HALF_DAY'].contains(status.toUpperCase())) {
+        status = 'ABSENT';
+      }
+
+    // Convert API status format to display format
+      switch (status.toUpperCase()) {
+        case 'PRESENT':
+          status = 'Present';
+          break;
+        case 'ABSENT':
+          status = 'Absent';
+          break;
+        case 'HALFDAY':
+        case 'HALF_DAY':
+          status = 'Half-Day';
+          break;
+        default:
+          status = 'Absent';
+      }
+
+      attendanceMap[student.studentId] = status;
+    }
   }
 
   @override
@@ -48,7 +88,7 @@ class _StudentsScreenState extends State<StudentsScreen> {
           children: [
             Text('${widget.standard} Students'),
             Text(
-              '${DateFormat('yyyy-MM-dd').format(selectedDate)}', // ✅ Show selected date
+              '${DateFormat('yyyy-MM-dd').format(selectedDate)}',
               style: TextStyle(fontSize: 14, fontWeight: FontWeight.w400),
             ),
           ],
@@ -64,11 +104,7 @@ class _StudentsScreenState extends State<StudentsScreen> {
           ],
           IconButton(
               icon: const Icon(Icons.refresh),
-              onPressed: () {
-                context
-                    .read<StudentsBloc>()
-                    .add(RefreshStudents(widget.classId));
-              }),
+              onPressed: () => _loadStudents()),
           if (widget.userRole.toLowerCase() == Constants.admin)
             IconButton(
                 icon: const Icon(Icons.add),
@@ -97,80 +133,114 @@ class _StudentsScreenState extends State<StudentsScreen> {
           ],
         ],
       ),
-      body: BlocBuilder<StudentsBloc, StudentsState>(
-        builder: (context, state) {
-          if (state is StudentsLoading) {
-            return const Center(child: CircularProgressIndicator());
-          }
-
-          if (state is StudentsError) {
-            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text('Error: ${state.message}',
-                      style: const TextStyle(color: Colors.red)),
-                  const SizedBox(height: 16),
-                  ElevatedButton(
-                    onPressed: () => context
-                        .read<StudentsBloc>()
-                        .add(LoadStudents(widget.classId, widget.userRole, DateFormat('yyyy-MM-dd').format(selectedDate).toString())),
-                    child: const Text('Retry'),
-                  ),
-                ],
+      body: BlocListener<StudentsBloc, StudentsState>(
+        listener: (context, state) {
+          if (state is AttendanceSubmitted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(state.message),
+                backgroundColor: Colors.green,
+              ),
+            );
+            // Optionally reload students after successful submission
+            _loadStudents();
+          } else if (state is AttendanceSubmissionError) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(state.message),
+                backgroundColor: Colors.red,
               ),
             );
           }
-
-          if (state is StudentsLoaded && state.students.isEmpty) {
-            return const Center(
-                child: Text('No students found',
-                    style: TextStyle(fontSize: 18, color: Colors.grey)));
-          }
-
-          if (state is StudentsLoaded) {
-            return Column(
-              children: [
-                if (widget.userRole.toLowerCase() == Constants.staff) _buildAttendanceSummary(),
-                // ✅ Show only for Staff
-                Expanded(
-                  child: PlutoGrid(
-                    columns: widget.userRole.toLowerCase() == Constants.admin
-                        ? _buildAdminGridColumns()
-                        : _buildStaffGridColumns(),
-                    rows: widget.userRole.toLowerCase() == Constants.admin
-                        ? _buildAdminGridRows(state.students)
-                        : _buildStaffGridRows(state.students),
-                    configuration: const PlutoGridConfiguration(
-                      style: PlutoGridStyleConfig(
-                        gridBorderColor: Colors.grey,
-                        gridBackgroundColor: Colors.white,
-                        rowColor: Colors.white,
-                        gridBorderRadius: BorderRadius.all(Radius.circular(8.0)),
-                      ),
-                      columnSize: PlutoGridColumnSizeConfig(
-                        autoSizeMode: PlutoAutoSizeMode.scale,
-                        resizeMode: PlutoResizeMode.pushAndPull,
-                      ),
-                      scrollbar: PlutoGridScrollbarConfig(
-                        isAlwaysShown: true,
-                      ),
-                    ),
-                    onLoaded: (PlutoGridOnLoadedEvent event) {
-                      _stateManager = event.stateManager;
-                      event.stateManager.setShowColumnFilter(true);
-                      event.stateManager.setPageSize(10);
-                    },
-                    createFooter: (stateManager) => PlutoPagination(stateManager),
-                    mode: PlutoGridMode.normal,
-                  ),
-                )
-              ],
-            );
-          }
-
-          return const SizedBox.shrink();
         },
+        child: BlocBuilder<StudentsBloc, StudentsState>(
+          builder: (context, state) {
+            if (state is StudentsLoading || state is AttendanceSubmitting) {
+              return const Center(child: CircularProgressIndicator());
+            }
+
+            if (state is StudentsError) {
+              return Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text('Error: ${state.message}',
+                        style: const TextStyle(color: Colors.red)),
+                    const SizedBox(height: 16),
+                    ElevatedButton(
+                      onPressed: () => _loadStudents(),
+                      child: const Text('Retry'),
+                    ),
+                  ],
+                ),
+              );
+            }
+
+            if (state is StudentsLoaded && state.students.isEmpty) {
+              return const Center(
+                  child: Text('No students found',
+                      style: TextStyle(fontSize: 18, color: Colors.grey)));
+            }
+
+            if (state is StudentsLoaded) {
+              // Update current students and initialize attendance map
+              currentStudents = state.students;
+              _initializeAttendanceMap(state.students);
+
+              return Column(
+                children: [
+                  if (widget.userRole.toLowerCase() == Constants.staff)
+                    _buildAttendanceSummary(),
+                  Expanded(
+                    child: PlutoGrid(
+                      columns: widget.userRole.toLowerCase() == Constants.admin
+                          ? _buildAdminGridColumns()
+                          : _buildStaffGridColumns(),
+                      rows: widget.userRole.toLowerCase() == Constants.admin
+                          ? _buildAdminGridRows(state.students)
+                          : _buildStaffGridRows(state.students),
+                      configuration: const PlutoGridConfiguration(
+                        style: PlutoGridStyleConfig(
+                          gridBorderColor: Colors.grey,
+                          gridBackgroundColor: Colors.white,
+                          rowColor: Colors.white,
+                          gridBorderRadius: BorderRadius.all(Radius.circular(8.0)),
+                        ),
+                        columnSize: PlutoGridColumnSizeConfig(
+                          autoSizeMode: PlutoAutoSizeMode.scale,
+                          resizeMode: PlutoResizeMode.pushAndPull,
+                        ),
+                        scrollbar: PlutoGridScrollbarConfig(
+                          isAlwaysShown: true,
+                        ),
+                      ),
+                      onLoaded: (PlutoGridOnLoadedEvent event) {
+                        _stateManager = event.stateManager;
+                        event.stateManager.setShowColumnFilter(true);
+                        event.stateManager.setPageSize(10);
+                      },
+                      onChanged: (PlutoGridOnChangedEvent event) {
+                        if (event.column.field == 'attendance') {
+                          final studentId = event.row.cells['id']?.value;
+                          final newStatus = event.value;
+                          if (studentId != null) {
+                            setState(() {
+                              attendanceMap[studentId] = newStatus;
+                            });
+                          }
+                        }
+                      },
+                      createFooter: (stateManager) => PlutoPagination(stateManager),
+                      mode: PlutoGridMode.normal,
+                    ),
+                  )
+                ],
+              );
+            }
+
+            return const SizedBox.shrink();
+          },
+        ),
       ),
     );
   }
@@ -181,10 +251,8 @@ class _StudentsScreenState extends State<StudentsScreen> {
       PlutoColumn(title: 'Name', field: 'name', type: PlutoColumnType.text()),
       PlutoColumn(title: 'Email', field: 'email', type: PlutoColumnType.text()),
       PlutoColumn(title: 'DOB', field: 'dob', type: PlutoColumnType.text()),
-      PlutoColumn(
-          title: 'Gender', field: 'gender', type: PlutoColumnType.text()),
-      PlutoColumn(
-          title: 'Contact', field: 'contact', type: PlutoColumnType.text()),
+      PlutoColumn(title: 'Gender', field: 'gender', type: PlutoColumnType.text()),
+      PlutoColumn(title: 'Contact', field: 'contact', type: PlutoColumnType.text()),
       PlutoColumn(
           title: 'Address',
           field: 'address',
@@ -196,22 +264,20 @@ class _StudentsScreenState extends State<StudentsScreen> {
   List<PlutoRow> _buildAdminGridRows(List<Student> students) {
     return students
         .map((student) => PlutoRow(cells: {
-              'name':
-                  PlutoCell(value: '${student.firstName} ${student.lastName}'),
-              'email': PlutoCell(value: student.email),
-              'dob': PlutoCell(value: student.dateOfBirth),
-              'gender': PlutoCell(value: student.gender),
-              'contact': PlutoCell(value: student.mobileNumber),
-              'address': PlutoCell(value: student.address),
-            }))
+      'name': PlutoCell(value: '${student.firstName} ${student.lastName}'),
+      'email': PlutoCell(value: student.email),
+      'dob': PlutoCell(value: student.dateOfBirth),
+      'gender': PlutoCell(value: student.gender),
+      'contact': PlutoCell(value: student.mobileNumber),
+      'address': PlutoCell(value: student.address),
+    }))
         .toList();
   }
 
-  // Staff Grid (For Attendance)
+  // Staff Grid (For Attendance) - FIXED
   List<PlutoColumn> _buildStaffGridColumns() {
     return [
-      PlutoColumn(
-          title: 'Student ID', field: 'id', type: PlutoColumnType.text()),
+      PlutoColumn(title: 'Student ID', field: 'id', type: PlutoColumnType.text()),
       PlutoColumn(title: 'Name', field: 'name', type: PlutoColumnType.text()),
       PlutoColumn(
         title: 'Attendance',
@@ -221,37 +287,63 @@ class _StudentsScreenState extends State<StudentsScreen> {
     ];
   }
 
+  // FIXED: Corrected attendance mapping
   List<PlutoRow> _buildStaffGridRows(List<Student> students) {
     return students
         .map((student) => PlutoRow(cells: {
-              'id': PlutoCell(value: student.studentId),
-              'name':
-                  PlutoCell(value: '${student.firstName} ${student.lastName}'),
-              'attendance': PlutoCell(
-                  value: attendanceMap[student.studentId] ?? 'Absent'),
-            }))
+      'id': PlutoCell(value: student.studentId),
+      'name': PlutoCell(value: '${student.firstName} ${student.lastName}'),
+      // FIXED: Use attendanceMap[student.studentId] instead of attendanceMap[student.attendanceStatus]
+      'attendance': PlutoCell(value: attendanceMap[student.studentId] ?? 'Absent'),
+    }))
         .toList();
   }
 
-  // Submitting Attendance Data
+  // Submit Attendance Data
   void _submitAttendance() {
-    // Construct payload
-    final attendanceData = attendanceMap.entries.map((entry) {
-      return {
-        "studentId": entry.key,
-        "status": entry.value,
-      };
-    }).toList();
+    if (attendanceMap.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+        content: Text("No attendance data to submit!"),
+        backgroundColor: Colors.orange,
+      ));
+      return;
+    }
 
-    final requestBody = {
-      "classId": widget.classId,
-      "date": "2025-03-01",
-      "attendance": attendanceData
-    };
-
-    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-      content: Text("Attendance submitted successfully!"),
-    ));
+    // Show confirmation dialog
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Confirm Submission'),
+        content: Text('Submit attendance for ${DateFormat('yyyy-MM-dd').format(selectedDate)}?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(context);
+              // Trigger the attendance submission
+              try {
+                context.read<StudentsBloc>().add(SubmitAttendance(
+                  widget.classId,
+                  DateFormat('yyyy-MM-dd').format(selectedDate),
+                  attendanceMap,
+                ));
+              } catch (e) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('Error submitting attendance: $e'),
+                    backgroundColor: Colors.red,
+                  ),
+                );
+              }
+            },
+            child: const Text('Submit'),
+          ),
+        ],
+      ),
+    );
   }
 
   void _showAddStudentDialog(BuildContext context) {
@@ -298,13 +390,13 @@ class _StudentsScreenState extends State<StudentsScreen> {
             ],
             data: students
                 .map((s) => [
-                      '${s.firstName} ${s.lastName}',
-                      s.email,
-                      s.dateOfBirth,
-                      s.gender,
-                      s.mobileNumber,
-                      s.address
-                    ])
+              '${s.firstName} ${s.lastName}',
+              s.email,
+              s.dateOfBirth,
+              s.gender,
+              s.mobileNumber,
+              s.address
+            ])
                 .toList(),
           ),
         ),
@@ -319,13 +411,13 @@ class _StudentsScreenState extends State<StudentsScreen> {
       final headers = ['Name', 'Email', 'DOB', 'Gender', 'Contact', 'Address'];
       final data = students
           .map((s) => [
-                '${s.firstName} ${s.lastName}',
-                s.email,
-                s.dateOfBirth,
-                s.gender,
-                s.mobileNumber,
-                s.address
-              ])
+        '${s.firstName} ${s.lastName}',
+        s.email,
+        s.dateOfBirth,
+        s.gender,
+        s.mobileNumber,
+        s.address
+      ])
           .toList();
 
       showModalBottomSheet(
@@ -364,12 +456,9 @@ class _StudentsScreenState extends State<StudentsScreen> {
   }
 
   Widget _buildAttendanceSummary() {
-    int presentCount =
-        attendanceMap.values.where((status) => status == "Present").length;
-    int halfDayCount =
-        attendanceMap.values.where((status) => status == "Half-Day").length;
-    int absentCount =
-        attendanceMap.values.where((status) => status == "Absent").length;
+    int presentCount = attendanceMap.values.where((status) => status == "Present").length;
+    int halfDayCount = attendanceMap.values.where((status) => status == "Half-Day").length;
+    int absentCount = attendanceMap.values.where((status) => status == "Absent").length;
 
     return Padding(
       padding: const EdgeInsets.all(8.0),
@@ -394,15 +483,18 @@ class _StudentsScreenState extends State<StudentsScreen> {
 
   void _markAllAttendance(String status) {
     setState(() {
-      attendanceMap.updateAll((key, value) => status);
+      for (var student in currentStudents) {
+        attendanceMap[student.studentId] = status;
+      }
     });
 
-    // ✅ Update PlutoGrid rows manually
-    for (var row in _stateManager.rows) {
-      row.cells['attendance']!.value = status;
+    // Update PlutoGrid rows manually
+    if (_stateManager != null) {
+      for (var row in _stateManager.rows) {
+        row.cells['attendance']!.value = status;
+      }
+      _stateManager.notifyListeners();
     }
-
-    _stateManager.notifyListeners(); // ✅ Force PlutoGrid to refresh
 
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text("All students marked as $status")),
@@ -420,19 +512,10 @@ class _StudentsScreenState extends State<StudentsScreen> {
     if (picked != null && picked != selectedDate) {
       setState(() {
         selectedDate = picked;
+        attendanceMap.clear(); // Clear existing attendance data
       });
 
-      _fetchStudents(); // ✅ Fetch students for the selected date
+      _loadStudents(); // Fetch students for the selected date
     }
   }
-
-  void _fetchStudents() {
-    context.read<StudentsBloc>().add(LoadStudents(
-      widget.classId,
-      widget.userRole,
-      DateFormat('yyyy-MM-dd').format(selectedDate).toString(), // ✅ Pass date
-    ));
-  }
-
-
 }
