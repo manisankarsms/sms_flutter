@@ -3,6 +3,7 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:sms/bloc/attendance/attendance_bloc.dart';
 import 'package:sms/bloc/auth/auth_bloc.dart';
 import 'package:sms/bloc/class_details/class_details_bloc.dart';
 import 'package:sms/bloc/configuration/configuration_bloc.dart';
@@ -18,7 +19,9 @@ import 'package:sms/bloc/permissions/permissions_bloc.dart';
 import 'package:sms/bloc/post/post_bloc.dart';
 import 'package:sms/bloc/rules/rules_bloc.dart';
 import 'package:sms/bloc/student_admin/student_bloc.dart';
+import 'package:sms/bloc/students/students_bloc.dart';
 import 'package:sms/bloc/subjects/subjects_bloc.dart';
+import 'package:sms/repositories/attendance_repository.dart';
 import 'package:sms/repositories/auth_repository.dart';
 import 'package:sms/repositories/class_details_repository.dart';
 import 'package:sms/repositories/class_repository.dart';
@@ -73,6 +76,7 @@ void main() async{
   final RulesRepository rulesRepository = RulesRepository(webService: webService);
   final StudentAdminRepository studentAdminRepository = StudentAdminRepository(webService: webService);
   final ClassDetailsRepository classDetailsRepository = ClassDetailsRepository(webService: webService);
+  final AttendanceRepository attendanceRepository = AttendanceRepository(webService: webService);
 
   final app =
     MultiBlocProvider(
@@ -137,6 +141,12 @@ void main() async{
         ),
         BlocProvider(
           create: (context) => UserBloc(userRepository: studentAdminRepository),
+        ),
+        BlocProvider(
+          create: (context) => StudentsBloc(repository: studentsRepository),
+        ),
+        BlocProvider(
+          create: (context) => AttendanceBloc(repository: attendanceRepository),
         ),
         BlocProvider<ClassDetailsBloc>(
           create: (context) => ClassDetailsBloc(

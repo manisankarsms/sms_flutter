@@ -31,6 +31,7 @@ class _StudentsScreenState extends State<StudentsScreen> {
   late PlutoGridStateManager _stateManager;
   Map<String, String> attendanceMap = {};
   List<Student> currentStudents = []; // Track current students
+  bool _gridInitialized = false; // Track if grid is initialized
 
   @override
   void initState() {
@@ -39,6 +40,10 @@ class _StudentsScreenState extends State<StudentsScreen> {
   }
 
   void _loadStudents() {
+    // Clear attendance map when loading new date data
+    if (attendanceMap.isNotEmpty) {
+      attendanceMap.clear();
+    }
     context.read<StudentsBloc>().add(LoadStudents(
         widget.classId,
         widget.userRole,
@@ -48,18 +53,19 @@ class _StudentsScreenState extends State<StudentsScreen> {
 
   // Initialize attendance map when students are loaded
   void _initializeAttendanceMap(List<Student> students) {
+    print("Initializing attendance map for ${students.length} students");
     attendanceMap.clear();
     for (var student in students) {
       // Use the actual attendance status from API, default to 'Absent' if empty
       String? status = student.attendanceStatus;
 
-    // Normalize null and unexpected values first
+      // Normalize null and unexpected values first
       if (status == null || status.isEmpty ||
           !['PRESENT', 'ABSENT', 'HALFDAY', 'HALF_DAY'].contains(status.toUpperCase())) {
         status = 'ABSENT';
       }
 
-    // Convert API status format to display format
+      // Convert API status format to display format
       switch (status.toUpperCase()) {
         case 'PRESENT':
           status = 'Present';
@@ -77,6 +83,8 @@ class _StudentsScreenState extends State<StudentsScreen> {
 
       attendanceMap[student.studentId] = status;
     }
+    print("Initialized attendanceMap: $attendanceMap");
+    _gridInitialized = false; // Reset grid initialization flag
   }
 
   @override
@@ -183,9 +191,11 @@ class _StudentsScreenState extends State<StudentsScreen> {
             }
 
             if (state is StudentsLoaded) {
-              // Update current students and initialize attendance map
+              // Update current students and initialize attendance map only if not already initialized
               currentStudents = state.students;
-              _initializeAttendanceMap(state.students);
+              if (attendanceMap.isEmpty) {
+                _initializeAttendanceMap(state.students);
+              }
 
               return Column(
                 children: [
@@ -218,15 +228,19 @@ class _StudentsScreenState extends State<StudentsScreen> {
                         _stateManager = event.stateManager;
                         event.stateManager.setShowColumnFilter(true);
                         event.stateManager.setPageSize(10);
+                        _syncGridWithAttendanceMap(); // Sync grid after loading
+                        _gridInitialized = true;
                       },
                       onChanged: (PlutoGridOnChangedEvent event) {
                         if (event.column.field == 'attendance') {
                           final studentId = event.row.cells['id']?.value;
                           final newStatus = event.value;
-                          if (studentId != null) {
+                          print("Grid changed - StudentId: $studentId, NewStatus: $newStatus");
+                          if (studentId != null && newStatus != null) {
                             setState(() {
                               attendanceMap[studentId] = newStatus;
                             });
+                            print("Updated attendanceMap: $attendanceMap");
                           }
                         }
                       },
@@ -243,6 +257,19 @@ class _StudentsScreenState extends State<StudentsScreen> {
         ),
       ),
     );
+  }
+
+  // Sync grid cells with attendance map
+  void _syncGridWithAttendanceMap() {
+    if (_stateManager == null) return;
+
+    for (var row in _stateManager.rows) {
+      final studentId = row.cells['id']?.value;
+      if (studentId != null && attendanceMap.containsKey(studentId)) {
+        row.cells['attendance']?.value = attendanceMap[studentId];
+      }
+    }
+    _stateManager.notifyListeners();
   }
 
   // Admin Grid
@@ -293,13 +320,13 @@ class _StudentsScreenState extends State<StudentsScreen> {
         .map((student) => PlutoRow(cells: {
       'id': PlutoCell(value: student.studentId),
       'name': PlutoCell(value: '${student.firstName} ${student.lastName}'),
-      // FIXED: Use attendanceMap[student.studentId] instead of attendanceMap[student.attendanceStatus]
+      // FIXED: Use attendanceMap[student.studentId] and ensure it's properly set
       'attendance': PlutoCell(value: attendanceMap[student.studentId] ?? 'Absent'),
     }))
         .toList();
   }
 
-  // Submit Attendance Data
+  // Submit Attendance Data - FIXED
   void _submitAttendance() {
     if (attendanceMap.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
@@ -309,12 +336,25 @@ class _StudentsScreenState extends State<StudentsScreen> {
       return;
     }
 
+    // Debug: Print attendance map before submission
+    print("Attendance Map before submission: $attendanceMap");
+
     // Show confirmation dialog
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Confirm Submission'),
-        content: Text('Submit attendance for ${DateFormat('yyyy-MM-dd').format(selectedDate)}?'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Submit attendance for ${DateFormat('yyyy-MM-dd').format(selectedDate)}?'),
+            const SizedBox(height: 8),
+            Text('Present: ${attendanceMap.values.where((v) => v == "Present").length}'),
+            Text('Half-Day: ${attendanceMap.values.where((v) => v == "Half-Day").length}'),
+            Text('Absent: ${attendanceMap.values.where((v) => v == "Absent").length}'),
+          ],
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
@@ -323,12 +363,34 @@ class _StudentsScreenState extends State<StudentsScreen> {
           ElevatedButton(
             onPressed: () {
               Navigator.pop(context);
+
+              // Convert display format back to API format before submission
+              Map<String, String> apiAttendanceMap = {};
+              attendanceMap.forEach((studentId, status) {
+                String apiStatus;
+                switch (status) {
+                  case 'Present':
+                    apiStatus = 'PRESENT';
+                    break;
+                  case 'Half-Day':
+                    apiStatus = 'HALFDAY';
+                    break;
+                  case 'Absent':
+                  default:
+                    apiStatus = 'ABSENT';
+                    break;
+                }
+                apiAttendanceMap[studentId] = apiStatus;
+              });
+
+              print("API Attendance Map: $apiAttendanceMap");
+
               // Trigger the attendance submission
               try {
                 context.read<StudentsBloc>().add(SubmitAttendance(
                   widget.classId,
                   DateFormat('yyyy-MM-dd').format(selectedDate),
-                  attendanceMap,
+                  apiAttendanceMap, // Use converted format
                 ));
               } catch (e) {
                 ScaffoldMessenger.of(context).showSnackBar(
@@ -482,11 +544,14 @@ class _StudentsScreenState extends State<StudentsScreen> {
   }
 
   void _markAllAttendance(String status) {
+    print("Marking all attendance as: $status");
     setState(() {
       for (var student in currentStudents) {
         attendanceMap[student.studentId] = status;
       }
     });
+
+    print("AttendanceMap after marking all: $attendanceMap");
 
     // Update PlutoGrid rows manually
     if (_stateManager != null) {

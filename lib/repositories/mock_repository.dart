@@ -19,7 +19,7 @@ class MockAuthRepository {
     }*/
   }
 
-  Future<List<Attendance>> fetchAttendance() async {
+ /* Future<List<Attendance>> fetchAttendance() async {
     return Future.delayed(Duration(milliseconds: 500), () {
       return [
         Attendance(date: DateTime(2024, 7, 10), eventName: 'Present'),
@@ -28,5 +28,5 @@ class MockAuthRepository {
         Attendance(date: DateTime(2024, 7, 20), eventName: 'Present'),
       ];
     });
-  }
+  }*/
 }

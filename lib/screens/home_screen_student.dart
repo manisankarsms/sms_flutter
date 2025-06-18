@@ -61,7 +61,7 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
       const StudentFeedScreen(),
       HolidayScreen(user: widget.selectedUser),
       MessagesScreen(),
-      AttendanceScreen(),
+      AttendanceScreen(user: widget.selectedUser),
       ProfileScreen(),
       ProfileScreen(),
       // UserFeesScreen(studentClass: _activeUser.studentData!.studentStandard), // Pass active user type
