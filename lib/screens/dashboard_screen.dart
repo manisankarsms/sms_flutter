@@ -425,7 +425,7 @@ class _DashboardScreenState extends State<DashboardScreen>
         const SectionHeader(title:'Quick Actions'),
         const SizedBox(height: 8),
         SizedBox(
-          height: 70, // Increased height for larger text
+          height: 90, // Increased height for larger text
           child: ListView.separated(
             scrollDirection: Axis.horizontal,
             itemCount: actions.length,
