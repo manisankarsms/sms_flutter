@@ -63,8 +63,12 @@ dependencies:
   firebase_crashlytics: ^4.3.4
   image_picker: ^1.0.4
   cached_network_image: ^3.3.0
+  file_picker: ^10.2.0
+  paged_datatable: ^2.1.1
 
 dev_dependencies:
+  flutter_web_plugins:
+    sdk: flutter
   flutter_test:
     sdk: flutter
 
