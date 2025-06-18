@@ -343,7 +343,7 @@ class _DashboardScreenState extends State<DashboardScreen>
                               child: Text(
                                 card.title,
                                 style: TextStyle(
-                                  fontSize: isVerySmall ? 15 : (isNarrowCard ? 18 : 24), // Increased sizes
+                                  fontSize: isVerySmall ? 15 : (isNarrowCard ? 18 : 20), // Increased sizes
                                   fontWeight: FontWeight.w900,
                                   height: 1.2, // Tighter line height
                                 ),
@@ -377,7 +377,7 @@ class _DashboardScreenState extends State<DashboardScreen>
                           child: Text(
                             card.value,
                             style: TextStyle(
-                              fontSize: isVerySmall ? 24 : (isNarrowCard ? 30 : 32), // Increased sizes
+                              fontSize: isVerySmall ? 24 : (isNarrowCard ? 26 : 38), // Increased sizes
                               fontWeight: FontWeight.w900,
                               color: card.color,
                               height: 1.0,
