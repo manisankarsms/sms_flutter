@@ -182,7 +182,7 @@ class MyApp extends StatelessWidget {
                 GlobalWidgetsLocalizations.delegate,
                 GlobalCupertinoLocalizations.delegate,
               ],
-              home: LoginScreen(),
+              home: const LoginScreen(),
             );
           },
         );
