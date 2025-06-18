@@ -53,7 +53,6 @@ import 'bloc/language/language_state.dart';
 import 'bloc/staffs/staff_bloc.dart';
 import 'bloc/theme/theme_bloc.dart';
 import 'dev_only/debug_logger.dart';
-import 'firebase_options.dart';
 
 void main() async{
   final WebService webService = WebService(baseUrl: Constants.baseUrl);
