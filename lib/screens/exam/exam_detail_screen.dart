@@ -58,14 +58,6 @@ class _ExamDetailScreenState extends State<ExamDetailScreen> {
                         title: Text('Edit'),
                       ),
                     ),
-                    if (state.exam.status.toLowerCase() == 'draft')
-                      const PopupMenuItem<String>(
-                        value: 'publish',
-                        child: ListTile(
-                          leading: Icon(Icons.publish),
-                          title: Text('Publish'),
-                        ),
-                      ),
                     const PopupMenuItem<String>(
                       value: 'delete',
                       child: ListTile(
@@ -119,25 +111,15 @@ class _ExamDetailScreenState extends State<ExamDetailScreen> {
           _buildHeader(exam),
           const SizedBox(height: 24),
           _buildInfoCard('General Information', [
-            _buildInfoRow('Title', exam.title),
-            _buildInfoRow('Description', exam.description),
-            _buildInfoRow('Status', exam.status.toUpperCase(), isChip: true, chipColor: _getStatusColor(exam.status)),
+            _buildInfoRow('Title', exam.name),
           ]),
           const SizedBox(height: 16),
           _buildInfoCard('Exam Details', [
-            _buildInfoRow('Duration', '${exam.duration} minutes'),
-            _buildInfoRow('Total Marks', exam.totalMarks.toString()),
+            _buildInfoRow('Total Marks', exam.maxMarks.toString()),
           ]),
           const SizedBox(height: 16),
           _buildInfoCard('Class & Subject', [
           ]),
-          if (exam.createdAt != null) ...[
-            const SizedBox(height: 16),
-            _buildInfoCard('Administrative', [
-              if (exam.createdBy != null) _buildInfoRow('Created By', exam.createdBy!),
-              _buildInfoRow('Created At', _formatDateTime(exam.createdAt!)),
-            ]),
-          ],
           const SizedBox(height: 24),
           // Here you could add sections for questions, results, etc.
         ],
@@ -164,20 +146,13 @@ class _ExamDetailScreenState extends State<ExamDetailScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                exam.title,
+                exam.name,
                 style: const TextStyle(
                   fontSize: 22,
                   fontWeight: FontWeight.bold,
                 ),
               ),
               const SizedBox(height: 4),
-              Text(
-                exam.description,
-                style: TextStyle(
-                  fontSize: 14,
-                  color: Colors.grey[600],
-                ),
-              ),
             ],
           ),
         ),
@@ -257,7 +232,7 @@ class _ExamDetailScreenState extends State<ExamDetailScreen> {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Delete Exam'),
-        content: Text('Are you sure you want to delete "${exam.title}"?'),
+        content: Text('Are you sure you want to delete "${exam.name}"?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
@@ -280,7 +255,7 @@ class _ExamDetailScreenState extends State<ExamDetailScreen> {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Publish Exam'),
-        content: Text('Are you sure you want to publish "${exam.title}"? Once published, only minor edits will be allowed.'),
+        content: Text('Are you sure you want to publish "${exam.name}"? Once published, only minor edits will be allowed.'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),

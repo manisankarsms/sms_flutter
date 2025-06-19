@@ -273,20 +273,9 @@ class _ExamsListScreenState extends State<ExamsListScreen> {
           elevation: 2,
           child: ListTile(
             title: Text(
-              exam.title,
+              exam.name,
               style: const TextStyle(fontWeight: FontWeight.bold),
             ),
-            subtitle: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const SizedBox(height: 4),
-                Text(
-                  'Duration: ${exam.duration} minutes',
-                  style: const TextStyle(fontSize: 12),
-                ),
-              ],
-            ),
-            trailing: _buildStatusChip(exam.status),
             onTap: () {
               Navigator.push(
                 context,

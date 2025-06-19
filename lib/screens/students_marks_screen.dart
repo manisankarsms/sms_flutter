@@ -179,15 +179,11 @@ class _StudentsMarksScreenState extends State<StudentsMarksScreen> {
                     (exam) => exam.id == selectedExamId,
                 orElse: () => Exam(
                     id: '',
-                    title: 'Unknown Exam',
-                    description: '',
-                    createdBy: '',
-                    createdAt: null,
-                    examDate: null,
+                    name: 'Unknown Exam',
+                    date: DateTime(1),
                     subjectId: '',
                     classId: '',
-                    duration: null,
-                    totalMarks: null
+                    maxMarks: 0
                 ),
               );
 
@@ -503,7 +499,7 @@ class _StudentsMarksScreenState extends State<StudentsMarksScreen> {
             items: exams.map((exam) {
               return DropdownMenuItem<String>(
                 value: exam.id,
-                child: Text(exam.title, overflow: TextOverflow.ellipsis),
+                child: Text(exam.name, overflow: TextOverflow.ellipsis),
               );
             }).toList(),
             onChanged: (value) {
@@ -535,10 +531,10 @@ class _StudentsMarksScreenState extends State<StudentsMarksScreen> {
       color: Colors.white,
       child: Row(
         children: [
-          if (selectedExam != null && selectedExam!.totalMarks != null)
+          if (selectedExam != null && selectedExam!.maxMarks != null)
             Expanded(
               child: Text(
-                'Total Marks: ${selectedExam!.totalMarks}',
+                'Total Marks: ${selectedExam!.maxMarks}',
                 style: const TextStyle(fontWeight: FontWeight.bold),
                 overflow: TextOverflow.ellipsis,
               ),
@@ -788,15 +784,11 @@ class _StudentsMarksScreenState extends State<StudentsMarksScreen> {
             (exam) => exam.id == selectedExamId,
         orElse: () => Exam(
             id: '',
-            title: 'Unknown Exam',
-            description: '',
-            createdBy: '',
-            createdAt: null,
-            examDate: null,
+            name: 'Unknown Exam',
+            date: DateTime(1),
             subjectId: '',
             classId: '',
-            duration: null,
-            totalMarks: null
+            maxMarks: 0
         ),
       );
 
@@ -819,7 +811,7 @@ class _StudentsMarksScreenState extends State<StudentsMarksScreen> {
         context,
         MaterialPageRoute(
           builder: (context) => PrintPreviewScreen(
-            title: "${widget.subjectName} - ${selectedExam.title}",
+            title: "${widget.subjectName} - ${selectedExam.name}",
             headers: headers,
             data: data,
           ),
@@ -843,15 +835,11 @@ class _StudentsMarksScreenState extends State<StudentsMarksScreen> {
             (exam) => exam.id == selectedExamId,
         orElse: () => Exam(
             id: '',
-            title: 'Unknown Exam',
-            description: '',
-            createdBy: '',
-            createdAt: null,
-            examDate: null,
+            name: 'Unknown Exam',
+            date: DateTime(1),
             subjectId: '',
             classId: '',
-            duration: null,
-            totalMarks: null
+            maxMarks: 0
         ),
       );
 
@@ -895,7 +883,7 @@ class _StudentsMarksScreenState extends State<StudentsMarksScreen> {
                   leading: Icon(Icons.file_download, color: Colors.blue.shade700),
                   title: const Text("Export as CSV"),
                   onTap: () {
-                    final fileName = 'marks_${widget.subjectName}_${selectedExam.title.replaceAll(' ', '_')}';
+                    final fileName = 'marks_${widget.subjectName}_${selectedExam.name.replaceAll(' ', '_')}';
                     ExportUtil.exportToCSV(
                         fileName: fileName,
                         headers: headers,
@@ -913,7 +901,7 @@ class _StudentsMarksScreenState extends State<StudentsMarksScreen> {
                   leading: Icon(Icons.insert_drive_file, color: Colors.green.shade700),
                   title: const Text("Export as Excel"),
                   onTap: () {
-                    final fileName = 'marks_${widget.subjectName}_${selectedExam.title.replaceAll(' ', '_')}';
+                    final fileName = 'marks_${widget.subjectName}_${selectedExam.name.replaceAll(' ', '_')}';
                     ExportUtil.exportToExcel(
                         fileName: fileName,
                         headers: headers,

@@ -13,15 +13,28 @@ class ExamRepository {
 
   Future<List<Exam>> getExams() async {
     final response = await webService.fetchData(ApiEndpoints.exams);
-    final List<dynamic> data = jsonDecode(response);
-    return data.map((json) => Exam.fromJson(json)).toList();
+    final Map<String, dynamic> json = jsonDecode(response);
+
+    if (json['success'] == true && json['data'] is List) {
+      final List<dynamic> data = json['data'];
+      return data.map((item) => Exam.fromJson(item)).toList();
+    } else {
+      throw Exception('Failed to load exams');
+    }
   }
+
 
   Future<Exam> getExamById(String id) async {
     final response = await webService.fetchData('${ApiEndpoints.exams}/$id');
-    final Map<String, dynamic> data = jsonDecode(response);
-    return Exam.fromJson(data);
+    final Map<String, dynamic> json = jsonDecode(response);
+
+    if (json['success'] == true && json['data'] != null) {
+      return Exam.fromJson(json['data']);
+    } else {
+      throw Exception('Failed to load exam details');
+    }
   }
+
 
   Future<Exam> createExam(Exam exam) async {
     final examJson = jsonEncode(exam.toJson());

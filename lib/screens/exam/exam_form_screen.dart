@@ -47,10 +47,8 @@ class _ExamFormScreenState extends State<ExamFormScreen> {
     super.initState();
 
     if (widget.exam != null) {
-      _titleController.text = widget.exam!.title;
-      _descriptionController.text = widget.exam!.description;
-      _durationController.text = widget.exam!.duration.toString();
-      _totalMarksController.text = widget.exam!.totalMarks.toString();
+      _titleController.text = widget.exam!.name;
+      _totalMarksController.text = widget.exam!.maxMarks.toString();
     }
   }
 
@@ -335,16 +333,11 @@ class _ExamFormScreenState extends State<ExamFormScreen> {
     if (_formKey.currentState!.validate()) {
       final exam = Exam(
         id: widget.exam?.id,
-        title: _titleController.text,
-        description: _descriptionController.text,
-        examDate: _selectedDate,
+        name: _titleController.text,
+        date: _selectedDate,
         subjectId: _selectedSubjectId,
         classId: _selectedClassId,
-        duration: int.parse(_durationController.text),
-        totalMarks: double.parse(_totalMarksController.text),
-        status: widget.exam?.status ?? 'draft',
-        createdBy: widget.exam?.createdBy,
-        createdAt: widget.exam?.createdAt,
+        maxMarks: double.parse(_totalMarksController.text)
       );
 
       if (widget.exam == null) {

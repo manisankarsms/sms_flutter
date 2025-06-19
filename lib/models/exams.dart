@@ -1,89 +1,93 @@
-// lib/models/exam.dart
-
 class Exam {
   final String? id;
-  final String title;
-  final String description;
-  final DateTime? examDate;
-  final String? subjectId;
-  final String? classId;
-  final int? duration; // in minutes
-  final double? totalMarks;
-  final String? createdBy;
-  final DateTime? createdAt;
-  final String status; // draft, published, completed, etc.
+  final String name;
+  final String subjectId;
+  final String? subjectName;
+  final String? subjectCode;
+  final String classId;
+  final String? className;
+  final String? sectionName;
+  final String? academicYearId;
+  final String? academicYearName;
+  final double maxMarks;
+  final DateTime date;
 
   Exam({
     this.id,
-    required this.title,
-    required this.description,
-    required this.examDate,
+    required this.name,
     required this.subjectId,
+    this.subjectName,
+    this.subjectCode,
     required this.classId,
-    required this.duration,
-    required this.totalMarks,
-    this.createdBy,
-    this.createdAt,
-    this.status = 'draft',
+    this.className,
+    this.sectionName,
+    this.academicYearId,
+    this.academicYearName,
+    required this.maxMarks,
+    required this.date,
   });
 
   factory Exam.fromJson(Map<String, dynamic> json) {
     return Exam(
       id: json['id'],
-      title: json['title'],
-      description: json['description'],
-      examDate: DateTime.parse(json['examDate']),
+      name: json['name'],
       subjectId: json['subjectId'],
+      subjectName: json['subjectName'],
+      subjectCode: json['subjectCode'],
       classId: json['classId'],
-      duration: json['duration'],
-      totalMarks: json['totalMarks'].toDouble(),
-      createdBy: json['createdBy'],
-      createdAt: json['createdAt'] != null ? DateTime.parse(json['createdAt']) : null,
-      status: json['status'] ?? 'draft',
+      className: json['className'],
+      sectionName: json['sectionName'],
+      academicYearId: json['academicYearId'],
+      academicYearName: json['academicYearName'],
+      maxMarks: (json['maxMarks'] as num).toDouble(),
+      date: DateTime.parse(json['date']),
     );
   }
 
   Map<String, dynamic> toJson() {
     return {
       if (id != null) 'id': id,
-      'title': title,
-      'description': description,
-      'examDate': examDate?.toIso8601String(),
+      'name': name,
       'subjectId': subjectId,
       'classId': classId,
-      'duration': duration,
-      'totalMarks': totalMarks,
-      if (createdBy != null) 'createdBy': createdBy,
-      if (createdAt != null) 'createdAt': createdAt?.toIso8601String(),
-      'status': status,
+      'maxMarks': maxMarks,
+      'date': date.toIso8601String(),
+      if (subjectName != null) 'subjectName': subjectName,
+      if (subjectCode != null) 'subjectCode': subjectCode,
+      if (className != null) 'className': className,
+      if (sectionName != null) 'sectionName': sectionName,
+      if (academicYearId != null) 'academicYearId': academicYearId,
+      if (academicYearName != null) 'academicYearName': academicYearName,
     };
   }
 
   Exam copyWith({
     String? id,
-    String? title,
-    String? description,
-    DateTime? examDate,
+    String? name,
     String? subjectId,
+    String? subjectName,
+    String? subjectCode,
     String? classId,
-    int? duration,
-    double? totalMarks,
-    String? createdBy,
-    DateTime? createdAt,
-    String? status,
+    String? className,
+    String? sectionName,
+    String? academicYearId,
+    String? academicYearName,
+    double? maxMarks,
+    DateTime? date,
   }) {
     return Exam(
       id: id ?? this.id,
-      title: title ?? this.title,
-      description: description ?? this.description,
-      examDate: examDate ?? this.examDate,
+      name: name ?? this.name,
       subjectId: subjectId ?? this.subjectId,
+      subjectName: subjectName ?? this.subjectName,
+      subjectCode: subjectCode ?? this.subjectCode,
       classId: classId ?? this.classId,
-      duration: duration ?? this.duration,
-      totalMarks: totalMarks ?? this.totalMarks,
-      createdBy: createdBy ?? this.createdBy,
-      createdAt: createdAt ?? this.createdAt,
-      status: status ?? this.status,
+      className: className ?? this.className,
+      sectionName: sectionName ?? this.sectionName,
+      academicYearId: academicYearId ?? this.academicYearId,
+      academicYearName: academicYearName ?? this.academicYearName,
+      maxMarks: maxMarks ?? this.maxMarks,
+      date: date ?? this.date,
     );
   }
 }
