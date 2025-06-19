@@ -3,7 +3,7 @@ class Class {
   final String className;
   final String sectionName;
   final String academicYearId;
-  final String academicYearName;
+  final String? academicYearName;
   final String? staffId;
   final String? staff;
   final String? subjectId;
@@ -14,7 +14,7 @@ class Class {
     required this.className,
     required this.sectionName,
     required this.academicYearId,
-    required this.academicYearName,
+    this.academicYearName,
     this.staffId,
     this.staff,
     this.subjectId,

@@ -74,3 +74,12 @@ class PublishExam extends ExamEvent {
   @override
   List<Object?> get props => [id];
 }
+
+class LoadClassesByExamName extends ExamEvent {
+  final String examName;
+
+  const LoadClassesByExamName(this.examName);
+
+  @override
+  List<Object?> get props => [examName];
+}

@@ -1,12 +1,10 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:sms/models/class.dart';
 import '../../bloc/exam/exam_bloc.dart';
 import '../../bloc/exam/exam_event.dart';
 import '../../bloc/exam/exam_state.dart';
-import '../../models/exams.dart';
-import 'exam_form_screen.dart';
-import 'exam_detail_screen.dart';
 
 class ExamsListScreen extends StatefulWidget {
   const ExamsListScreen({Key? key}) : super(key: key);
@@ -16,6 +14,10 @@ class ExamsListScreen extends StatefulWidget {
 }
 
 class _ExamsListScreenState extends State<ExamsListScreen> {
+  String? selectedExamName;
+  List<Class> selectedExamClasses = [];
+  List<String> examNames = []; // Store exam names locally
+
   @override
   void initState() {
     super.initState();
@@ -24,9 +26,12 @@ class _ExamsListScreenState extends State<ExamsListScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isWideScreen = screenWidth > 800;
+
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Exams Management'),
+        title: const Text('Exams'),
         actions: [
           IconButton(
             icon: const Icon(Icons.filter_list),
@@ -40,6 +45,15 @@ class _ExamsListScreenState extends State<ExamsListScreen> {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(content: Text(state.message)),
             );
+          } else if (state is ExamNamesLoaded) {
+            setState(() {
+              examNames = state.examNames;
+            });
+          } else if (state is ClassesLoaded) {
+            setState(() {
+              selectedExamName = state.examName;
+              selectedExamClasses = state.classes;
+            });
           } else if (state is ExamOperationSuccess) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(content: Text(state.message)),
@@ -47,10 +61,14 @@ class _ExamsListScreenState extends State<ExamsListScreen> {
           }
         },
         builder: (context, state) {
-          if (state is ExamLoading) {
+          if (state is ExamLoading && examNames.isEmpty) {
             return const Center(child: CircularProgressIndicator());
-          } else if (state is ExamsLoaded) {
-            return _buildExamsList(context, state.exams);
+          } else if (examNames.isNotEmpty) {
+            if (isWideScreen) {
+              return _buildMasterDetailLayout(examNames);
+            } else {
+              return _buildMobileLayout(examNames);
+            }
           } else if (state is ExamError) {
             return Center(child: Text('Error: ${state.message}'));
           }
@@ -58,71 +76,324 @@ class _ExamsListScreenState extends State<ExamsListScreen> {
         },
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          if (kIsWeb && MediaQuery.of(context).size.width > 800) {
-            // Show right-side drawer for web
-            showGeneralDialog(
-              context: context,
-              barrierDismissible: true,
-              barrierLabel: "Right Drawer",
-              transitionDuration: const Duration(milliseconds: 300),
-              pageBuilder: (context, animation, secondaryAnimation) {
-                return Align(
-                  alignment: Alignment.centerRight,
-                  child: Material(
-                    color: Colors.white,
-                    elevation: 16,
-                    child: SizedBox(
-                      width: 400,
-                      height: MediaQuery.of(context).size.height,
-                      child: Stack(
-                        children: [
-                          const Padding(
-                            padding: EdgeInsets.only(top: 56.0), // space for the close button
-                            child: ExamFormScreen(),
-                          ),
-                          Positioned(
-                            top: 8,
-                            right: 8,
-                            child: IconButton(
-                              icon: const Icon(Icons.close),
-                              onPressed: () => Navigator.of(context).pop(),
-                              tooltip: 'Close',
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                );
-              },
-              transitionBuilder: (context, animation, secondaryAnimation, child) {
-                final tween = Tween<Offset>(
-                  begin: const Offset(1, 0),
-                  end: Offset.zero,
-                );
-                return SlideTransition(
-                  position: tween.animate(animation),
-                  child: child,
-                );
-              },
-            );
-          } else {
-            // Show bottom sheet for mobile
-            showModalBottomSheet(
-              context: context,
-              shape: const RoundedRectangleBorder(
-                borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-              ),
-              isScrollControlled: true,
-              builder: (_) => const ExamFormScreen(),
-            );
-          }
-        },
+        onPressed: _showCreateExamSheet,
         child: const Icon(Icons.add),
         tooltip: 'Create new exam',
       ),
     );
+  }
+
+  Widget _buildMasterDetailLayout(List<String> examNames) {
+    return Row(
+      children: [
+        // Left Panel - Exams List
+        Container(
+          width: 350,
+          decoration: BoxDecoration(
+            border: Border(
+              right: BorderSide(
+                color: Theme.of(context).dividerColor,
+                width: 1,
+              ),
+            ),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Text(
+                  'Exams (${examNames.length})',
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+              Expanded(child: _buildExamsList(examNames)),
+            ],
+          ),
+        ),
+        // Right Panel - Classes List
+        Expanded(
+          child: _buildClassesPanel(),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildMobileLayout(List<String> examNames) {
+    if (selectedExamName != null && selectedExamClasses.isNotEmpty) {
+      return Column(
+        children: [
+          // Header with back button
+          Container(
+            padding: const EdgeInsets.all(16.0),
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.surface,
+              border: Border(
+                bottom: BorderSide(
+                  color: Theme.of(context).dividerColor,
+                ),
+              ),
+            ),
+            child: Row(
+              children: [
+                IconButton(
+                  icon: const Icon(Icons.arrow_back),
+                  onPressed: () {
+                    setState(() {
+                      selectedExamName = null;
+                      selectedExamClasses = [];
+                    });
+                  },
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    'Classes for "$selectedExamName"',
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Expanded(child: _buildClassesList()),
+        ],
+      );
+    }
+    return _buildExamsList(examNames);
+  }
+
+  Widget _buildExamsList(List<String> examNames) {
+    if (examNames.isEmpty) {
+      return const Center(child: Text('No exams found'));
+    }
+
+    return ListView.builder(
+      padding: const EdgeInsets.symmetric(horizontal: 8.0),
+      itemCount: examNames.length,
+      itemBuilder: (context, index) {
+        final examName = examNames[index];
+        final isSelected = selectedExamName == examName;
+
+        return Container(
+          margin: const EdgeInsets.symmetric(vertical: 2.0, horizontal: 8.0),
+          decoration: BoxDecoration(
+            color: isSelected
+                ? Theme.of(context).colorScheme.primaryContainer
+                : Colors.transparent,
+            borderRadius: BorderRadius.circular(8.0),
+            border: isSelected
+                ? Border.all(
+              color: Theme.of(context).colorScheme.primary,
+              width: 1,
+            )
+                : null,
+          ),
+          child: ListTile(
+            title: Text(
+              examName,
+              style: TextStyle(
+                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                color: isSelected
+                    ? Theme.of(context).colorScheme.onPrimaryContainer
+                    : null,
+              ),
+            ),
+            trailing: selectedExamClasses.isNotEmpty && selectedExamName == examName
+                ? Badge(
+              label: Text('${selectedExamClasses.length}'),
+              child: const Icon(Icons.chevron_right),
+            )
+                : const Icon(Icons.chevron_right),
+            onTap: () {
+              context.read<ExamBloc>().add(LoadClassesByExamName(examName));
+            },
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildClassesPanel() {
+    if (selectedExamName == null) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.school_outlined,
+              size: 64,
+              color: Theme.of(context).colorScheme.outline,
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'Select an exam to view classes',
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                color: Theme.of(context).colorScheme.outline,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          padding: const EdgeInsets.all(16.0),
+          decoration: BoxDecoration(
+            color: Theme.of(context).colorScheme.surface,
+            border: Border(
+              bottom: BorderSide(
+                color: Theme.of(context).dividerColor,
+              ),
+            ),
+          ),
+          child: Row(
+            children: [
+              Expanded(
+                child: Text(
+                  'Classes for "$selectedExamName"',
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+              if (selectedExamClasses.isNotEmpty)
+                Chip(
+                  label: Text('${selectedExamClasses.length} classes'),
+                  labelStyle: TextStyle(
+                    fontSize: 12,
+                    color: Theme.of(context).colorScheme.onSecondaryContainer,
+                  ),
+                  backgroundColor:
+                  Theme.of(context).colorScheme.secondaryContainer,
+                ),
+            ],
+          ),
+        ),
+        Expanded(child: _buildClassesList()),
+      ],
+    );
+  }
+
+  Widget _buildClassesList() {
+    if (selectedExamClasses.isEmpty) {
+      return const Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.class_outlined, size: 48, color: Colors.grey),
+            SizedBox(height: 16),
+            Text('No classes found for this exam'),
+          ],
+        ),
+      );
+    }
+
+    return ListView.builder(
+      padding: const EdgeInsets.all(16.0),
+      itemCount: selectedExamClasses.length,
+      itemBuilder: (context, index) {
+        final classItem = selectedExamClasses[index];
+        return Card(
+          elevation: 1,
+          margin: const EdgeInsets.only(bottom: 8.0),
+          child: ListTile(
+            leading: CircleAvatar(
+              backgroundColor: Theme.of(context).colorScheme.primaryContainer,
+              child: Text(
+                classItem.className.substring(0, 1).toUpperCase(),
+                style: TextStyle(
+                  color: Theme.of(context).colorScheme.onPrimaryContainer,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+            title: Text(
+              '${classItem.className} - ${classItem.sectionName}',
+              style: const TextStyle(fontWeight: FontWeight.w500),
+            ),
+            subtitle: Text('Section: ${classItem.sectionName}'),
+            trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+            onTap: () {
+              // Handle class selection - navigate to class details
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(
+                    'Selected: ${classItem.className} - ${classItem.sectionName}',
+                  ),
+                ),
+              );
+            },
+          ),
+        );
+      },
+    );
+  }
+
+  void _showCreateExamSheet() {
+    if (kIsWeb && MediaQuery.of(context).size.width > 800) {
+      showGeneralDialog(
+        context: context,
+        barrierDismissible: true,
+        barrierLabel: "Right Drawer",
+        transitionDuration: const Duration(milliseconds: 300),
+        pageBuilder: (context, animation, secondaryAnimation) {
+          return Align(
+            alignment: Alignment.centerRight,
+            child: Material(
+              color: Colors.white,
+              elevation: 16,
+              child: SizedBox(
+                width: 400,
+                height: MediaQuery.of(context).size.height,
+                child: Stack(
+                  children: [
+                    const Padding(
+                      padding: EdgeInsets.only(top: 56.0),
+                      child: Placeholder(), // Replace with your ExamFormScreen
+                    ),
+                    Positioned(
+                      top: 8,
+                      right: 8,
+                      child: IconButton(
+                        icon: const Icon(Icons.close),
+                        onPressed: () => Navigator.of(context).pop(),
+                        tooltip: 'Close',
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          );
+        },
+        transitionBuilder: (context, animation, secondaryAnimation, child) {
+          final tween = Tween<Offset>(
+            begin: const Offset(1, 0),
+            end: Offset.zero,
+          );
+          return SlideTransition(
+            position: tween.animate(animation),
+            child: child,
+          );
+        },
+      );
+    } else {
+      showModalBottomSheet(
+        context: context,
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        ),
+        isScrollControlled: true,
+        builder: (_) => const Placeholder(), // Replace with ExamFormScreen
+      );
+    }
   }
 
   void _showFilterOptions() {
@@ -143,7 +414,6 @@ class _ExamsListScreenState extends State<ExamsListScreen> {
                 leading: const Icon(Icons.class_),
                 title: const Text('Filter by Class'),
                 onTap: () {
-                  // Show class selection dialog
                   Navigator.pop(context);
                   _showClassSelectionDialog();
                 },
@@ -152,7 +422,6 @@ class _ExamsListScreenState extends State<ExamsListScreen> {
                 leading: const Icon(Icons.subject),
                 title: const Text('Filter by Subject'),
                 onTap: () {
-                  // Show subject selection dialog
                   Navigator.pop(context);
                   _showSubjectSelectionDialog();
                 },
@@ -163,6 +432,11 @@ class _ExamsListScreenState extends State<ExamsListScreen> {
                 onTap: () {
                   Navigator.pop(context);
                   context.read<ExamBloc>().add(LoadExams());
+                  setState(() {
+                    selectedExamName = null;
+                    selectedExamClasses = [];
+                    examNames = []; // Clear local state to force reload
+                  });
                 },
               ),
             ],
@@ -173,7 +447,6 @@ class _ExamsListScreenState extends State<ExamsListScreen> {
   }
 
   void _showClassSelectionDialog() {
-    // In a real app, you would fetch classes from your API
     final dummyClasses = [
       {'id': 'class1', 'name': 'Class 1'},
       {'id': 'class2', 'name': 'Class 2'},
@@ -216,7 +489,6 @@ class _ExamsListScreenState extends State<ExamsListScreen> {
   }
 
   void _showSubjectSelectionDialog() {
-    // In a real app, you would fetch subjects from your API
     final dummySubjects = [
       {'id': 'subject1', 'name': 'Mathematics'},
       {'id': 'subject2', 'name': 'Science'},
@@ -256,68 +528,5 @@ class _ExamsListScreenState extends State<ExamsListScreen> {
         );
       },
     );
-  }
-
-  Widget _buildExamsList(BuildContext context, List<Exam> exams) {
-    if (exams.isEmpty) {
-      return const Center(child: Text('No exams found'));
-    }
-
-    return ListView.separated(
-      padding: const EdgeInsets.all(16.0),
-      itemCount: exams.length,
-      separatorBuilder: (context, index) => const Divider(),
-      itemBuilder: (context, index) {
-        final exam = exams[index];
-        return Card(
-          elevation: 2,
-          child: ListTile(
-            title: Text(
-              exam.name,
-              style: const TextStyle(fontWeight: FontWeight.bold),
-            ),
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => ExamDetailScreen(examId: exam.id!),
-                ),
-              );
-            },
-          ),
-        );
-      },
-    );
-  }
-
-  Widget _buildStatusChip(String status) {
-    Color chipColor;
-    switch (status.toLowerCase()) {
-      case 'draft':
-        chipColor = Colors.grey;
-        break;
-      case 'published':
-        chipColor = Colors.blue;
-        break;
-      case 'completed':
-        chipColor = Colors.green;
-        break;
-      default:
-        chipColor = Colors.grey;
-    }
-
-    return Chip(
-      label: Text(
-        status,
-        style: const TextStyle(color: Colors.white, fontSize: 12),
-      ),
-      backgroundColor: chipColor,
-      padding: EdgeInsets.zero,
-      labelPadding: const EdgeInsets.symmetric(horizontal: 8),
-    );
-  }
-
-  String _formatDate(DateTime date) {
-    return '${date.day}/${date.month}/${date.year}';
   }
 }

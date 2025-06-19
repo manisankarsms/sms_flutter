@@ -1,6 +1,7 @@
 // lib/blocs/exam/exam_state.dart
 
 import 'package:equatable/equatable.dart';
+import '../../models/class.dart';
 import '../../models/exams.dart';
 
 abstract class ExamState extends Equatable {
@@ -48,4 +49,23 @@ class ExamError extends ExamState {
 
   @override
   List<Object?> get props => [message];
+}
+
+class ExamNamesLoaded extends ExamState {
+  final List<String> examNames;
+
+  const ExamNamesLoaded(this.examNames);
+
+  @override
+  List<Object?> get props => [examNames];
+}
+
+class ClassesLoaded extends ExamState {
+  final String examName;
+  final List<Class> classes;
+
+  const ClassesLoaded(this.examName, this.classes);
+
+  @override
+  List<Object?> get props => [examName, classes];
 }

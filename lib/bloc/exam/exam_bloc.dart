@@ -17,9 +17,10 @@ class ExamBloc extends Bloc<ExamEvent, ExamState> {
     on<UpdateExam>(_onUpdateExam);
     on<DeleteExam>(_onDeleteExam);
     on<PublishExam>(_onPublishExam);
+    on<LoadClassesByExamName>(_onLoadClassesByExamName);
   }
 
-  void _onLoadExams(LoadExams event, Emitter<ExamState> emit) async {
+  /*void _onLoadExams(LoadExams event, Emitter<ExamState> emit) async {
     emit(ExamLoading());
     try {
       final exams = await examRepository.getExams();
@@ -27,7 +28,29 @@ class ExamBloc extends Bloc<ExamEvent, ExamState> {
     } catch (e) {
       emit(ExamError(e.toString()));
     }
+  }*/
+
+
+  void _onLoadExams(LoadExams event, Emitter<ExamState> emit) async {
+    emit(ExamLoading());
+    try {
+      final examNames = await examRepository.getExamNames(); // returns List<String>
+      emit(ExamNamesLoaded(examNames));
+    } catch (e) {
+      emit(ExamError(e.toString()));
+    }
   }
+
+  void _onLoadClassesByExamName(LoadClassesByExamName event, Emitter<ExamState> emit) async {
+    emit(ExamLoading());
+    try {
+      final classes = await examRepository.getClassesByExamName(event.examName);
+      emit(ClassesLoaded(event.examName, classes));
+    } catch (e) {
+      emit(ExamError('Failed to load classes: ${e.toString()}'));
+    }
+  }
+
 
   void _onLoadExamsByClass(LoadExamsByClass event, Emitter<ExamState> emit) async {
     emit(ExamLoading());
@@ -102,4 +125,6 @@ class ExamBloc extends Bloc<ExamEvent, ExamState> {
       emit(ExamError(e.toString()));
     }
   }
+
+
 }
