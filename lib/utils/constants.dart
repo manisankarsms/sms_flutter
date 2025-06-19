@@ -49,6 +49,7 @@ class ApiEndpoints {
   static const String exams = 'exams';
   static const String examsByName = 'exams/examsByName';
   static const String classByExamsName = 'exams/classByExamName';
+  static const String examsByClassAndExamsName = 'exams/examsByClassAndExamName';
 
   static const String configuration = 'admin/configuration';
 

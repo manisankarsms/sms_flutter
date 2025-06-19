@@ -1,10 +1,10 @@
-// lib/repositories/exam_repository.dart
-
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:sms/utils/constants.dart';
 
 import '../models/class.dart';
 import '../models/exams.dart';
+import '../models/subject.dart'; // Make sure you have this import
 import '../services/web_service.dart';
 
 class ExamRepository {
@@ -48,6 +48,17 @@ class ExamRepository {
     }
   }
 
+  Future<List<Exam>> getExamsByClassesAndExamName(String examName, String classId) async {
+    final response = await webService.fetchData('${ApiEndpoints.examsByClassAndExamsName}/$classId/$examName');
+    final Map<String, dynamic> json = jsonDecode(response);
+
+    if (json['success'] == true && json['data'] is List) {
+      final List<dynamic> data = json['data'];
+      return data.map((item) => Exam.fromJson(item)).toList();
+    } else {
+      throw Exception('Failed to load class list for exam');
+    }
+  }
 
   Future<Exam> getExamById(String id) async {
     final response = await webService.fetchData('${ApiEndpoints.exams}/$id');
@@ -59,7 +70,6 @@ class ExamRepository {
       throw Exception('Failed to load exam details');
     }
   }
-
 
   Future<Exam> createExam(Exam exam) async {
     final examJson = jsonEncode(exam.toJson());
@@ -98,5 +108,38 @@ class ExamRepository {
     final response = await webService.putData('${ApiEndpoints.exams}/$id/publish', '{}');
     final Map<String, dynamic> data = jsonDecode(response);
     return Exam.fromJson(data);
+  }
+
+  // NEW METHODS FOR CLASSES AND SUBJECTS
+  Future<List<Class>> fetchAllClasses() async {
+    try {
+      final String responseString = await webService.fetchData('classes');
+      if (kDebugMode) {
+        print("API Response: $responseString");
+      }
+
+      final Map<String, dynamic> response = jsonDecode(responseString);
+      final List<dynamic> classesJson = response['data'];
+      return classesJson.map((json) => Class.fromJson(json)).toList();
+    } catch (e) {
+      if (kDebugMode) {
+        print("Error fetching classes: $e");
+      }
+      throw Exception('Failed to fetch classes: $e');
+    }
+  }
+
+  Future<List<Subject>> fetchSubjects() async {
+    try {
+      final responseString = await webService.fetchData(ApiEndpoints.subjects);
+      final Map<String, dynamic> response = jsonDecode(responseString);
+      final List<dynamic> subjectsJson = response['data'];
+      return subjectsJson.map((json) => Subject.fromJson(json)).toList();
+    } catch (e) {
+      if (kDebugMode) {
+        print("Error fetching subjects: $e");
+      }
+      throw Exception('Failed to fetch subjects: $e');
+    }
   }
 }

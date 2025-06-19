@@ -83,3 +83,18 @@ class LoadClassesByExamName extends ExamEvent {
   @override
   List<Object?> get props => [examName];
 }
+
+class LoadExamsByClassesAndExamsName extends ExamEvent {
+  final String examName;
+  final String classId;
+
+  const LoadExamsByClassesAndExamsName(this.examName, this.classId);
+
+  @override
+  List<Object?> get props => [examName];
+}
+
+// NEW EVENTS FOR CLASSES AND SUBJECTS
+class LoadAllClasses extends ExamEvent {}
+
+class LoadAllSubjects extends ExamEvent {}

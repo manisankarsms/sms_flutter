@@ -3,6 +3,7 @@
 import 'package:equatable/equatable.dart';
 import '../../models/class.dart';
 import '../../models/exams.dart';
+import '../../models/subject.dart';
 
 abstract class ExamState extends Equatable {
   const ExamState();
@@ -68,4 +69,29 @@ class ClassesLoaded extends ExamState {
 
   @override
   List<Object?> get props => [examName, classes];
+}
+
+class ExamsByClassExamNameLoaded extends ExamState {
+  final List<Exam> exams;
+
+  const ExamsByClassExamNameLoaded(this.exams);
+
+  @override
+  List<Object?> get props => [exams];
+}
+
+class AllClassesLoaded extends ExamState {
+  final List<Class> classes;
+  AllClassesLoaded(this.classes);
+}
+
+class AllSubjectsLoaded extends ExamState {
+  final List<Subject> subjects;
+  AllSubjectsLoaded(this.subjects);
+}
+
+class ClassesAndSubjectsLoaded extends ExamState {
+  final List<Class> classes;
+  final List<Subject> subjects;
+  ClassesAndSubjectsLoaded(this.classes, this.subjects);
 }

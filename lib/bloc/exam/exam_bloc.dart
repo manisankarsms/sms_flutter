@@ -18,18 +18,11 @@ class ExamBloc extends Bloc<ExamEvent, ExamState> {
     on<DeleteExam>(_onDeleteExam);
     on<PublishExam>(_onPublishExam);
     on<LoadClassesByExamName>(_onLoadClassesByExamName);
+    on<LoadExamsByClassesAndExamsName>(_onLoadExamsByClassesAndExamsName);
+    // NEW EVENT HANDLERS
+    on<LoadAllClasses>(_onLoadAllClasses);
+    on<LoadAllSubjects>(_onLoadAllSubjects);
   }
-
-  /*void _onLoadExams(LoadExams event, Emitter<ExamState> emit) async {
-    emit(ExamLoading());
-    try {
-      final exams = await examRepository.getExams();
-      emit(ExamsLoaded(exams));
-    } catch (e) {
-      emit(ExamError(e.toString()));
-    }
-  }*/
-
 
   void _onLoadExams(LoadExams event, Emitter<ExamState> emit) async {
     emit(ExamLoading());
@@ -51,6 +44,15 @@ class ExamBloc extends Bloc<ExamEvent, ExamState> {
     }
   }
 
+  void _onLoadExamsByClassesAndExamsName(LoadExamsByClassesAndExamsName event, Emitter<ExamState> emit) async {
+    emit(ExamLoading());
+    try {
+      final exams = await examRepository.getExamsByClassesAndExamName(event.examName, event.classId);
+      emit(ExamsByClassExamNameLoaded(exams));
+    } catch (e) {
+      emit(ExamError(e.toString()));
+    }
+  }
 
   void _onLoadExamsByClass(LoadExamsByClass event, Emitter<ExamState> emit) async {
     emit(ExamLoading());
@@ -86,10 +88,16 @@ class ExamBloc extends Bloc<ExamEvent, ExamState> {
     emit(ExamLoading());
     try {
       final exam = await examRepository.createExam(event.exam);
+
+      // Only emit success state - don't emit ExamLoaded immediately
       emit(ExamOperationSuccess('Exam created successfully'));
-      emit(ExamLoaded(exam));
+
+      // Optionally, you can emit ExamLoaded after a small delay
+      // or handle it in the UI listener instead
+
     } catch (e) {
-      emit(ExamError(e.toString()));
+      print('Create exam error: ${e.toString()}'); // Add logging
+      emit(ExamError('Failed to create exam: ${e.toString()}'));
     }
   }
 
@@ -126,5 +134,34 @@ class ExamBloc extends Bloc<ExamEvent, ExamState> {
     }
   }
 
+  // NEW EVENT HANDLERS FOR CLASSES AND SUBJECTS
+  void _onLoadAllClasses(LoadAllClasses event, Emitter<ExamState> emit) async {
+    try {
+      final classes = await examRepository.fetchAllClasses();
+      emit(AllClassesLoaded(classes));
+    } catch (e) {
+      emit(ExamError('Failed to load classes: ${e.toString()}'));
+    }
+  }
 
+  void _onLoadAllSubjects(LoadAllSubjects event, Emitter<ExamState> emit) async {
+    try {
+      final subjects = await examRepository.fetchSubjects();
+      emit(AllSubjectsLoaded(subjects));
+    } catch (e) {
+      emit(ExamError('Failed to load subjects: ${e.toString()}'));
+    }
+  }
+
+  // Helper method to load both classes and subjects together
+  void loadClassesAndSubjects() async {
+    emit(ExamLoading());
+    try {
+      final classes = await examRepository.fetchAllClasses();
+      final subjects = await examRepository.fetchSubjects();
+      emit(ClassesAndSubjectsLoaded(classes, subjects));
+    } catch (e) {
+      emit(ExamError('Failed to load classes and subjects: ${e.toString()}'));
+    }
+  }
 }

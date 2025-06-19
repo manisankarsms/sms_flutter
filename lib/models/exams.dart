@@ -1,3 +1,5 @@
+import 'package:intl/intl.dart';
+
 class Exam {
   final String? id;
   final String name;
@@ -29,18 +31,20 @@ class Exam {
 
   factory Exam.fromJson(Map<String, dynamic> json) {
     return Exam(
-      id: json['id'],
-      name: json['name'],
-      subjectId: json['subjectId'],
-      subjectName: json['subjectName'],
-      subjectCode: json['subjectCode'],
-      classId: json['classId'],
-      className: json['className'],
-      sectionName: json['sectionName'],
-      academicYearId: json['academicYearId'],
-      academicYearName: json['academicYearName'],
-      maxMarks: (json['maxMarks'] as num).toDouble(),
-      date: DateTime.parse(json['date']),
+      id: json['id']?.toString(), // Add null safety
+      name: json['name']?.toString() ?? '', // Add null safety with default
+      subjectId: json['subjectId']?.toString() ?? '', // Add null safety with default
+      subjectName: json['subjectName']?.toString(), // Already nullable, but add null safety
+      subjectCode: json['subjectCode']?.toString(), // Already nullable, but add null safety
+      classId: json['classId']?.toString() ?? '', // Add null safety with default
+      className: json['className']?.toString(), // Already nullable, but add null safety
+      sectionName: json['sectionName']?.toString(), // Already nullable, but add null safety
+      academicYearId: json['academicYearId']?.toString(), // Already nullable, but add null safety
+      academicYearName: json['academicYearName']?.toString(), // Already nullable, but add null safety
+      maxMarks: (json['maxMarks'] as num?)?.toDouble() ?? 0.0, // Add null safety with default
+      date: json['date'] != null
+          ? DateTime.parse(json['date'].toString())
+          : DateTime.now(), // Add null safety with default
     );
   }
 
@@ -51,7 +55,7 @@ class Exam {
       'subjectId': subjectId,
       'classId': classId,
       'maxMarks': maxMarks,
-      'date': date.toIso8601String(),
+      'date': DateFormat('yyyy-MM-dd').format(date),
       if (subjectName != null) 'subjectName': subjectName,
       if (subjectCode != null) 'subjectCode': subjectCode,
       if (className != null) 'className': className,
