@@ -180,6 +180,9 @@ class _ClassesScreenState extends State<ClassesScreen> {
 
   void _showSearchDialog() {
     final l10n = AppLocalizations.of(context);
+    // Store reference to the bloc before showing dialog
+    final classesBloc = context.read<ClassesBloc>();
+
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -192,13 +195,13 @@ class _ClassesScreenState extends State<ClassesScreen> {
             prefixIcon: const Icon(Icons.search),
             border: const OutlineInputBorder(),
           ),
-          onChanged: (value) => context.read<ClassesBloc>().add(SearchClasses(value)),
+          onChanged: (value) => classesBloc.add(SearchClasses(value)),
         ),
         actions: [
           TextButton(
             onPressed: () {
               _searchController.clear();
-              context.read<ClassesBloc>().add(const SearchClasses(''));
+              classesBloc.add(const SearchClasses(''));
               Navigator.pop(context);
             },
             child: Text(l10n?.clear ?? 'Clear'),
@@ -216,6 +219,8 @@ class _ClassesScreenState extends State<ClassesScreen> {
     final l10n = AppLocalizations.of(context);
     final nameController = TextEditingController();
     final sectionController = TextEditingController();
+    // Store reference to the bloc before showing dialog
+    final classesBloc = context.read<ClassesBloc>();
 
     showDialog(
       context: context,
@@ -252,7 +257,8 @@ class _ClassesScreenState extends State<ClassesScreen> {
           FilledButton(
             onPressed: () {
               if (nameController.text.trim().isNotEmpty) {
-                context.read<ClassesBloc>().add(
+                // Use the stored bloc reference instead of context.read
+                classesBloc.add(
                   AddClass(Class(
                     className: nameController.text.trim(),
                     sectionName: sectionController.text.trim(),
