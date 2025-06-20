@@ -42,7 +42,7 @@ class ApiEndpoints {
   static const String issuedBooks = 'books/issued';
 
   static const String studentAdmission = 'users';
-  static const String staffRegistration = 'admin/staffs/register';
+  static const String staffRegistration = 'users';
   static const String staffDelete = 'admin/staff/delete';
 
   static const String subjects = 'subjects';

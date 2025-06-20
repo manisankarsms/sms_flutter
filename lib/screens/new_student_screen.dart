@@ -514,6 +514,7 @@ class _NewStudentScreenState extends State<NewStudentScreen> {
             TextButton(
               child: const Text('OK'),
               onPressed: () {
+                _resetForm();
                 Navigator.of(context).pop();
               },
             ),
@@ -521,6 +522,15 @@ class _NewStudentScreenState extends State<NewStudentScreen> {
         );
       },
     );
+  }
+
+  void _resetForm() {
+    _formKey.currentState?.reset();
+    _firstNameController.clear();
+    _lastNameController.clear();
+    _emailController.clear();
+    _mobileController.clear();
+    _passwordController.clear();
   }
 
   void _showErrorDialog(String message) {

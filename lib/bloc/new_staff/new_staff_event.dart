@@ -7,10 +7,19 @@ abstract class StaffRegistrationEvent extends Equatable {
   List<Object> get props => [];
 }
 
-class SubmitStaffRegistrationEvent extends StaffRegistrationEvent {
-  final Map<String, dynamic> staffData;
+class SaveStaffEvent extends StaffRegistrationEvent {
+  final Map<String, dynamic> formData;
 
-  const SubmitStaffRegistrationEvent(this.staffData);
+  const SaveStaffEvent(this.formData);
+
+  @override
+  List<Object> get props => [formData];
+}
+
+class BulkSaveStaffEvent extends StaffRegistrationEvent {
+  final List<Map<String, dynamic>> staffData;
+
+  const BulkSaveStaffEvent(this.staffData);
 
   @override
   List<Object> get props => [staffData];

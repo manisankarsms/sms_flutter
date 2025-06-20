@@ -31,7 +31,6 @@ class StudentRepository {
         'role': formData['role'] ?? 'STUDENT',
         'firstName': formData['firstName'],
         'lastName': formData['lastName'],
-        'class': formData['class'],
       });
 
       if (kDebugMode) {
@@ -96,7 +95,7 @@ class StudentRepository {
 
   // Validate student data before submission
   bool validateStudentData(Map<String, dynamic> formData) {
-    final requiredFields = ['email', 'mobileNumber', 'password', 'firstName', 'lastName', 'class'];
+    final requiredFields = ['email', 'mobileNumber', 'password', 'firstName', 'lastName'];
 
     for (String field in requiredFields) {
       if (formData[field] == null || formData[field].toString().trim().isEmpty) {
