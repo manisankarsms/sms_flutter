@@ -37,8 +37,9 @@ class LoadStudentMarks extends StudentsEvent {
 
 class LoadExams extends StudentsEvent {
   final String classId;
+  final String subjectId;
 
-  LoadExams(this.classId);
+  LoadExams(this.classId, this.subjectId);
 }
 
 class SaveStudentMarks extends StudentsEvent {

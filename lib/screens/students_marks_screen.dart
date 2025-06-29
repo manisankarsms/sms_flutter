@@ -45,7 +45,7 @@ class _StudentsMarksScreenState extends State<StudentsMarksScreen> {
   void initState() {
     super.initState();
     // First load the available exams
-    context.read<StudentsBloc>().add(LoadExams(widget.classId));
+    context.read<StudentsBloc>().add(LoadExams(widget.classId, widget.subjectId));
   }
 
   @override

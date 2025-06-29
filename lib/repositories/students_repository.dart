@@ -82,11 +82,22 @@ class StudentsRepository {
     }
   }
 
-  Future<List<Exam>> getExams() async {
-    final response = await webService.fetchData(ApiEndpoints.exams);
-    final List<dynamic> data = jsonDecode(response);
-    return data.map((json) => Exam.fromJson(json)).toList();
+  Future<List<Exam>> getExams(String classId, String subjectId) async {
+    try {
+      final responseString = await webService.fetchData('${ApiEndpoints.exams}/class/$classId/subject/$subjectId');
+      final Map<String, dynamic> response = jsonDecode(responseString);
+
+      if (response['success'] != true) {
+        throw Exception(response['message'] ?? 'Failed to fetch exams');
+      }
+
+      final List<dynamic> examsJson = response['data'];
+      return examsJson.map((json) => Exam.fromJson(json)).toList();
+    } catch (error) {
+      throw Exception('Failed to fetch exams: ${error.toString()}');
+    }
   }
+
 
   Future<List<StudentMark>> getStudentMarks(
       String classId,
@@ -99,7 +110,7 @@ class StudentsRepository {
         'subjectId': subjectId,
       });
 
-      final response = await webService.postData('students/marks', requestBody);
+      final response = await webService.fetchData('exam-results/exam/$examId');
 
       final Map<String, dynamic> responseData = jsonDecode(response);
       final List<dynamic> marksJson = responseData['marks'] ?? [];

@@ -44,7 +44,7 @@ class StudentsBloc extends Bloc<StudentsEvent, StudentsState> {
       Emitter<StudentsState> emit,
       ) async {
     try {
-      final exams = await repository.getExams();
+      final exams = await repository.getExams(event.classId, event.subjectId);
       emit(ExamsLoaded(exams));
     } catch (error) {
       emit(StudentsError(error.toString()));
