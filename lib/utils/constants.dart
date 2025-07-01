@@ -52,7 +52,7 @@ class ApiEndpoints {
   static const String classByExamsName = 'exams/classByExamName';
   static const String examsByClassAndExamsName = 'exams/examsByClassAndExamName';
 
-  static const String configuration = 'admin/configuration';
+  static const String configuration = 'school-config/1';
 
   static const String features = 'admin/features';
   static const String staff = 'admin/staffs/permissions';

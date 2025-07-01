@@ -23,7 +23,12 @@ class _ConfigurationScreenState extends State<ConfigurationScreen> {
   final _schoolNameController = TextEditingController();
   final _addressController = TextEditingController();
   final _emailController = TextEditingController();
-  final _phoneController = TextEditingController();
+  final _phoneNumber1Controller = TextEditingController();
+  final _phoneNumber2Controller = TextEditingController();
+  final _phoneNumber3Controller = TextEditingController();
+  final _phoneNumber4Controller = TextEditingController();
+  final _phoneNumber5Controller = TextEditingController();
+  final _websiteController = TextEditingController();
 
   File? _pickedLogoFile;
   XFile? _pickedLogoXFile; // For web support
@@ -42,7 +47,12 @@ class _ConfigurationScreenState extends State<ConfigurationScreen> {
     _schoolNameController.dispose();
     _addressController.dispose();
     _emailController.dispose();
-    _phoneController.dispose();
+    _phoneNumber1Controller.dispose();
+    _phoneNumber2Controller.dispose();
+    _phoneNumber3Controller.dispose();
+    _phoneNumber4Controller.dispose();
+    _phoneNumber5Controller.dispose();
+    _websiteController.dispose();
     super.dispose();
   }
 
@@ -89,12 +99,17 @@ class _ConfigurationScreenState extends State<ConfigurationScreen> {
       }
 
       final updated = Configuration(
-        id: _configId,
+        id: _configId ?? 1,
         schoolName: _schoolNameController.text,
-        logoUrl: logoPath,
+        logoUrl: logoPath.isEmpty ? null : logoPath,
         address: _addressController.text,
-        contactEmail: _emailController.text,
-        contactPhone: _phoneController.text,
+        email: _emailController.text.isEmpty ? null : _emailController.text,
+        phoneNumber1: _phoneNumber1Controller.text.isEmpty ? null : _phoneNumber1Controller.text,
+        phoneNumber2: _phoneNumber2Controller.text.isEmpty ? null : _phoneNumber2Controller.text,
+        phoneNumber3: _phoneNumber3Controller.text.isEmpty ? null : _phoneNumber3Controller.text,
+        phoneNumber4: _phoneNumber4Controller.text.isEmpty ? null : _phoneNumber4Controller.text,
+        phoneNumber5: _phoneNumber5Controller.text.isEmpty ? null : _phoneNumber5Controller.text,
+        website: _websiteController.text.isEmpty ? null : _websiteController.text,
       );
 
       context.read<ConfigurationBloc>().add(UpdateConfiguration(updated));
@@ -180,8 +195,13 @@ class _ConfigurationScreenState extends State<ConfigurationScreen> {
               _configId = config.id;
               _schoolNameController.text = config.schoolName;
               _addressController.text = config.address;
-              _emailController.text = config.contactEmail;
-              _phoneController.text = config.contactPhone;
+              _emailController.text = config.email ?? '';
+              _phoneNumber1Controller.text = config.phoneNumber1 ?? '';
+              _phoneNumber2Controller.text = config.phoneNumber2 ?? '';
+              _phoneNumber3Controller.text = config.phoneNumber3 ?? '';
+              _phoneNumber4Controller.text = config.phoneNumber4 ?? '';
+              _phoneNumber5Controller.text = config.phoneNumber5 ?? '';
+              _websiteController.text = config.website ?? '';
               _existingLogoUrl = config.logoUrl;
             }
 
@@ -296,6 +316,7 @@ class _ConfigurationScreenState extends State<ConfigurationScreen> {
                 contentPadding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
               ),
               maxLines: 2,
+              validator: (value) => value == null || value.isEmpty ? 'Address is required' : null,
             ),
             const SizedBox(height: 24),
             const SectionHeader(title: "Contact Information"),
@@ -318,9 +339,72 @@ class _ConfigurationScreenState extends State<ConfigurationScreen> {
             ),
             const SizedBox(height: 16),
             TextFormField(
-              controller: _phoneController,
+              controller: _websiteController,
               decoration: InputDecoration(
-                labelText: 'Phone Number',
+                labelText: 'Website',
+                prefixIcon: const Icon(Icons.web),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                contentPadding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+              ),
+              keyboardType: TextInputType.url,
+              validator: (value) {
+                if (value != null && value.isNotEmpty && !RegExp(r'^https?:\/\/[\w\-]+(\.[\w\-]+)+([\w\-\.,@?^=%&:/~\+#]*[\w\-\@?^=%&/~\+#])?$').hasMatch(value)) {
+                  return 'Enter a valid website URL (e.g., https://example.com)';
+                }
+                return null;
+              },
+            ),
+            const SizedBox(height: 24),
+            const SectionHeader(title: "Phone Numbers"),
+            const SizedBox(height: 16),
+            TextFormField(
+              controller: _phoneNumber1Controller,
+              decoration: InputDecoration(
+                labelText: 'Primary Phone Number',
+                prefixIcon: const Icon(Icons.phone),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                contentPadding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+              ),
+              keyboardType: TextInputType.phone,
+            ),
+            const SizedBox(height: 16),
+            TextFormField(
+              controller: _phoneNumber2Controller,
+              decoration: InputDecoration(
+                labelText: 'Phone Number 2 (Optional)',
+                prefixIcon: const Icon(Icons.phone),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                contentPadding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+              ),
+              keyboardType: TextInputType.phone,
+            ),
+            const SizedBox(height: 16),
+            TextFormField(
+              controller: _phoneNumber3Controller,
+              decoration: InputDecoration(
+                labelText: 'Phone Number 3 (Optional)',
+                prefixIcon: const Icon(Icons.phone),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                contentPadding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+              ),
+              keyboardType: TextInputType.phone,
+            ),
+            const SizedBox(height: 16),
+            TextFormField(
+              controller: _phoneNumber4Controller,
+              decoration: InputDecoration(
+                labelText: 'Phone Number 4 (Optional)',
+                prefixIcon: const Icon(Icons.phone),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                contentPadding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+              ),
+              keyboardType: TextInputType.phone,
+            ),
+            const SizedBox(height: 16),
+            TextFormField(
+              controller: _phoneNumber5Controller,
+              decoration: InputDecoration(
+                labelText: 'Phone Number 5 (Optional)',
                 prefixIcon: const Icon(Icons.phone),
                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
                 contentPadding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
