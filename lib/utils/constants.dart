@@ -58,5 +58,5 @@ class ApiEndpoints {
   static const String staff = 'admin/staffs/permissions';
 
   static const String rules = 'rules-and-regulations';
-
+  static const String uploadLogo = 'files/upload/profile';
 }

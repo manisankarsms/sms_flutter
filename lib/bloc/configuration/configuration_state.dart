@@ -6,6 +6,8 @@ class ConfigurationInitial extends ConfigurationState {}
 
 class ConfigurationLoading extends ConfigurationState {}
 
+class ConfigurationLogoUploading extends ConfigurationState {}
+
 /// When configuration is found and loaded
 class ConfigurationLoaded extends ConfigurationState {
   final Configuration config;
@@ -23,3 +25,9 @@ class ConfigurationError extends ConfigurationState {
 
 /// When the config was successfully saved/updated
 class ConfigurationUpdated extends ConfigurationState {}
+
+class ConfigurationLogoUploaded extends ConfigurationState {
+  final String logoUrl;
+
+  ConfigurationLogoUploaded(this.logoUrl);
+}

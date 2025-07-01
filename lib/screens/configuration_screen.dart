@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:typed_data';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -33,8 +34,13 @@ class _ConfigurationScreenState extends State<ConfigurationScreen> {
   File? _pickedLogoFile;
   XFile? _pickedLogoXFile; // For web support
   String? _existingLogoUrl;
+  String? _uploadedLogoUrl; // New logo URL from upload
   int? _configId;
   bool _isLoading = false;
+  bool _isLogoUploading = false;
+
+  // You'll need to get this from your authentication system
+  String get userId => "user123"; // Replace with actual user ID logic
 
   @override
   void initState() {
@@ -64,6 +70,8 @@ class _ConfigurationScreenState extends State<ConfigurationScreen> {
       final pickedFile = await picker.pickImage(
         source: ImageSource.gallery,
         imageQuality: 85,
+        maxWidth: 800,
+        maxHeight: 800,
       );
 
       if (pickedFile != null) {
@@ -76,64 +84,130 @@ class _ConfigurationScreenState extends State<ConfigurationScreen> {
             _pickedLogoXFile = null;
           }
         });
+
+        // Automatically upload the logo after selection
+        await _uploadLogo();
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Error picking image: $e")),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text("Error picking image: $e"),
+            backgroundColor: Colors.red.shade700,
+          ),
+        );
+      }
     } finally {
-      setState(() => _isLoading = false);
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
     }
+  }
+
+  Future<void> _uploadLogo() async {
+    if (_pickedLogoFile == null && _pickedLogoXFile == null) return;
+
+    context.read<ConfigurationBloc>().add(
+      UploadLogo(
+        userId: userId,
+        logoFile: _pickedLogoFile,
+        logoXFile: _pickedLogoXFile,
+      ),
+    );
   }
 
   void _onSavePressed() {
     if (_formKey.currentState!.validate()) {
-      String logoPath = '';
-
-      if (kIsWeb && _pickedLogoXFile != null) {
-        logoPath = _pickedLogoXFile!.path;
-      } else if (!kIsWeb && _pickedLogoFile != null) {
-        logoPath = _pickedLogoFile!.path;
-      } else {
-        logoPath = _existingLogoUrl ?? '';
-      }
-
       final updated = Configuration(
         id: _configId ?? 1,
-        schoolName: _schoolNameController.text,
-        logoUrl: logoPath.isEmpty ? null : logoPath,
-        address: _addressController.text,
-        email: _emailController.text.isEmpty ? null : _emailController.text,
-        phoneNumber1: _phoneNumber1Controller.text.isEmpty ? null : _phoneNumber1Controller.text,
-        phoneNumber2: _phoneNumber2Controller.text.isEmpty ? null : _phoneNumber2Controller.text,
-        phoneNumber3: _phoneNumber3Controller.text.isEmpty ? null : _phoneNumber3Controller.text,
-        phoneNumber4: _phoneNumber4Controller.text.isEmpty ? null : _phoneNumber4Controller.text,
-        phoneNumber5: _phoneNumber5Controller.text.isEmpty ? null : _phoneNumber5Controller.text,
-        website: _websiteController.text.isEmpty ? null : _websiteController.text,
+        schoolName: _schoolNameController.text.trim(),
+        logoUrl: _uploadedLogoUrl ?? _existingLogoUrl, // Use uploaded URL if available
+        address: _addressController.text.trim(),
+        email: _emailController.text.trim().isEmpty ? null : _emailController.text.trim(),
+        phoneNumber1: _phoneNumber1Controller.text.trim().isEmpty ? null : _phoneNumber1Controller.text.trim(),
+        phoneNumber2: _phoneNumber2Controller.text.trim().isEmpty ? null : _phoneNumber2Controller.text.trim(),
+        phoneNumber3: _phoneNumber3Controller.text.trim().isEmpty ? null : _phoneNumber3Controller.text.trim(),
+        phoneNumber4: _phoneNumber4Controller.text.trim().isEmpty ? null : _phoneNumber4Controller.text.trim(),
+        phoneNumber5: _phoneNumber5Controller.text.trim().isEmpty ? null : _phoneNumber5Controller.text.trim(),
+        website: _websiteController.text.trim().isEmpty ? null : _websiteController.text.trim(),
       );
 
+      // Always use UpdateConfiguration since logo is already uploaded and saved
       context.read<ConfigurationBloc>().add(UpdateConfiguration(updated));
     }
   }
 
   Widget _buildLogoPreview() {
-    if (_isLoading) {
-      return const CircleAvatar(
-        radius: 50,
-        child: CircularProgressIndicator(color: Colors.white),
+    if (_isLoading || _isLogoUploading) {
+      return Container(
+        width: 100,
+        height: 100,
+        decoration: const BoxDecoration(
+          shape: BoxShape.circle,
+          color: Colors.grey,
+        ),
+        child: const CircularProgressIndicator(
+          color: Colors.white,
+          strokeWidth: 3,
+        ),
       );
     }
 
-    if (kIsWeb && _pickedLogoXFile != null) {
+    // Show uploaded logo first (highest priority)
+    if (_uploadedLogoUrl != null && _uploadedLogoUrl!.isNotEmpty) {
       return ClipOval(
-        child: Image.network(
-          _pickedLogoXFile!.path,
+        child: CachedNetworkImage(
+          imageUrl: _uploadedLogoUrl!,
           width: 100,
           height: 100,
           fit: BoxFit.cover,
+          placeholder: (context, url) => Container(
+            width: 100,
+            height: 100,
+            decoration: const BoxDecoration(
+              shape: BoxShape.circle,
+              color: Colors.grey,
+            ),
+            child: const CircularProgressIndicator(strokeWidth: 2),
+          ),
+          errorWidget: (context, url, error) => const CircleAvatar(
+            radius: 50,
+            child: Icon(Icons.school, size: 50),
+          ),
         ),
       );
-    } else if (!kIsWeb && _pickedLogoFile != null) {
+    }
+
+    // Show selected file (before upload) - Web
+    if (kIsWeb && _pickedLogoXFile != null) {
+      return FutureBuilder<Uint8List>(
+        future: _pickedLogoXFile!.readAsBytes(),
+        builder: (context, snapshot) {
+          if (snapshot.hasData) {
+            return ClipOval(
+              child: Image.memory(
+                snapshot.data!,
+                width: 100,
+                height: 100,
+                fit: BoxFit.cover,
+              ),
+            );
+          }
+          return Container(
+            width: 100,
+            height: 100,
+            decoration: const BoxDecoration(
+              shape: BoxShape.circle,
+              color: Colors.grey,
+            ),
+            child: const CircularProgressIndicator(strokeWidth: 2),
+          );
+        },
+      );
+    }
+
+    // Show selected file (before upload) - Mobile
+    if (!kIsWeb && _pickedLogoFile != null) {
       return ClipOval(
         child: Image.file(
           _pickedLogoFile!,
@@ -142,23 +216,39 @@ class _ConfigurationScreenState extends State<ConfigurationScreen> {
           fit: BoxFit.cover,
         ),
       );
-    } else if (_existingLogoUrl?.isNotEmpty == true) {
+    }
+
+    // Show existing logo from server
+    if (_existingLogoUrl != null && _existingLogoUrl!.isNotEmpty) {
       return ClipOval(
         child: CachedNetworkImage(
           imageUrl: _existingLogoUrl!,
           width: 100,
           height: 100,
           fit: BoxFit.cover,
-          placeholder: (context, url) => const CircularProgressIndicator(),
-          errorWidget: (context, url, error) => const Icon(Icons.school, size: 50),
+          placeholder: (context, url) => Container(
+            width: 100,
+            height: 100,
+            decoration: const BoxDecoration(
+              shape: BoxShape.circle,
+              color: Colors.grey,
+            ),
+            child: const CircularProgressIndicator(strokeWidth: 2),
+          ),
+          errorWidget: (context, url, error) => const CircleAvatar(
+            radius: 50,
+            child: Icon(Icons.school, size: 50),
+          ),
         ),
       );
-    } else {
-      return const CircleAvatar(
-        radius: 50,
-        child: Icon(Icons.school, size: 50),
-      );
     }
+
+    // Default placeholder
+    return const CircleAvatar(
+      radius: 50,
+      backgroundColor: Colors.grey,
+      child: Icon(Icons.school, size: 50, color: Colors.white),
+    );
   }
 
   @override
@@ -171,20 +261,62 @@ class _ConfigurationScreenState extends State<ConfigurationScreen> {
               SnackBar(
                 content: Text(state.message),
                 backgroundColor: Colors.red.shade700,
+                duration: const Duration(seconds: 4),
               ),
             );
+            // Reset loading states on error
+            setState(() {
+              _isLogoUploading = false;
+            });
           } else if (state is ConfigurationUpdated) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
                 content: const Text("Configuration saved successfully"),
                 backgroundColor: Colors.green.shade700,
+                duration: const Duration(seconds: 3),
               ),
             );
+          } else if (state is ConfigurationLogoUploading) {
+            setState(() => _isLogoUploading = true);
+          } else if (state is ConfigurationLogoUploaded) {
+            setState(() {
+              _uploadedLogoUrl = state.logoUrl;
+              _isLogoUploading = false;
+              // Clear the picked files since they're now uploaded
+              _pickedLogoFile = null;
+              _pickedLogoXFile = null;
+            });
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: const Text("Logo uploaded and saved successfully"),
+                backgroundColor: Colors.green.shade700,
+                duration: const Duration(seconds: 3),
+              ),
+            );
+          } else if (state is ConfigurationLoaded) {
+            // Update the UI when configuration is reloaded after logo upload
+            final config = state.config;
+            setState(() {
+              _existingLogoUrl = config.logoUrl;
+              // If we have a newly uploaded logo, it should be reflected in the loaded config
+              if (config.logoUrl != null && config.logoUrl!.isNotEmpty) {
+                _uploadedLogoUrl = config.logoUrl;
+              }
+            });
           }
         },
         builder: (context, state) {
           if (state is ConfigurationLoading) {
-            return const Center(child: CircularProgressIndicator());
+            return const Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  CircularProgressIndicator(),
+                  SizedBox(height: 16),
+                  Text('Loading configuration...'),
+                ],
+              ),
+            );
           }
 
           if (state is ConfigurationLoaded) {
@@ -234,91 +366,120 @@ class _ConfigurationScreenState extends State<ConfigurationScreen> {
 
   Widget _buildForm() {
     return Padding(
-      padding: const EdgeInsets.only(top: 16, left: 16, right: 16, bottom: 16),
+      padding: const EdgeInsets.all(16.0),
       child: Form(
         key: _formKey,
         child: ListView(
           children: [
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Stack(
+            // Logo Section
+            Card(
+              elevation: 2,
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    _buildLogoPreview(),
-                    Positioned(
-                      right: 0,
-                      bottom: 0,
-                      child: Material(
-                        color: Theme.of(context).colorScheme.primary,
-                        elevation: 4,
-                        shape: const CircleBorder(),
-                        child: InkWell(
-                          onTap: _pickLogo,
-                          customBorder: const CircleBorder(),
-                          child: const Padding(
-                            padding: EdgeInsets.all(8.0),
-                            child: Icon(
-                              Icons.camera_alt,
-                              color: Colors.white,
-                              size: 16,
+                    Stack(
+                      children: [
+                        _buildLogoPreview(),
+                        Positioned(
+                          right: 0,
+                          bottom: 0,
+                          child: Material(
+                            color: Theme.of(context).colorScheme.primary,
+                            elevation: 4,
+                            shape: const CircleBorder(),
+                            child: InkWell(
+                              onTap: (_isLogoUploading || _isLoading) ? null : _pickLogo,
+                              customBorder: const CircleBorder(),
+                              child: Padding(
+                                padding: const EdgeInsets.all(8.0),
+                                child: Icon(
+                                  _isLogoUploading ? Icons.hourglass_empty : Icons.camera_alt,
+                                  color: Colors.white,
+                                  size: 16,
+                                ),
+                              ),
                             ),
                           ),
-                        ),
+                        )
+                      ],
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'School Logo',
+                            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            _isLogoUploading
+                                ? 'Uploading logo...'
+                                : 'Upload your school logo. The image will be shown on reports, dashboards and other documents.',
+                            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                              color: _isLogoUploading ? Colors.orange : Colors.grey.shade700,
+                            ),
+                          ),
+                          if (_uploadedLogoUrl != null) ...[
+                            const SizedBox(height: 8),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: Colors.green.shade100,
+                                borderRadius: BorderRadius.circular(4),
+                              ),
+                              child: Text(
+                                'Logo uploaded successfully',
+                                style: TextStyle(
+                                  color: Colors.green.shade700,
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ],
                       ),
-                    )
+                    ),
                   ],
                 ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'School Logo',
-                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        'Upload your school logo. The image will be shown on reports, dashboards and other documents.',
-                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: Colors.grey.shade700,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
+              ),
             ),
             const SizedBox(height: 24),
-            const Divider(),
-            const SizedBox(height: 16),
+
+            // School Information Section
             const SectionHeader(title: "School Information"),
             const SizedBox(height: 16),
             TextFormField(
               controller: _schoolNameController,
               decoration: InputDecoration(
-                labelText: 'School Name',
+                labelText: 'School Name *',
                 prefixIcon: const Icon(Icons.business),
                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
                 contentPadding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
               ),
-              validator: (value) => value == null || value.isEmpty ? 'School name is required' : null,
+              validator: (value) => value == null || value.trim().isEmpty ? 'School name is required' : null,
             ),
             const SizedBox(height: 16),
             TextFormField(
               controller: _addressController,
               decoration: InputDecoration(
-                labelText: 'Address',
+                labelText: 'Address *',
                 prefixIcon: const Icon(Icons.location_on),
                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
                 contentPadding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
               ),
               maxLines: 2,
-              validator: (value) => value == null || value.isEmpty ? 'Address is required' : null,
+              validator: (value) => value == null || value.trim().isEmpty ? 'Address is required' : null,
             ),
             const SizedBox(height: 24),
+
+            // Contact Information Section
             const SectionHeader(title: "Contact Information"),
             const SizedBox(height: 16),
             TextFormField(
@@ -331,7 +492,7 @@ class _ConfigurationScreenState extends State<ConfigurationScreen> {
               ),
               keyboardType: TextInputType.emailAddress,
               validator: (value) {
-                if (value != null && value.isNotEmpty && !RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(value)) {
+                if (value != null && value.trim().isNotEmpty && !RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(value.trim())) {
                   return 'Enter a valid email address';
                 }
                 return null;
@@ -348,13 +509,15 @@ class _ConfigurationScreenState extends State<ConfigurationScreen> {
               ),
               keyboardType: TextInputType.url,
               validator: (value) {
-                if (value != null && value.isNotEmpty && !RegExp(r'^https?:\/\/[\w\-]+(\.[\w\-]+)+([\w\-\.,@?^=%&:/~\+#]*[\w\-\@?^=%&/~\+#])?$').hasMatch(value)) {
+                if (value != null && value.trim().isNotEmpty && !RegExp(r'^https?:\/\/[\w\-]+(\.[\w\-]+)+([\w\-\.,@?^=%&:/~\+#]*[\w\-\@?^=%&/~\+#])?$').hasMatch(value.trim())) {
                   return 'Enter a valid website URL (e.g., https://example.com)';
                 }
                 return null;
               },
             ),
             const SizedBox(height: 24),
+
+            // Phone Numbers Section
             const SectionHeader(title: "Phone Numbers"),
             const SizedBox(height: 16),
             TextFormField(
@@ -412,15 +575,21 @@ class _ConfigurationScreenState extends State<ConfigurationScreen> {
               keyboardType: TextInputType.phone,
             ),
             const SizedBox(height: 32),
+
+            // Save Button
             ElevatedButton(
-              onPressed: _onSavePressed,
+              onPressed: (_isLogoUploading || _isLoading) ? null : _onSavePressed,
               style: ElevatedButton.styleFrom(
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                 backgroundColor: Theme.of(context).colorScheme.primary,
                 foregroundColor: Colors.white,
                 padding: const EdgeInsets.symmetric(vertical: 16),
+                disabledBackgroundColor: Colors.grey.shade400,
               ),
-              child: const Text('Save Configuration', style: TextStyle(fontWeight: FontWeight.bold)),
+              child: Text(
+                _isLogoUploading ? 'Uploading Logo...' : 'Save Configuration',
+                style: const TextStyle(fontWeight: FontWeight.bold),
+              ),
             ),
             const SizedBox(height: 16),
           ],
