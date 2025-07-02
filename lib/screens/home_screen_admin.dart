@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:sms/screens/admin_permission_screen.dart';
 import 'package:sms/screens/classes_screen.dart';
 import 'package:sms/screens/complaint_list_screen.dart';
@@ -21,8 +22,12 @@ import 'package:sms/screens/theme_screen.dart';
 
 import '../bloc/auth/auth_bloc.dart';
 import '../bloc/auth/auth_event.dart';
+import '../bloc/configuration/configuration_bloc.dart';
+import '../bloc/configuration/configuration_event.dart';
+import '../bloc/configuration/configuration_state.dart';
 import '../models/item.dart';
 import '../models/user.dart';
+import '../models/configuration.dart';
 import 'login_screen.dart';
 
 class HomeScreenAdmin extends StatefulWidget {
@@ -42,12 +47,18 @@ class _HomeScreenAdminState extends State<HomeScreenAdmin> {
   late List<Widget> _screens;
   late List<NavigationItem> items;
 
+  // Configuration data
+  Configuration? _configuration;
+
   @override
   void initState() {
     super.initState();
     // Initialize with filtered navigation items based on permissions
     items = _getFilteredNavigationItems();
     _screens = _buildScreens(widget.user);
+
+    // Load configuration data
+    context.read<ConfigurationBloc>().add(LoadConfiguration());
   }
 
   // Method to filter navigation items based on permissions
@@ -320,6 +331,65 @@ class _HomeScreenAdminState extends State<HomeScreenAdmin> {
     )
   ];
 
+  // Helper method to build logo widget
+  Widget _buildLogo({required double size, bool showDefault = true}) {
+    if (_configuration?.logoUrl != null && _configuration!.logoUrl!.isNotEmpty) {
+      return ClipOval(
+        child: CachedNetworkImage(
+          imageUrl: _configuration!.logoUrl!,
+          width: size,
+          height: size,
+          fit: BoxFit.cover,
+          placeholder: (context, url) => Container(
+            width: size,
+            height: size,
+            decoration: const BoxDecoration(
+              shape: BoxShape.circle,
+              color: Colors.grey,
+            ),
+            child: CircularProgressIndicator(
+              strokeWidth: size > 40 ? 3 : 2,
+              color: Colors.white,
+            ),
+          ),
+          errorWidget: (context, url, error) => showDefault
+              ? CircleAvatar(
+            radius: size / 2,
+            backgroundColor: Colors.grey,
+            child: Icon(Icons.school, size: size * 0.6, color: Colors.white),
+          )
+              : const SizedBox.shrink(),
+        ),
+      );
+    }
+
+    // Fallback to asset image if no logo URL
+    return showDefault
+        ? ClipOval(
+      child: Image.asset(
+        'assets/images/school_logo.png',
+        width: size,
+        height: size,
+        fit: BoxFit.contain,
+        errorBuilder: (context, error, stackTrace) => CircleAvatar(
+          radius: size / 2,
+          backgroundColor: Colors.grey,
+          child: Icon(Icons.school, size: size * 0.6, color: Colors.white),
+        ),
+      ),
+    )
+        : CircleAvatar(
+      radius: size / 2,
+      backgroundColor: Colors.grey,
+      child: Icon(Icons.school, size: size * 0.6, color: Colors.white),
+    );
+  }
+
+  // Helper method to get school name
+  String get _schoolName {
+    return _configuration?.schoolName ?? 'School Management';
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -328,39 +398,51 @@ class _HomeScreenAdminState extends State<HomeScreenAdmin> {
     final isMediumScreen = size.width >= 600 && size.width < 1200;
     final isLargeScreen = size.width >= 1200;
 
-    return Scaffold(
-      key: _scaffoldKey,
-      backgroundColor: theme.colorScheme.background,
-      appBar: isSmallScreen ? _buildAppBar(theme) : null,
-      drawer: isSmallScreen ? _buildDrawer(theme) : null,
-      body: SafeArea(
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Side Navigation for medium and large screens
-            if (!isSmallScreen) _buildSideNavigation(theme, isLargeScreen),
+    return BlocListener<ConfigurationBloc, ConfigurationState>(
+      listener: (context, state) {
+        if (state is ConfigurationLoaded) {
+          setState(() {
+            _configuration = state.config;
+          });
+        } else if (state is ConfigurationError) {
+          // Optionally show a snackbar or handle error
+          debugPrint('Configuration load error: ${state.message}');
+        }
+      },
+      child: Scaffold(
+        key: _scaffoldKey,
+        backgroundColor: theme.colorScheme.background,
+        appBar: isSmallScreen ? _buildAppBar(theme) : null,
+        drawer: isSmallScreen ? _buildDrawer(theme) : null,
+        body: SafeArea(
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Side Navigation for medium and large screens
+              if (!isSmallScreen) _buildSideNavigation(theme, isLargeScreen),
 
-            // Main content area
-            Expanded(
-              child: Column(
-                children: [
-                  // Top app bar for medium and large screens
-                  if (!isSmallScreen) _buildTopBar(theme, isLargeScreen),
+              // Main content area
+              Expanded(
+                child: Column(
+                  children: [
+                    // Top app bar for medium and large screens
+                    if (!isSmallScreen) _buildTopBar(theme, isLargeScreen),
 
-                  // Main content
-                  Expanded(
-                    child: Container(
-                      padding: const EdgeInsets.all(16),
-                      child: _screens[_selectedIndex],
+                    // Main content
+                    Expanded(
+                      child: Container(
+                        padding: const EdgeInsets.all(16),
+                        child: _screens[_selectedIndex],
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
+        bottomNavigationBar: isSmallScreen ? _buildBottomNav(theme) : null,
       ),
-      bottomNavigationBar: isSmallScreen ? _buildBottomNav(theme) : null,
     );
   }
 
@@ -369,7 +451,7 @@ class _HomeScreenAdminState extends State<HomeScreenAdmin> {
       backgroundColor: theme.colorScheme.surface,
       elevation: 0,
       title: Text(
-        'School Management',
+        _schoolName,
         style: TextStyle(
           color: theme.colorScheme.onSurface,
           fontWeight: FontWeight.bold,
@@ -556,17 +638,14 @@ class _HomeScreenAdminState extends State<HomeScreenAdmin> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  Image.asset(
-                    'assets/images/school_logo.png', // Replace with actual logo
-                    width: 60,
-                    height: 60,
-                  ),
+                  _buildLogo(size: 60),
                   const SizedBox(height: 12),
                   Text(
-                    'XYZ School', // Replace with actual school name
+                    _schoolName,
                     style: theme.textTheme.titleLarge?.copyWith(
                       fontWeight: FontWeight.bold,
                     ),
+                    textAlign: TextAlign.center,
                   ),
                 ],
               ),
@@ -591,7 +670,7 @@ class _HomeScreenAdminState extends State<HomeScreenAdmin> {
                       item.name,
                       style: TextStyle(
                         fontWeight:
-                            isSelected ? FontWeight.bold : FontWeight.normal,
+                        isSelected ? FontWeight.bold : FontWeight.normal,
                         color: isSelected
                             ? theme.colorScheme.primary
                             : theme.colorScheme.onSurface,
@@ -599,7 +678,7 @@ class _HomeScreenAdminState extends State<HomeScreenAdmin> {
                     ),
                     selected: isSelected,
                     selectedTileColor:
-                        theme.colorScheme.primary.withOpacity(0.1),
+                    theme.colorScheme.primary.withOpacity(0.1),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(8),
                     ),
@@ -637,7 +716,6 @@ class _HomeScreenAdminState extends State<HomeScreenAdmin> {
     );
   }
 
-  // Replace the _buildSideNavigation method with this improved version
   Widget _buildSideNavigation(ThemeData theme, bool isExpanded) {
     return AnimatedContainer(
       duration: const Duration(milliseconds: 200),
@@ -645,7 +723,6 @@ class _HomeScreenAdminState extends State<HomeScreenAdmin> {
       color: theme.colorScheme.surface,
       child: Column(
         children: [
-          // Branding Space - This is likely where the issue is
           // Branding Space at top of sidebar
           AnimatedSwitcher(
             duration: const Duration(milliseconds: 200),
@@ -659,16 +736,11 @@ class _HomeScreenAdminState extends State<HomeScreenAdmin> {
               padding: const EdgeInsets.all(16),
               child: Row(
                 children: [
-                  Image.asset(
-                    'assets/images/school_logo.png',
-                    width: 50,
-                    height: 50,
-                    fit: BoxFit.contain,
-                  ),
+                  _buildLogo(size: 50),
                   const SizedBox(width: 12),
                   Expanded(
                     child: Text(
-                      'XYZ School',
+                      _schoolName,
                       style: theme.textTheme.titleMedium?.copyWith(
                         fontWeight: FontWeight.bold,
                       ),
@@ -684,12 +756,7 @@ class _HomeScreenAdminState extends State<HomeScreenAdmin> {
               width: 80,
               padding: const EdgeInsets.all(16),
               alignment: Alignment.center,
-              child: Image.asset(
-                'assets/images/school_logo.png',
-                width: 40,
-                height: 40,
-                fit: BoxFit.contain,
-              ),
+              child: _buildLogo(size: 40),
             ),
           ),
           const Divider(height: 1),

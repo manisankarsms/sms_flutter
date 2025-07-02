@@ -33,14 +33,6 @@ class ConfigurationRepository {
     }
   }
 
-  String convertDropboxUrl(String dropboxUrl) {
-    // Convert Dropbox sharing URL to direct download URL
-    if (dropboxUrl.contains('dropbox.com') && dropboxUrl.contains('dl=0')) {
-      return dropboxUrl.replaceAll('dl=0', 'dl=1');
-    }
-    return dropboxUrl;
-  }
-
   // Upload logo with FormData
   Future<String?> uploadLogo({
     required String userId,
@@ -130,8 +122,6 @@ class ConfigurationRepository {
 
         if (responseData['success'] == true && responseData['fileUrl'] != null) {
           String logoUrl = responseData['fileUrl'];
-          // Convert Dropbox URL for direct access
-          logoUrl = convertDropboxUrl(logoUrl);
 
           if (kDebugMode) {
             print('✅ Logo upload successful: $logoUrl');
@@ -164,6 +154,7 @@ class ConfigurationRepository {
   }
 
   // Update the configuration
+  // Update the configuration
   Future<bool> updateConfiguration(Configuration config) async {
     try {
       final responseString = await webService.putData(
@@ -174,7 +165,8 @@ class ConfigurationRepository {
       final Map<String, dynamic> response = jsonDecode(responseString);
 
       // Check for success or failure in the API response
-      if (response['status'] == 'success') {
+      // Changed from response['status'] to response['success']
+      if (response['success'] == true) {
         return true; // Successfully updated
       } else {
         return false; // Failed to update
