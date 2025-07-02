@@ -1,45 +1,134 @@
+import 'dart:convert';
+import 'dart:io';
 import 'package:flutter/foundation.dart';
-import '../models/profile.dart';
-import '../services/request.dart';
-import '../services/web_service.dart';
+import 'package:http/http.dart' as http;
+import 'package:image_picker/image_picker.dart';
+import 'package:sms/models/profile.dart';
+import 'package:sms/services/web_service.dart';
+import 'package:sms/utils/constants.dart';
 
 class ProfileRepository {
   final WebService webService;
 
   ProfileRepository({required this.webService});
 
-  Future<Map<String, dynamic>?> fetchProfileData(String mobile, String userId) async {
+  // Fetch Profile
+  Future<Profile?> fetchProfile(String userId) async {
     try {
-      String request = frameProfileRequest(mobile, userId); // Assuming this function frames the request payload
-      if (kDebugMode) {
-        print(request);
-      }
-      final data = await webService.postData('getProfile', request); // Assuming 'getProfile' is the endpoint
+      final responseString = await webService.fetchData('${ApiEndpoints.userProfile}/$userId');
+      final Map<String, dynamic> response = jsonDecode(responseString);
 
-      // Parse the response data
-      Map<String, dynamic>? profileData = data as Map<String, dynamic>?;
-
-      return profileData;
-    } catch (error) {
-      if (kDebugMode) {
-        print("Error fetching profile data: $error");
+      if (response['data'] == null) {
+        return null;
       }
-      rethrow; // Rethrow the error for higher-level error handling
+
+      return Profile.fromJson(response['data']);
+    } catch (e) {
+      if (kDebugMode) {
+        print("Error fetching profile: $e");
+      }
+      return null;
     }
   }
 
-  Future<void> updateProfile(Profile profile) async {
+  // Update Profile
+  Future<bool> updateProfile(Profile profile, String userId) async {
     try {
-      final data = profile.toJson().toString(); // Assuming you have a toJson method in Profile model
-      final response = await webService.postData('profileUpdate', data); // Assume 'profileUpdate' is the endpoint
+      final responseString = await webService.putData(
+        '${ApiEndpoints.userProfile}/$userId',
+        jsonEncode(profile.toJson()),
+      );
+
+      final Map<String, dynamic> response = jsonDecode(responseString);
+
+      return response['success'] == true;
+    } catch (e) {
       if (kDebugMode) {
-        print('Update response: $response');
+        print("Error updating profile: $e");
       }
-    } catch (error) {
+      return false;
+    }
+  }
+
+  // Upload Avatar
+  Future<String?> uploadAvatar(String userId, File avatarFile) async {
+    try {
+      final request = http.MultipartRequest(
+        'POST',
+        Uri.parse('${Constants.baseUrl}/${ApiEndpoints.uploadLogo}'),
+      );
+
+      request.fields['userId'] = userId;
+
+      final fileName = avatarFile.path.split('/').last;
+      final fileSize = await avatarFile.length();
+
+      request.files.add(
+        await http.MultipartFile.fromPath(
+          'file',
+          avatarFile.path,
+          filename: fileName,
+        ),
+      );
+
       if (kDebugMode) {
-        print("Error updating profile: $error");
+        print('=== UPLOAD AVATAR REQUEST ===');
+        print('File: $fileName, Size: ${(fileSize / 1024).toStringAsFixed(2)} KB');
       }
-      rethrow; // Rethrow the error for higher-level error handling
+
+      final response = await request.send();
+      final responseString = await response.stream.bytesToString();
+
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> responseData = jsonDecode(responseString);
+        if (responseData['success'] == true && responseData['fileUrl'] != null) {
+          return responseData['fileUrl'];
+        } else {
+          throw Exception(responseData['message'] ?? 'Avatar upload failed');
+        }
+      } else {
+        throw Exception('HTTP ${response.statusCode}: Avatar upload failed');
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print("Error uploading avatar: $e");
+      }
+      return null;
+    }
+  }
+
+  // Update Profile with optional avatar upload
+  Future<Profile?> updateProfileWithAvatar({
+    required Profile profile,
+    required String userId,
+    File? avatarFile,
+    XFile? avatarXFile,
+  }) async {
+    try {
+      String? avatarUrl;
+
+      // Upload avatar if file is provided
+      if (avatarFile != null || avatarXFile != null) {
+        final file = avatarFile ?? File(avatarXFile!.path);
+        avatarUrl = await uploadAvatar(userId, file);
+      }
+
+      final updatedProfile = profile.copyWith(
+        avatarUrl: avatarUrl ?? profile.avatarUrl,
+      );
+
+      final success = await updateProfile(updatedProfile, userId);
+
+      if (success) {
+        return updatedProfile;
+      } else {
+        throw Exception('Failed to update profile with avatar');
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print("Error updating profile with avatar: $e");
+      }
+      return null;
     }
   }
 }

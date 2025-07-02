@@ -65,8 +65,8 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
       HolidayScreen(user: widget.selectedUser),
       MessagesScreen(),
       AttendanceScreen(user: widget.selectedUser),
-      ProfileScreen(),
-      ProfileScreen(),
+    ProfileScreen(user: widget.selectedUser),
+    ProfileScreen(user: widget.selectedUser),
       // UserFeesScreen(studentClass: _activeUser.studentData!.studentStandard), // Pass active user type
       ThemeScreen(),
       RulesScreen(user: widget.selectedUser),
@@ -252,7 +252,7 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
               setState(() {
                 _activeUser = newUser;
                 _screens[5] = UserFeesScreen(studentClass: _activeUser.role);
-                _screens[4] = ProfileScreen(); // Refresh profile screen
+                _screens[4] = ProfileScreen(user: _activeUser); // Refresh profile screen
               });
             },
             itemBuilder: (BuildContext context) {
@@ -812,7 +812,7 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
                 setState(() {
                   _activeUser = value;
                   _screens[5] = UserFeesScreen(studentClass: _activeUser.role);
-                  _screens[4] = ProfileScreen(); // Refresh profile screen
+                  _screens[4] = ProfileScreen(user: _activeUser); // Refresh profile screen
                 });
               } else if (value == 'logout') {
                 _confirmLogout();

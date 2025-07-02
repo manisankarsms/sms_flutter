@@ -59,4 +59,6 @@ class ApiEndpoints {
 
   static const String rules = 'rules-and-regulations';
   static const String uploadLogo = 'files/upload/profile';
+
+  static const String userProfile = 'users';
 }

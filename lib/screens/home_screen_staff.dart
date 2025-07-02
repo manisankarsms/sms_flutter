@@ -55,7 +55,7 @@ class _StaffHomeScreenState extends State<StaffHomeScreen> {
       ClassesScreenStaff(user: user),
       // StaffTasksScreen(),
       MessagesScreen(),
-      ProfileScreen(),
+      ProfileScreen(user: user),
     ];
   }
 
