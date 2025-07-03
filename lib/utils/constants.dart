@@ -20,6 +20,7 @@ class ApiEndpoints {
   static const String loginVerifyOtp = 'users/login/verify-otp';
 
   static const String adminDashboard = 'dashboard/complete';
+  static const String studentDashboard = 'dashboard/students/complete';
   static const String login = 'login';
   static const String studentFeed = 'students/feed';
   static const String adminHolidays = 'holidays';

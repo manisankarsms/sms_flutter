@@ -10,6 +10,7 @@ import '../bloc/attendance/attendance_state.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 import '../models/user.dart';
+import '../widgets/screen_header.dart';
 
 class AttendanceScreen extends StatefulWidget {
   final User user;
@@ -45,7 +46,8 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
     for (var event in events) {
       // Parse the date string from API response (format: "2025-06-17")
       DateTime eventDate = DateTime.parse(event.date);
-      DateTime normalizedDate = DateTime(eventDate.year, eventDate.month, eventDate.day);
+      DateTime normalizedDate =
+          DateTime(eventDate.year, eventDate.month, eventDate.day);
 
       if (mappedEvents[normalizedDate] == null) {
         mappedEvents[normalizedDate] = [event];
@@ -63,17 +65,28 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
 
     final monthlyAttendance = allAttendance.where((attendance) {
       final attendanceDate = DateTime.parse(attendance.date);
-      return attendanceDate.month == currentMonth && attendanceDate.year == currentYear;
+      return attendanceDate.month == currentMonth &&
+          attendanceDate.year == currentYear;
     }).toList();
 
     int totalDays = monthlyAttendance.length;
-    int presentDays = monthlyAttendance.where((a) => a.status.toUpperCase() == 'PRESENT').length;
-    int absentDays = monthlyAttendance.where((a) => a.status.toUpperCase() == 'ABSENT').length;
-    int lateDays = monthlyAttendance.where((a) => a.status.toUpperCase() == 'LATE').length;
-    int leaveDays = monthlyAttendance.where((a) => a.status.toUpperCase() == 'LEAVE').length;
-    int excusedDays = monthlyAttendance.where((a) => a.status.toUpperCase() == 'EXCUSED').length;
+    int presentDays = monthlyAttendance
+        .where((a) => a.status.toUpperCase() == 'PRESENT')
+        .length;
+    int absentDays = monthlyAttendance
+        .where((a) => a.status.toUpperCase() == 'ABSENT')
+        .length;
+    int lateDays =
+        monthlyAttendance.where((a) => a.status.toUpperCase() == 'LATE').length;
+    int leaveDays = monthlyAttendance
+        .where((a) => a.status.toUpperCase() == 'LEAVE')
+        .length;
+    int excusedDays = monthlyAttendance
+        .where((a) => a.status.toUpperCase() == 'EXCUSED')
+        .length;
 
-    double attendancePercentage = totalDays > 0 ? (presentDays / totalDays) * 100 : 0.0;
+    double attendancePercentage =
+        totalDays > 0 ? (presentDays / totalDays) * 100 : 0.0;
 
     return {
       'totalDays': totalDays,
@@ -93,7 +106,12 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
       body: SafeArea(
         child: Column(
           children: [
-            _buildHeader(),
+            const Padding(
+              padding: EdgeInsets.all(20),
+              child: ScreenHeader(
+                title: 'Attendance',
+              ),
+            ),
             Expanded(
               child: BlocBuilder<AttendanceBloc, AttendanceState>(
                 builder: (context, state) => _buildContent(state),
@@ -103,32 +121,6 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
         ),
       ),
       floatingActionButton: _buildFloatingActionButton(),
-    );
-  }
-
-  Widget _buildHeader() {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      child: const Row(
-        children: [
-          SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Attendance',
-                  style: TextStyle(
-                    fontSize: 28,
-                    fontWeight: FontWeight.bold,
-                    color: Color(0xFF1F2937),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
     );
   }
 
@@ -199,7 +191,8 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
               backgroundColor: const Color(0xFF6366F1),
               foregroundColor: Colors.white,
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12)),
             ),
             child: const Text('Retry'),
           ),
@@ -219,7 +212,8 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
               color: const Color(0xFF6366F1).withOpacity(0.1),
               borderRadius: BorderRadius.circular(16),
             ),
-            child: const Icon(Icons.calendar_today_outlined, size: 48, color: Color(0xFF6366F1)),
+            child: const Icon(Icons.calendar_today_outlined,
+                size: 48, color: Color(0xFF6366F1)),
           ),
           const SizedBox(height: 16),
           const Text(
@@ -245,7 +239,8 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
               backgroundColor: const Color(0xFF6366F1),
               foregroundColor: Colors.white,
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12)),
             ),
             child: const Text('Refresh'),
           ),
@@ -443,7 +438,8 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                       ],
                     ),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 8),
                       decoration: BoxDecoration(
                         gradient: const LinearGradient(
                           colors: [Color(0xFF10B981), Color(0xFF059669)],
@@ -529,7 +525,8 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
     );
   }
 
-  Widget _buildStatCard(String title, String value, IconData icon, Color color) {
+  Widget _buildStatCard(
+      String title, String value, IconData icon, Color color) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -594,13 +591,15 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
   }
 
   void _showDayDetails(DateTime selectedDay) {
-    final dayEvents = _events[DateTime(selectedDay.year, selectedDay.month, selectedDay.day)];
+    final dayEvents =
+        _events[DateTime(selectedDay.year, selectedDay.month, selectedDay.day)];
 
     if (dayEvents != null && dayEvents.isNotEmpty) {
       showDialog(
         context: context,
         builder: (context) => AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
           title: Text(
             'Attendance for ${DateFormat('MMM d, yyyy').format(selectedDay)}',
             style: const TextStyle(

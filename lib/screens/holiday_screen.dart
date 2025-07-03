@@ -8,6 +8,7 @@ import '../bloc/holiday/holiday_event.dart';
 import '../bloc/holiday/holiday_state.dart';
 import '../models/holiday.dart';
 import '../models/user.dart';
+import '../widgets/screen_header.dart';
 
 class HolidayScreen extends StatefulWidget {
   final User user;
@@ -20,6 +21,14 @@ class HolidayScreen extends StatefulWidget {
 
 class _HolidayScreenState extends State<HolidayScreen> {
   int _previousHolidayCount = 0;
+  final Set<int> _dismissedHolidays = <int>{};
+
+  @override
+  void initState() {
+    super.initState();
+    // Load holidays when screen initializes
+    context.read<HolidayBloc>().add(LoadHolidays());
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -30,7 +39,12 @@ class _HolidayScreenState extends State<HolidayScreen> {
           listener: _handleStateChanges,
           child: Column(
             children: [
-              _buildHeader(),
+              const Padding(
+                padding: EdgeInsets.all(20),
+                child: ScreenHeader(
+                  title: 'Holidays',
+                ),
+              ),
               Expanded(
                 child: BlocBuilder<HolidayBloc, HolidayState>(
                   builder: (context, state) => _buildContent(state),
@@ -41,32 +55,6 @@ class _HolidayScreenState extends State<HolidayScreen> {
         ),
       ),
       floatingActionButton: _buildFloatingActionButton(),
-    );
-  }
-
-  Widget _buildHeader() {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      child: const Row(
-        children: [
-          SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Holidays',
-                  style: TextStyle(
-                    fontSize: 28,
-                    fontWeight: FontWeight.bold,
-                    color: Color(0xFF1F2937),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
     );
   }
 
@@ -112,7 +100,8 @@ class _HolidayScreenState extends State<HolidayScreen> {
               backgroundColor: const Color(0xFF6366F1),
               foregroundColor: Colors.white,
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12)),
             ),
             child: const Text('Retry'),
           ),
@@ -132,12 +121,16 @@ class _HolidayScreenState extends State<HolidayScreen> {
               color: const Color(0xFF6366F1).withOpacity(0.1),
               borderRadius: BorderRadius.circular(16),
             ),
-            child: const Icon(Icons.event_available, size: 48, color: Color(0xFF6366F1)),
+            child: const Icon(Icons.event_available,
+                size: 48, color: Color(0xFF6366F1)),
           ),
           const SizedBox(height: 16),
           const Text(
             'No holidays yet',
-            style: TextStyle(fontSize: 20, fontWeight: FontWeight.w600, color: Color(0xFF1F2937)),
+            style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.w600,
+                color: Color(0xFF1F2937)),
           ),
           const SizedBox(height: 8),
           const Text(
@@ -151,8 +144,10 @@ class _HolidayScreenState extends State<HolidayScreen> {
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFF6366F1),
                 foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                padding:
+                const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12)),
               ),
               child: const Text('Add Holiday'),
             ),
@@ -163,15 +158,22 @@ class _HolidayScreenState extends State<HolidayScreen> {
   }
 
   Widget _buildHolidaysList(List<Holiday> holidays) {
-    final groupedHolidays = _groupHolidaysByMonth(holidays);
+    // Filter out dismissed holidays
+    final filteredHolidays = holidays.where((holiday) => !_dismissedHolidays.contains(holiday.id)).toList();
+    final groupedHolidays = _groupHolidaysByMonth(filteredHolidays);
 
-    return ListView.builder(
-      padding: const EdgeInsets.all(20),
-      itemCount: groupedHolidays.length,
-      itemBuilder: (context, index) {
-        final monthData = groupedHolidays[index];
-        return _buildMonthSection(monthData['month'], monthData['holidays']);
+    return RefreshIndicator(
+      onRefresh: () async {
+        context.read<HolidayBloc>().add(LoadHolidays());
       },
+      child: ListView.builder(
+        padding: const EdgeInsets.all(20),
+        itemCount: groupedHolidays.length,
+        itemBuilder: (context, index) {
+          final monthData = groupedHolidays[index];
+          return _buildMonthSection(monthData['month'], monthData['holidays']);
+        },
+      ),
     );
   }
 
@@ -236,7 +238,13 @@ class _HolidayScreenState extends State<HolidayScreen> {
             child: const Icon(Icons.delete, color: Colors.white),
           ),
           confirmDismiss: (direction) => _showDeleteConfirmation(holiday),
-          onDismissed: (direction) => _deleteHoliday(holiday.id),
+          onDismissed: (direction) {
+            // Immediately remove from dismissed set and delete
+            setState(() {
+              _dismissedHolidays.add(holiday.id);
+            });
+            _deleteHoliday(holiday.id);
+          },
           child: ListTile(
             contentPadding: const EdgeInsets.all(16),
             leading: Container(
@@ -248,8 +256,12 @@ class _HolidayScreenState extends State<HolidayScreen> {
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Icon(
-                holiday.isPublicHoliday ? Icons.star_rounded : Icons.event_rounded,
-                color: holiday.isPublicHoliday ? const Color(0xFFF59E0B) : const Color(0xFF10B981),
+                holiday.isPublicHoliday
+                    ? Icons.star_rounded
+                    : Icons.event_rounded,
+                color: holiday.isPublicHoliday
+                    ? const Color(0xFFF59E0B)
+                    : const Color(0xFF10B981),
                 size: 24,
               ),
             ),
@@ -268,7 +280,8 @@ class _HolidayScreenState extends State<HolidayScreen> {
                 Row(
                   children: [
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 8, vertical: 4),
                       decoration: BoxDecoration(
                         color: const Color(0xFF6B7280).withOpacity(0.1),
                         borderRadius: BorderRadius.circular(8),
@@ -285,7 +298,8 @@ class _HolidayScreenState extends State<HolidayScreen> {
                     if (isUpcoming) ...[
                       const SizedBox(width: 8),
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 8, vertical: 4),
                         decoration: BoxDecoration(
                           color: const Color(0xFFEF4444).withOpacity(0.1),
                           borderRadius: BorderRadius.circular(8),
@@ -315,9 +329,28 @@ class _HolidayScreenState extends State<HolidayScreen> {
               ],
             ),
             trailing: widget.user.role.toLowerCase() == 'admin'
-                ? IconButton(
-              icon: const Icon(Icons.edit_rounded, color: Color(0xFF6B7280)),
-              onPressed: () => _showHolidayDialog(context, holiday: holiday),
+                ? Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                IconButton(
+                  icon: const Icon(Icons.edit_rounded,
+                      color: Color(0xFF6B7280)),
+                  onPressed: () =>
+                      _showHolidayDialog(context, holiday: holiday),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.delete_rounded,
+                      color: Colors.red),
+                  onPressed: () => _showDeleteConfirmation(holiday).then((confirmed) {
+                    if (confirmed) {
+                      setState(() {
+                        _dismissedHolidays.add(holiday.id);
+                      });
+                      _deleteHoliday(holiday.id);
+                    }
+                  }),
+                ),
+              ],
             )
                 : null,
             onTap: widget.user.role.toLowerCase() == 'admin'
@@ -335,7 +368,8 @@ class _HolidayScreenState extends State<HolidayScreen> {
     return BlocBuilder<HolidayBloc, HolidayState>(
       builder: (context, state) {
         return FloatingActionButton(
-          onPressed: state.isOperating ? null : () => _showHolidayDialog(context),
+          onPressed:
+          state.isOperating ? null : () => _showHolidayDialog(context),
           backgroundColor: const Color(0xFF6366F1),
           elevation: 8,
           child: const Icon(Icons.add_rounded, color: Colors.white),
@@ -355,12 +389,18 @@ class _HolidayScreenState extends State<HolidayScreen> {
     }
 
     final sortedKeys = grouped.keys.toList()
-      ..sort((a, b) => DateFormat('MMMM yyyy').parse(a).compareTo(DateFormat('MMMM yyyy').parse(b)));
+      ..sort((a, b) => DateFormat('MMMM yyyy')
+          .parse(a)
+          .compareTo(DateFormat('MMMM yyyy').parse(b)));
 
-    return sortedKeys.map((month) => {
+    return sortedKeys
+        .map((month) => {
       'month': month,
-      'holidays': grouped[month]!..sort((a, b) => _parseDate(a.date).compareTo(_parseDate(b.date)))
-    }).toList();
+      'holidays': grouped[month]!
+        ..sort(
+                (a, b) => _parseDate(a.date).compareTo(_parseDate(b.date)))
+    })
+        .toList();
   }
 
   DateTime _parseDate(String dateStr) {
@@ -384,7 +424,8 @@ class _HolidayScreenState extends State<HolidayScreen> {
           content: Text(state.errorMessage!),
           backgroundColor: Colors.red,
           behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          shape:
+          RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         ),
       );
     }
@@ -396,6 +437,8 @@ class _HolidayScreenState extends State<HolidayScreen> {
       if (_previousHolidayCount > 0) {
         if (state.holidays.length > _previousHolidayCount) {
           message = 'Holiday added successfully';
+          // Clear dismissed holidays on successful add
+          _dismissedHolidays.clear();
         } else if (state.holidays.length < _previousHolidayCount) {
           message = 'Holiday deleted successfully';
         } else {
@@ -411,7 +454,8 @@ class _HolidayScreenState extends State<HolidayScreen> {
             content: Text(message),
             backgroundColor: const Color(0xFF10B981),
             behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            shape:
+            RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
           ),
         );
       }
@@ -422,9 +466,10 @@ class _HolidayScreenState extends State<HolidayScreen> {
     return await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        shape:
+        RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: const Text('Delete Holiday'),
-        content: Text('Are you sure you want to delete ${holiday.name}?'),
+        content: Text('Are you sure you want to delete "${holiday.name}"?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(false),
@@ -435,13 +480,15 @@ class _HolidayScreenState extends State<HolidayScreen> {
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.red,
               foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8)),
             ),
             child: const Text('Delete'),
           ),
         ],
       ),
-    ) ?? false;
+    ) ??
+        false;
   }
 
   void _deleteHoliday(int id) {
@@ -455,6 +502,9 @@ class _HolidayScreenState extends State<HolidayScreen> {
     final descriptionController = TextEditingController(text: holiday?.description ?? '');
     DateTime? selectedDate = holiday != null ? _parseDate(holiday.date) : null;
     bool isPublicHoliday = holiday?.isPublicHoliday ?? false;
+
+    // Get the bloc reference before showing dialog
+    final holidayBloc = context.read<HolidayBloc>();
 
     showDialog(
       context: context,
@@ -545,10 +595,11 @@ class _HolidayScreenState extends State<HolidayScreen> {
                     isPublicHoliday: isPublicHoliday,
                   );
 
+                  // Use the bloc reference from outside the dialog
                   if (isEditing) {
-                    context.read<HolidayBloc>().add(UpdateHoliday(updatedHoliday));
+                    holidayBloc.add(UpdateHoliday(updatedHoliday));
                   } else {
-                    context.read<HolidayBloc>().add(AddHoliday(updatedHoliday));
+                    holidayBloc.add(AddHoliday(updatedHoliday));
                   }
                   Navigator.of(dialogContext).pop();
                 }

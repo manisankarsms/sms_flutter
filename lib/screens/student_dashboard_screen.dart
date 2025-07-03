@@ -1,45 +1,24 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'dart:ui';
 
+import '../bloc/student_dashboard/student_dashboard_bloc.dart';
+import '../bloc/student_dashboard/student_dashboard_event.dart';
+import '../bloc/student_dashboard/student_dashboard_state.dart';
+import '../models/student_dashboard_model.dart';
+import '../models/user.dart';
+import '../widgets/screen_header.dart';
+import '../repositories/dashboard_repository.dart';
+
 class StudentDashboardScreen extends StatefulWidget {
-  const StudentDashboardScreen({Key? key}) : super(key: key);
+  final User user;
+  const StudentDashboardScreen({Key? key, required this.user}) : super(key: key);
 
   @override
   State<StudentDashboardScreen> createState() => _StudentDashboardScreenState();
 }
 
 class _StudentDashboardScreenState extends State<StudentDashboardScreen> {
-  final Map<String, dynamic> studentData = {
-    "studentId": "aee59f43-28b5-4aa1-9dcd-e03a2db53166",
-    "firstName": "Manisankar",
-    "lastName": "S",
-    "email": "manisankarsms@gmail.com",
-    "currentAcademicYear": {
-      "className": "1",
-      "sectionName": "A",
-      "academicYearName": "2025-2026",
-    },
-    "attendanceStatistics": {
-      "attendancePercentage": 100.0,
-      "presentDays": 5,
-      "totalDays": 5,
-    },
-    "upcomingExams": [
-      {
-        "examName": "Quarterly Exam 2025",
-        "subjectName": "English",
-        "examDate": "2025-07-06",
-        "daysUntilExam": 3
-      },
-      {
-        "examName": "HalfYearly 2025",
-        "subjectName": "English",
-        "examDate": "2025-07-06",
-        "daysUntilExam": 3
-      },
-    ]
-  };
-
   final List<DashboardOption> dashboardOptions = [
     DashboardOption(icon: Icons.calendar_today_rounded, title: 'Calendar', color: const Color(0xFF6366F1)),
     DashboardOption(icon: Icons.how_to_reg_rounded, title: 'Attendance', color: const Color(0xFF10B981)),
@@ -52,54 +31,118 @@ class _StudentDashboardScreenState extends State<StudentDashboardScreen> {
   ];
 
   @override
+  void initState() {
+    super.initState();
+    // Trigger initial data fetch
+    context.read<StudentDashboardBloc>().add(FetchStudentDashboardData(widget.user.id));
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
       body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(20),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _buildHeader(),
-              const SizedBox(height: 24),
-              _buildStudentInfoCard(),
-              const SizedBox(height: 24),
-              _buildQuickStatsSection(),
-              const SizedBox(height: 24),
-              _buildDashboardOptions(),
-              const SizedBox(height: 24),
-              _buildUpcomingExamsCard(),
-            ],
-          ),
+        child: BlocBuilder<StudentDashboardBloc, StudentDashboardState>(
+          builder: (context, state) {
+            if (state is StudentDashboardLoading) {
+              return const Center(
+                child: CircularProgressIndicator(
+                  color: Color(0xFF667EEA),
+                ),
+              );
+            } else if (state is StudentDashboardError) {
+              return Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Icons.error_outline,
+                      size: 64,
+                      color: Colors.red[400],
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      'Error loading dashboard',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.red[600],
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      state.message,
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: Colors.grey[600],
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 24),
+                    ElevatedButton(
+                      onPressed: () {
+                        context.read<StudentDashboardBloc>().add(FetchStudentDashboardData(widget.user.id));
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF667EEA),
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      child: const Text('Retry'),
+                    ),
+                  ],
+                ),
+              );
+            } else if (state is StudentDashboardLoaded || state is StudentDashboardRefreshing) {
+              final data = state is StudentDashboardLoaded
+                  ? (state as StudentDashboardLoaded).data
+                  : (state as StudentDashboardRefreshing).data;
+
+              return RefreshIndicator(
+                onRefresh: () async {
+                  context.read<StudentDashboardBloc>().add(RefreshStudentDashboardData(widget.user.id));
+                },
+                color: const Color(0xFF667EEA),
+                child: SingleChildScrollView(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  padding: const EdgeInsets.all(20),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const ScreenHeader(
+                        title: 'Dashboard',
+                      ),
+                      const SizedBox(height: 24),
+                      _buildStudentInfoCard(data),
+                      const SizedBox(height: 24),
+                      _buildQuickStatsSection(data),
+                      const SizedBox(height: 24),
+                      _buildDashboardOptions(),
+                      const SizedBox(height: 24),
+                      _buildUpcomingExamsCard(data),
+                    ],
+                  ),
+                ),
+              );
+            }
+
+            return const SizedBox.shrink();
+          },
         ),
       ),
     );
   }
 
-  Widget _buildHeader() {
-    return const Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        SizedBox(height: 4),
-        Text(
-          'Dashboard',
-          style: TextStyle(
-            fontSize: 32,
-            fontWeight: FontWeight.bold,
-            color: Color(0xFF1F2937),
-            height: 1.1,
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildStudentInfoCard() {
-    final name = '${studentData['firstName']} ${studentData['lastName']}';
-    final initials = '${studentData['firstName'][0]}${studentData['lastName'][0]}';
-    final studentId = studentData['studentId'].substring(0, 8);
-    final classSection = '${studentData['currentAcademicYear']['className']} - ${studentData['currentAcademicYear']['sectionName']}';
+  Widget _buildStudentInfoCard(StudentDashboardModel data) {
+    final name = '${data.firstName} ${data.lastName}';
+    final firstInitial = (data.firstName?.isNotEmpty ?? false) ? data.firstName![0] : '';
+    final lastInitial = (data.lastName?.isNotEmpty ?? false) ? data.lastName![0] : '';
+    final initials = '$firstInitial$lastInitial';
+    final studentId = data.studentId;
+    final classSection = '${data.currentAcademicYear.className} - ${data.currentAcademicYear.sectionName}';
 
     return Container(
       decoration: BoxDecoration(
@@ -191,7 +234,7 @@ class _StudentDashboardScreenState extends State<StudentDashboardScreen> {
     );
   }
 
-  Widget _buildQuickStatsSection() {
+  Widget _buildQuickStatsSection(StudentDashboardModel data) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -209,7 +252,7 @@ class _StudentDashboardScreenState extends State<StudentDashboardScreen> {
             Expanded(
               child: _buildStatCard(
                 'Attendance',
-                '${studentData['attendanceStatistics']['attendancePercentage']}%',
+                '${data.attendanceStatistics.attendancePercentage}%',
                 Icons.trending_up_rounded,
                 const Color(0xFF10B981),
               ),
@@ -218,7 +261,7 @@ class _StudentDashboardScreenState extends State<StudentDashboardScreen> {
             Expanded(
               child: _buildStatCard(
                 'Present Days',
-                '${studentData['attendanceStatistics']['presentDays']}/${studentData['attendanceStatistics']['totalDays']}',
+                '${data.attendanceStatistics.presentDays}/${data.attendanceStatistics.totalDays}',
                 Icons.check_circle_rounded,
                 const Color(0xFF3B82F6),
               ),
@@ -347,7 +390,7 @@ class _StudentDashboardScreenState extends State<StudentDashboardScreen> {
     );
   }
 
-  Widget _buildUpcomingExamsCard() {
+  Widget _buildUpcomingExamsCard(StudentDashboardModel data) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -375,7 +418,7 @@ class _StudentDashboardScreenState extends State<StudentDashboardScreen> {
           ),
           child: Column(
             children: [
-              if (studentData['upcomingExams'].isEmpty)
+              if (data.upcomingExams.isEmpty)
                 Center(
                   child: Column(
                     children: [
@@ -389,7 +432,7 @@ class _StudentDashboardScreenState extends State<StudentDashboardScreen> {
                   ),
                 )
               else
-                ...studentData['upcomingExams'].take(3).map<Widget>((exam) {
+                ...data.upcomingExams.take(3).map<Widget>((exam) {
                   return Container(
                     margin: const EdgeInsets.only(bottom: 12),
                     padding: const EdgeInsets.all(16),
@@ -423,7 +466,7 @@ class _StudentDashboardScreenState extends State<StudentDashboardScreen> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                exam['examName'],
+                                exam.examName,
                                 style: const TextStyle(
                                   fontSize: 16,
                                   fontWeight: FontWeight.bold,
@@ -432,7 +475,7 @@ class _StudentDashboardScreenState extends State<StudentDashboardScreen> {
                               ),
                               const SizedBox(height: 2),
                               Text(
-                                exam['subjectName'],
+                                exam.subjectName,
                                 style: TextStyle(
                                   fontSize: 14,
                                   color: Colors.grey[600],
@@ -448,7 +491,7 @@ class _StudentDashboardScreenState extends State<StudentDashboardScreen> {
                             borderRadius: BorderRadius.circular(20),
                           ),
                           child: Text(
-                            '${exam['daysUntilExam']} days',
+                            '${exam.daysUntilExam} days',
                             style: const TextStyle(
                               color: Colors.white,
                               fontSize: 12,

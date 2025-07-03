@@ -62,7 +62,7 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
 
   List<Widget> get _screens {
     return [
-      const StudentDashboardScreen(),
+      StudentDashboardScreen(user: widget.selectedUser),
       HolidayScreen(user: widget.selectedUser),
       MessagesScreen(),
       AttendanceScreen(user: widget.selectedUser),

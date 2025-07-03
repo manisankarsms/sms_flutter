@@ -20,6 +20,7 @@ import 'package:sms/bloc/post/post_bloc.dart';
 import 'package:sms/bloc/profile/profile_bloc.dart';
 import 'package:sms/bloc/rules/rules_bloc.dart';
 import 'package:sms/bloc/student_admin/student_bloc.dart';
+import 'package:sms/bloc/student_dashboard/student_dashboard_bloc.dart';
 import 'package:sms/bloc/students/students_bloc.dart';
 import 'package:sms/bloc/subjects/subjects_bloc.dart';
 import 'package:sms/repositories/attendance_repository.dart';
@@ -40,6 +41,7 @@ import 'package:sms/repositories/profile_repository.dart';
 import 'package:sms/repositories/rules_repository.dart';
 import 'package:sms/repositories/staff_repository.dart';
 import 'package:sms/repositories/student_admin_repository.dart';
+import 'package:sms/repositories/student_dashboard_repository.dart';
 import 'package:sms/repositories/student_repository.dart';
 import 'package:sms/repositories/students_repository.dart';
 import 'package:sms/repositories/subjects_repository.dart';
@@ -60,6 +62,7 @@ void main() async{
   final WebService webService = WebService(baseUrl: Constants.baseUrl);
   final AuthRepository authRepository = AuthRepository(webService: webService);
   final DashboardRepository dashboardRepository = DashboardRepository(webService: webService);
+  final StudentDashboardRepository studentDashboardRepository = StudentDashboardRepository(webService: webService);
   final ClassRepository classRepository = ClassRepository(webService: webService);
   final StudentsRepository studentsRepository = StudentsRepository(webService: webService);
   final StudentRepository studentRepository = StudentRepository(webService: webService);
@@ -152,6 +155,9 @@ void main() async{
         ),
         BlocProvider(
           create: (context) => ProfileBloc(profileRepository),
+        ),
+        BlocProvider(
+          create: (context) => StudentDashboardBloc(repository: studentDashboardRepository),
         ),
         BlocProvider<ClassDetailsBloc>(
           create: (context) => ClassDetailsBloc(

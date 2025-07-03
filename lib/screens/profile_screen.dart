@@ -12,9 +12,11 @@ import '../bloc/profile/profile_event.dart';
 import '../bloc/profile/profile_state.dart';
 import '../models/profile.dart';
 import '../models/user.dart';
+import '../widgets/screen_header.dart';
 
 class ProfileScreen extends StatefulWidget {
   final User user;
+
   const ProfileScreen({Key? key, required this.user}) : super(key: key);
 
   @override
@@ -73,10 +75,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
         });
 
         context.read<ProfileBloc>().add(UploadAvatar(
-          userId: widget.user.id,
-          avatarFile: _avatarFile,
-          avatarXFile: _avatarXFile,
-        ));
+              userId: widget.user.id,
+              avatarFile: _avatarFile,
+              avatarXFile: _avatarXFile,
+            ));
       }
     } catch (e) {
       _showSnackBar("Error picking image: $e", isError: true);
@@ -107,15 +109,23 @@ class _ProfileScreenState extends State<ProfileScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(message),
-          backgroundColor: isError ? const Color(0xFFEF4444) : const Color(0xFF10B981),
+          backgroundColor:
+              isError ? const Color(0xFFEF4444) : const Color(0xFF10B981),
         ),
       );
     }
   }
 
   Widget _buildAvatarSection() {
-    final name = '${_controllers['firstName']!.text} ${_controllers['lastName']!.text}';
-    final initials = name.trim().split(' ').take(2).map((n) => n.isNotEmpty ? n[0] : '').join().toUpperCase();
+    final name =
+        '${_controllers['firstName']!.text} ${_controllers['lastName']!.text}';
+    final initials = name
+        .trim()
+        .split(' ')
+        .take(2)
+        .map((n) => n.isNotEmpty ? n[0] : '')
+        .join()
+        .toUpperCase();
 
     return Container(
       decoration: BoxDecoration(
@@ -167,7 +177,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             ],
                           ),
                           child: Icon(
-                            _isLoading ? Icons.hourglass_empty : Icons.camera_alt,
+                            _isLoading
+                                ? Icons.hourglass_empty
+                                : Icons.camera_alt,
                             color: const Color(0xFF667EEA),
                             size: 20,
                           ),
@@ -187,7 +199,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  _controllers['role']!.text.isEmpty ? 'Your Role' : _controllers['role']!.text,
+                  _controllers['role']!.text.isEmpty
+                      ? 'Your Role'
+                      : _controllers['role']!.text,
                   style: TextStyle(
                     fontSize: 16,
                     color: Colors.white.withOpacity(0.8),
@@ -212,7 +226,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
         builder: (context, snapshot) {
           if (snapshot.hasData) {
             return ClipOval(
-              child: Image.memory(snapshot.data!, width: 100, height: 100, fit: BoxFit.cover),
+              child: Image.memory(snapshot.data!,
+                  width: 100, height: 100, fit: BoxFit.cover),
             );
           }
           return _buildLoadingAvatar();
@@ -222,7 +237,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
     if (!kIsWeb && _avatarFile != null) {
       return ClipOval(
-        child: Image.file(_avatarFile!, width: 100, height: 100, fit: BoxFit.cover),
+        child: Image.file(_avatarFile!,
+            width: 100, height: 100, fit: BoxFit.cover),
       );
     }
 
@@ -286,7 +302,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  Widget _buildFormField(String key, String label, IconData icon, {TextInputType? keyboardType, String? Function(String?)? validator}) {
+  Widget _buildFormField(String key, String label, IconData icon,
+      {TextInputType? keyboardType, String? Function(String?)? validator}) {
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       child: TextFormField(
@@ -308,7 +325,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ),
           filled: true,
           fillColor: Colors.white,
-          contentPadding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+          contentPadding:
+              const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
         ),
         keyboardType: keyboardType,
         validator: validator,
@@ -334,12 +352,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
-      appBar: AppBar(
-        title: const Text('Profile', style: TextStyle(fontWeight: FontWeight.bold)),
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        foregroundColor: const Color(0xFF1F2937),
-      ),
       body: BlocConsumer<ProfileBloc, ProfileState>(
         listener: (context, state) {
           if (state is ProfileError) {
@@ -373,7 +385,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 children: [
                   CircularProgressIndicator(color: Color(0xFF667EEA)),
                   SizedBox(height: 16),
-                  Text('Loading profile...', style: TextStyle(color: Color(0xFF6B7280))),
+                  Text('Loading profile...',
+                      style: TextStyle(color: Color(0xFF6B7280))),
                 ],
               ),
             );
@@ -386,6 +399,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  const ScreenHeader(
+                    title: 'Profile',
+                  ),
+                  const SizedBox(height: 24),
                   _buildAvatarSection(),
                   const SizedBox(height: 32),
                   _buildSectionTitle('Personal Information'),
@@ -396,7 +413,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           'firstName',
                           'First Name *',
                           Icons.person_outline,
-                          validator: (value) => value?.trim().isEmpty ?? true ? 'Required' : null,
+                          validator: (value) =>
+                              value?.trim().isEmpty ?? true ? 'Required' : null,
                         ),
                       ),
                       const SizedBox(width: 16),
@@ -405,7 +423,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           'lastName',
                           'Last Name *',
                           Icons.person,
-                          validator: (value) => value?.trim().isEmpty ?? true ? 'Required' : null,
+                          validator: (value) =>
+                              value?.trim().isEmpty ?? true ? 'Required' : null,
                         ),
                       ),
                     ],
@@ -414,7 +433,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     'role',
                     'Role *',
                     Icons.work_outline,
-                    validator: (value) => value?.trim().isEmpty ?? true ? 'Required' : null,
+                    validator: (value) =>
+                        value?.trim().isEmpty ?? true ? 'Required' : null,
                   ),
                   _buildSectionTitle('Contact Information'),
                   _buildFormField(
@@ -424,7 +444,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     keyboardType: TextInputType.emailAddress,
                     validator: (value) {
                       if (value?.trim().isEmpty ?? true) return 'Required';
-                      if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(value!)) return 'Invalid email';
+                      if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$')
+                          .hasMatch(value!)) return 'Invalid email';
                       return null;
                     },
                   ),
@@ -433,7 +454,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     'Mobile Number *',
                     Icons.phone_outlined,
                     keyboardType: TextInputType.phone,
-                    validator: (value) => value?.trim().isEmpty ?? true ? 'Required' : null,
+                    validator: (value) =>
+                        value?.trim().isEmpty ?? true ? 'Required' : null,
                   ),
                   const SizedBox(height: 24),
                   SizedBox(
@@ -444,12 +466,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         backgroundColor: const Color(0xFF667EEA),
                         foregroundColor: Colors.white,
                         padding: const EdgeInsets.symmetric(vertical: 16),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12)),
                         elevation: 0,
                       ),
                       child: Text(
                         _isLoading ? 'Updating...' : 'Update Profile',
-                        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                        style: const TextStyle(
+                            fontSize: 16, fontWeight: FontWeight.bold),
                       ),
                     ),
                   ),
