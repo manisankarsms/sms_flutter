@@ -6,6 +6,7 @@ import 'package:sms/screens/fees_screen_user.dart';
 import 'package:sms/screens/holiday_screen.dart';
 import 'package:sms/screens/profile_screen.dart';
 import 'package:sms/screens/rules_screen.dart';
+import 'package:sms/screens/student_dashboard_screen.dart';
 import 'package:sms/screens/theme_screen.dart';
 import 'package:sms/utils/constants.dart';
 
@@ -61,7 +62,7 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
 
   List<Widget> get _screens {
     return [
-      const StudentFeedScreen(),
+      const StudentDashboardScreen(),
       HolidayScreen(user: widget.selectedUser),
       MessagesScreen(),
       AttendanceScreen(user: widget.selectedUser),
@@ -190,7 +191,6 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
                     if (!isSmallScreen) _buildTopBar(theme, size.width >= 1200),
                     Expanded(
                       child: Container(
-                        padding: const EdgeInsets.all(16),
                         child: _screens[_selectedIndex],
                       ),
                     ),
