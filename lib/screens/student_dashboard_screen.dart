@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:sms/screens/holiday_screen.dart';
 import 'dart:ui';
 
 import '../bloc/student_dashboard/student_dashboard_bloc.dart';
@@ -12,29 +13,134 @@ import '../repositories/dashboard_repository.dart';
 
 class StudentDashboardScreen extends StatefulWidget {
   final User user;
-  const StudentDashboardScreen({Key? key, required this.user}) : super(key: key);
+  final Function(int)? onNavigate; // Add callback for navigation
+
+  const StudentDashboardScreen({
+    Key? key,
+    required this.user,
+    this.onNavigate, // Optional callback
+  }) : super(key: key);
 
   @override
   State<StudentDashboardScreen> createState() => _StudentDashboardScreenState();
 }
 
 class _StudentDashboardScreenState extends State<StudentDashboardScreen> {
-  final List<DashboardOption> dashboardOptions = [
-    DashboardOption(icon: Icons.calendar_today_rounded, title: 'Calendar', color: const Color(0xFF6366F1)),
-    DashboardOption(icon: Icons.how_to_reg_rounded, title: 'Attendance', color: const Color(0xFF10B981)),
-    DashboardOption(icon: Icons.person_rounded, title: 'Profile', color: const Color(0xFF8B5CF6)),
-    DashboardOption(icon: Icons.rule_rounded, title: 'Rules', color: const Color(0xFFF59E0B)),
-    DashboardOption(icon: Icons.report_problem_rounded, title: 'Complaints', color: const Color(0xFFEF4444)),
-    DashboardOption(icon: Icons.payment_rounded, title: 'Fees', color: const Color(0xFF06B6D4)),
-    DashboardOption(icon: Icons.message_rounded, title: 'Messages', color: const Color(0xFF3B82F6)),
-    DashboardOption(icon: Icons.more_horiz_rounded, title: 'More', color: const Color(0xFF6B7280)),
-  ];
+  late final List<DashboardOption> dashboardOptions;
 
   @override
   void initState() {
     super.initState();
+    dashboardOptions = [
+      DashboardOption(
+        icon: Icons.calendar_today_rounded,
+        title: 'Calendar',
+        color: const Color(0xFF6366F1),
+        onTap: () => _navigateToScreen(1), // Navigate to Calendar (index 1)
+      ),
+      DashboardOption(
+        icon: Icons.how_to_reg_rounded,
+        title: 'Attendance',
+        color: const Color(0xFF10B981),
+        onTap: () => _navigateToScreen(3), // Navigate to Attendance (index 3)
+      ),
+      DashboardOption(
+        icon: Icons.person_rounded,
+        title: 'Profile',
+        color: const Color(0xFF8B5CF6),
+        onTap: () => _navigateToScreen(4), // Navigate to Profile (index 4)
+      ),
+      DashboardOption(
+        icon: Icons.rule_rounded,
+        title: 'Rules',
+        color: const Color(0xFFF59E0B),
+        onTap: () => _navigateToScreen(7), // Navigate to Rules (index 7)
+      ),
+      DashboardOption(
+        icon: Icons.report_problem_rounded,
+        title: 'Complaints',
+        color: const Color(0xFFEF4444),
+        onTap: () => _navigateToScreen(9), // Navigate to Complaints (index 9)
+      ),
+      DashboardOption(
+        icon: Icons.payment_rounded,
+        title: 'Fees',
+        color: const Color(0xFF06B6D4),
+        onTap: () => _navigateToScreen(5), // Navigate to Fees (index 5)
+      ),
+      DashboardOption(
+        icon: Icons.message_rounded,
+        title: 'Messages',
+        color: const Color(0xFF3B82F6),
+        onTap: () => _navigateToScreen(2), // Navigate to Posts/Messages (index 2)
+      ),
+      DashboardOption(
+        icon: Icons.more_horiz_rounded,
+        title: 'More',
+        color: const Color(0xFF6B7280),
+        onTap: () => _showMoreOptions(), // Show more options
+      ),
+    ];
     // Trigger initial data fetch
     context.read<StudentDashboardBloc>().add(FetchStudentDashboardData(widget.user.id));
+  }
+
+  void _navigateToScreen(int index) {
+    if (widget.onNavigate != null) {
+      widget.onNavigate!(index);
+    }
+  }
+
+  void _showMoreOptions() {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) {
+        return Container(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: Colors.grey[300],
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              const SizedBox(height: 20),
+              const Text(
+                'More Options',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 20),
+              ListTile(
+                leading: const Icon(Icons.color_lens_sharp, color: Color(0xFF8B5CF6)),
+                title: const Text('Themes'),
+                onTap: () {
+                  Navigator.pop(context);
+                  _navigateToScreen(6); // Navigate to Themes (index 6)
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.videogame_asset, color: Color(0xFF10B981)),
+                title: const Text('Games'),
+                onTap: () {
+                  Navigator.pop(context);
+                  _navigateToScreen(8); // Navigate to Games (index 8)
+                },
+              ),
+            ],
+          ),
+        );
+      },
+    );
   }
 
   @override

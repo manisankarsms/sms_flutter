@@ -62,13 +62,20 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
 
   List<Widget> get _screens {
     return [
-      StudentDashboardScreen(user: widget.selectedUser),
+      StudentDashboardScreen(
+        user: widget.selectedUser,
+        onNavigate: (int index) {
+          setState(() {
+            _selectedIndex = index;
+          });
+        },
+      ),
       HolidayScreen(user: widget.selectedUser),
-      MessagesScreen(),
+      const StudentFeedScreen(),
       AttendanceScreen(user: widget.selectedUser),
-    ProfileScreen(user: widget.selectedUser),
-    ProfileScreen(user: widget.selectedUser),
-      // UserFeesScreen(studentClass: _activeUser.studentData!.studentStandard), // Pass active user type
+      ProfileScreen(user: widget.selectedUser),
+      ProfileScreen(user: widget.selectedUser),
+      // UserFeesScreen(studentClass: _activeUser.studentData!.studentStandard),
       ThemeScreen(),
       RulesScreen(user: widget.selectedUser),
       GamesScreen(),
@@ -81,62 +88,52 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
         name: 'Home',
         imagePath: 'assets/images/home.png',
         icon: Icons.home_rounded,
-        permissionKey: ''
-    ),
+        permissionKey: ''),
     NavigationItem(
         name: 'Calendar',
         imagePath: 'assets/images/calendar.png',
         icon: Icons.calendar_today_rounded,
-        permissionKey: ''
-    ),
+        permissionKey: ''),
     NavigationItem(
-        name: 'Messages',
+        name: 'Posts',
         imagePath: 'assets/images/messages.png',
-        icon: Icons.forum_rounded,
-        permissionKey: ''
-    ),
+        icon: Icons.post_add_outlined,
+        permissionKey: ''),
     NavigationItem(
         name: 'Attendance',
         imagePath: 'assets/images/attendance.png',
         icon: Icons.assignment_turned_in_rounded,
-        permissionKey: ''
-    ),
+        permissionKey: ''),
     NavigationItem(
         name: 'Profile',
         imagePath: 'assets/images/profile.png',
         icon: Icons.person_rounded,
-        permissionKey: ''
-    ),
+        permissionKey: ''),
     NavigationItem(
         name: 'Fees',
         imagePath: 'assets/images/profile.png',
         icon: Icons.person_rounded,
-        permissionKey: ''
-    ),
+        permissionKey: ''),
     NavigationItem(
         name: 'Themes',
         imagePath: 'assets/images/profile.png',
         icon: Icons.color_lens_sharp,
-        permissionKey: ''
-    ),
+        permissionKey: ''),
     NavigationItem(
         name: 'Rules',
         imagePath: 'assets/images/profile.png',
         icon: Icons.rule,
-        permissionKey: ''
-    ),
+        permissionKey: ''),
     NavigationItem(
         name: 'Games',
         imagePath: 'assets/images/profile.png',
         icon: Icons.videogame_asset,
-        permissionKey: ''
-    ),
+        permissionKey: ''),
     NavigationItem(
         name: 'Complaint',
         imagePath: 'assets/images/profile.png',
         icon: Icons.comment,
-        permissionKey: ''
-    ),
+        permissionKey: ''),
   ];
 
   @override
@@ -184,7 +181,8 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              if (!isSmallScreen) _buildSideNavigation(theme, size.width >= 1200),
+              if (!isSmallScreen)
+                _buildSideNavigation(theme, size.width >= 1200),
               Expanded(
                 child: Column(
                   children: [
@@ -241,7 +239,10 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
       ),
       actions: [
         // If multiple student users exist, show Switch User option
-        if (widget.users.where((user) => user.role == Constants.student).length > 1)
+        if (widget.users
+                .where((user) => user.role == Constants.student)
+                .length >
+            1)
           PopupMenuButton<User>(
             icon: const Icon(Icons.swap_horiz, color: Colors.blue),
             tooltip: "Switch User",
@@ -252,12 +253,15 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
               setState(() {
                 _activeUser = newUser;
                 _screens[5] = UserFeesScreen(studentClass: _activeUser.role);
-                _screens[4] = ProfileScreen(user: _activeUser); // Refresh profile screen
+                _screens[4] =
+                    ProfileScreen(user: _activeUser); // Refresh profile screen
               });
             },
             itemBuilder: (BuildContext context) {
               // Filter only Student users
-              List<User> studentUsers = widget.users.where((user) => user.role.toLowerCase() == Constants.student).toList();
+              List<User> studentUsers = widget.users
+                  .where((user) => user.role.toLowerCase() == Constants.student)
+                  .toList();
 
               return studentUsers.map((User user) {
                 final isActive = user.displayName == _activeUser.displayName;
@@ -267,7 +271,9 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
                     children: [
                       Icon(
                         Icons.person,
-                        color: isActive ? theme.colorScheme.primary : theme.colorScheme.onSurface.withOpacity(0.7),
+                        color: isActive
+                            ? theme.colorScheme.primary
+                            : theme.colorScheme.onSurface.withOpacity(0.7),
                       ),
                       const SizedBox(width: 8),
                       Expanded(
@@ -278,7 +284,9 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
                             Text(
                               user.displayName,
                               style: TextStyle(
-                                fontWeight: isActive ? FontWeight.bold : FontWeight.normal,
+                                fontWeight: isActive
+                                    ? FontWeight.bold
+                                    : FontWeight.normal,
                               ),
                             ),
                             if (isActive)
@@ -384,7 +392,8 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
                               Text(
                                 'Student Portal',
                                 style: theme.textTheme.bodyMedium?.copyWith(
-                                  color: theme.colorScheme.onPrimaryContainer.withOpacity(0.8),
+                                  color: theme.colorScheme.onPrimaryContainer
+                                      .withOpacity(0.8),
                                 ),
                               ),
                             ],
@@ -400,10 +409,7 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
             Expanded(
               child: ListView(
                 padding: EdgeInsets.zero,
-                children: _navItems
-                    .asMap()
-                    .entries
-                    .map((entry) {
+                children: _navItems.asMap().entries.map((entry) {
                   final index = entry.key;
                   final item = entry.value;
                   final isSelected = _selectedIndex == index;
@@ -418,14 +424,16 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
                     title: Text(
                       item.name,
                       style: TextStyle(
-                        fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                        fontWeight:
+                            isSelected ? FontWeight.bold : FontWeight.normal,
                         color: isSelected
                             ? theme.colorScheme.primary
                             : theme.colorScheme.onSurface,
                       ),
                     ),
                     selected: isSelected,
-                    selectedTileColor: theme.colorScheme.primary.withOpacity(0.1),
+                    selectedTileColor:
+                        theme.colorScheme.primary.withOpacity(0.1),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(8),
                     ),
@@ -516,16 +524,16 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
                   ),
                   title: isExpanded
                       ? Text(
-                    item.name,
-                    style: TextStyle(
-                      fontWeight: isSelected
-                          ? FontWeight.bold
-                          : FontWeight.normal,
-                      color: isSelected
-                          ? theme.colorScheme.primary
-                          : theme.colorScheme.onSurface,
-                    ),
-                  )
+                          item.name,
+                          style: TextStyle(
+                            fontWeight: isSelected
+                                ? FontWeight.bold
+                                : FontWeight.normal,
+                            color: isSelected
+                                ? theme.colorScheme.primary
+                                : theme.colorScheme.onSurface,
+                          ),
+                        )
                       : null,
                   selected: isSelected,
                   selectedTileColor: isSelected
@@ -558,11 +566,11 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
             ),
             title: isExpanded
                 ? Text(
-              'Logout',
-              style: TextStyle(
-                color: theme.colorScheme.error,
-              ),
-            )
+                    'Logout',
+                    style: TextStyle(
+                      color: theme.colorScheme.error,
+                    ),
+                  )
                 : null,
             onTap: () {
               _confirmLogout();
@@ -621,7 +629,8 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
   Widget _buildBottomNav(ThemeData theme) {
     List<BottomNavigationBarItem> visibleItems = _navItems
         .take(4) // Show only the first 4 items
-        .map((item) => BottomNavigationBarItem(icon: Icon(item.icon), label: item.name))
+        .map((item) =>
+            BottomNavigationBarItem(icon: Icon(item.icon), label: item.name))
         .toList();
 
     return Container(
@@ -650,12 +659,14 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
         backgroundColor: theme.colorScheme.surface,
         selectedItemColor: theme.colorScheme.primary,
         unselectedItemColor: theme.colorScheme.onSurface.withOpacity(0.7),
-        selectedLabelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
+        selectedLabelStyle:
+            const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
         unselectedLabelStyle: const TextStyle(fontSize: 12),
         elevation: 0,
         items: [
           ...visibleItems,
-          BottomNavigationBarItem(icon: const Icon(Icons.more_horiz), label: 'More'),
+          BottomNavigationBarItem(
+              icon: const Icon(Icons.more_horiz), label: 'More'),
         ],
       ),
     );
@@ -713,7 +724,7 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
     Navigator.pushAndRemoveUntil(
       context,
       MaterialPageRoute(builder: (context) => const LoginScreen()),
-          (route) => false,
+      (route) => false,
     );
   }
 
@@ -812,21 +823,25 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
                 setState(() {
                   _activeUser = value;
                   _screens[5] = UserFeesScreen(studentClass: _activeUser.role);
-                  _screens[4] = ProfileScreen(user: _activeUser); // Refresh profile screen
+                  _screens[4] = ProfileScreen(
+                      user: _activeUser); // Refresh profile screen
                 });
               } else if (value == 'logout') {
                 _confirmLogout();
               }
             },
             itemBuilder: (context) {
-              List<User> studentUsers = widget.users.where((user) => user.role == Constants.student).toList();
+              List<User> studentUsers = widget.users
+                  .where((user) => user.role == Constants.student)
+                  .toList();
 
               List<PopupMenuEntry<dynamic>> items = [
                 PopupMenuItem<String>(
                   value: 'profile',
                   child: Row(
                     children: [
-                      Icon(Icons.person_outline, color: theme.colorScheme.primary),
+                      Icon(Icons.person_outline,
+                          color: theme.colorScheme.primary),
                       const SizedBox(width: 8),
                       const Text('Profile'),
                     ],
@@ -836,7 +851,8 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
                   value: 'settings',
                   child: Row(
                     children: [
-                      Icon(Icons.settings_outlined, color: theme.colorScheme.primary),
+                      Icon(Icons.settings_outlined,
+                          color: theme.colorScheme.primary),
                       const SizedBox(width: 8),
                       const Text('Settings'),
                     ],
@@ -847,13 +863,15 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
 
               // Add Switch User option only if multiple students exist
               if (studentUsers.length > 1) {
-                print("Multiple student users detected, showing switch option.");
+                print(
+                    "Multiple student users detected, showing switch option.");
                 items.addAll(studentUsers.map((User user) {
                   return PopupMenuItem<User>(
                     value: user,
                     child: Row(
                       children: [
-                        Icon(Icons.swap_horiz, color: theme.colorScheme.primary),
+                        Icon(Icons.swap_horiz,
+                            color: theme.colorScheme.primary),
                         const SizedBox(width: 8),
                         Text(user.displayName),
                       ],
@@ -862,7 +880,8 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
                 }).toList());
                 items.add(const PopupMenuDivider());
               } else {
-                print("Only one student found, switch user option will not appear.");
+                print(
+                    "Only one student found, switch user option will not appear.");
               }
 
               // Add logout option
