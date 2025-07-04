@@ -47,6 +47,8 @@ class MarksLoaded extends StudentsState {
 
 class NoStudentsFound extends StudentsState {}
 
+class MarksSaving extends StudentsState {}
+
 class MarksSaved extends StudentsState {}
 
 class AttendanceSubmitting extends StudentsState {}

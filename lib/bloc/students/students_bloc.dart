@@ -14,6 +14,7 @@ class StudentsBloc extends Bloc<StudentsEvent, StudentsState> {
     on<LoadStudents>(_onLoadStudents);
     on<LoadExams>(_onLoadExams);
     on<LoadStudentMarks>(_onLoadStudentMarks);
+    on<SaveStudentMarks>(_onSaveStudentMarks); // Add this line
     on<SubmitAttendance>(_onSubmitAttendance); // Add this line
     on<RefreshStudents>(_onRefreshStudents); // Add this if not already present
   }
@@ -109,6 +110,36 @@ class StudentsBloc extends Bloc<StudentsEvent, StudentsState> {
       emit(StudentsLoaded(students));
     } catch (error) {
       emit(StudentsError(error.toString()));
+    }
+  }
+
+  Future<void> _onSaveStudentMarks(
+      SaveStudentMarks event,
+      Emitter<StudentsState> emit,
+      ) async {
+    emit(MarksSaving()); // Add this new state
+
+    try {
+      // Transform the payload to match the required format
+      final transformedPayload = {
+        "examId": event.payload["examId"],
+        "results": (event.payload["marks"] as List).map((mark) {
+          return {
+            "studentId": mark["studentId"],
+            "marksObtained": mark["marksScored"], // Convert marksScored to marksObtained
+          };
+        }).toList(),
+      };
+
+      final success = await repository.saveStudentMarks(transformedPayload);
+
+      if (success) {
+        emit(MarksSaved());
+      } else {
+        emit(StudentsError('Failed to save marks'));
+      }
+    } catch (error) {
+      emit(StudentsError('Failed to save marks: ${error.toString()}'));
     }
   }
 }

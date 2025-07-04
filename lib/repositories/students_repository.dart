@@ -104,20 +104,32 @@ class StudentsRepository {
       String examId,
       String subjectId) async {
     try {
-      final requestBody = jsonEncode({
-        'classId': classId,
-        'examId': examId,
-        'subjectId': subjectId,
-      });
-
       final response = await webService.fetchData('exam-results/exam/$examId');
 
       final Map<String, dynamic> responseData = jsonDecode(response);
-      final List<dynamic> marksJson = responseData['marks'] ?? [];
+
+      // Check if the API call was successful
+      if (responseData['success'] != true) {
+        throw Exception(responseData['message'] ?? 'Failed to fetch student marks');
+      }
+
+      // The data is in 'data' field, not 'marks'
+      final List<dynamic> marksJson = responseData['data'] ?? [];
 
       return marksJson.map((json) => StudentMark.fromJson(json)).toList();
     } catch (error) {
       throw Exception('Failed to fetch student marks: ${error.toString()}');
+    }
+  }
+
+  Future<bool> saveStudentMarks(Map<String, dynamic> payload) async {
+    try {
+      final response = await webService.postData('exam-results/bulk', jsonEncode(payload));
+      final Map<String, dynamic> responseData = jsonDecode(response);
+
+      return responseData['success'] == true;
+    } catch (error) {
+      throw Exception('Failed to save student marks: ${error.toString()}');
     }
   }
 }

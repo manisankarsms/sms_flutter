@@ -13,7 +13,7 @@ class StudentMark {
     return StudentMark(
       studentId: json['studentId'],
       studentName: json['studentName'],
-      marksScored: json['marksScored'] ?? 0,
+      marksScored: json['marksObtained'] ?? 0,
     );
   }
 }

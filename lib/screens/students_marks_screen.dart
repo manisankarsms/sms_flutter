@@ -168,6 +168,49 @@ class _StudentsMarksScreenState extends State<StudentsMarksScreen> {
             );
           }
 
+          if (state is MarksSaving) {
+            return _buildMainContent(
+              content: const Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    CircularProgressIndicator(),
+                    SizedBox(height: 16),
+                    Text('Saving marks...'),
+                  ],
+                ),
+              ),
+            );
+          }
+
+          if (state is MarksSaved) {
+            // Show success message and reload marks
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Row(
+                    children: [
+                      Icon(Icons.check_circle, color: Colors.white),
+                      SizedBox(width: 12),
+                      Text("Marks saved successfully!"),
+                    ],
+                  ),
+                  backgroundColor: Colors.green,
+                  behavior: SnackBarBehavior.floating,
+                  duration: Duration(seconds: 2),
+                ),
+              );
+
+              // Reload the marks to get the updated data
+              _loadMarks();
+            });
+
+            return _buildMainContent(
+              content: const Center(child: CircularProgressIndicator()),
+            );
+          }
+
+
           if (state is MarksLoaded) {
             // Always update the current marks list
             currentMarks = state.marks;
@@ -667,6 +710,22 @@ class _StudentsMarksScreenState extends State<StudentsMarksScreen> {
           _stateManager.setShowColumnFilter(true);
           _stateManager.setPageSize(12);
         },
+        onChanged: (PlutoGridOnChangedEvent event) {
+          // This is the key fix - sync PlutoGrid changes back to your data
+          if (event.column.field == 'marks') {
+            final studentId = event.row.cells['id']?.value;
+            final newValue = event.value;
+            if (studentId != null && newValue != null) {
+              final marks = double.tryParse(newValue.toString()) ?? 0;
+              _updateStudentMark(studentId, marks);
+
+              // Also update the controller to keep it in sync
+              if (_markControllers.containsKey(studentId)) {
+                _markControllers[studentId]!.text = marks.toString();
+              }
+            }
+          }
+        },
         createFooter: (stateManager) => PlutoPagination(stateManager),
         mode: PlutoGridMode.normal,
       ),
@@ -730,18 +789,32 @@ class _StudentsMarksScreenState extends State<StudentsMarksScreen> {
       return;
     }
 
-    // Update marks from controllers to ensure the latest values
+    // Update marks from controllers to ensure the latest values (for mobile)
     _markControllers.forEach((studentId, controller) {
       final value = double.tryParse(controller.text) ?? 0;
       studentMarksMap[studentId] = value;
     });
+
+    if (MediaQuery.of(context).size.width >= 600 && _stateManager != null) {
+      for (var row in _stateManager.rows) {
+        final studentId = row.cells['id']?.value;
+        final marksValue = row.cells['marks']?.value;
+        if (studentId != null && marksValue != null) {
+          final marks = double.tryParse(marksValue.toString()) ?? 0;
+          studentMarksMap[studentId] = marks;
+        }
+      }
+    }
 
     // Recalculate top scorers with the final marks
     setState(() {
       topScorers = _calculateTopScorers();
     });
 
-    // Construct payload
+    // Debug: Print the marks being sent
+    print('Submitting marks: $studentMarksMap');
+
+    // Construct payload in the new format
     final marksData = studentMarksMap.entries.map((entry) {
       return {
         "studentId": entry.key,
@@ -750,30 +823,15 @@ class _StudentsMarksScreenState extends State<StudentsMarksScreen> {
     }).toList();
 
     final requestBody = {
-      "classId": widget.classId,
       "examId": selectedExamId,
-      "subjectId": widget.subjectId,
       "marks": marksData
     };
 
+    // Debug: Print the request body
+    print('Request body: $requestBody');
+
     // Make the API call to save the marks
     context.read<StudentsBloc>().add(SaveStudentMarks(requestBody));
-
-    // Show success message
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Row(
-          children: [
-            Icon(Icons.check_circle, color: Colors.white),
-            SizedBox(width: 12),
-            Text("Marks saved successfully!"),
-          ],
-        ),
-        backgroundColor: Colors.green,
-        behavior: SnackBarBehavior.floating,
-        duration: Duration(seconds: 2),
-      ),
-    );
   }
 
   void _printStudentMarks(BuildContext context) {
