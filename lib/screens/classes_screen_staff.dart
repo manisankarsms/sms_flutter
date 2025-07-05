@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:sms/repositories/complete_marks_repository.dart';
+import 'package:sms/screens/complete_student_marks_screen.dart';
 import 'package:sms/screens/students_marks_screen.dart';
 import 'package:sms/screens/students_screen.dart';
 import '../bloc/class_details/class_details_bloc.dart';
 import '../bloc/classes_staff/staff_classes_bloc.dart';
 import '../bloc/classes_staff/staff_classes_event.dart';
 import '../bloc/classes_staff/staff_classes_state.dart';
+import '../bloc/complete_marks/complete_marks_bloc.dart';
 import '../bloc/students/students_bloc.dart';
 import '../models/class.dart';
 import '../models/user.dart';
@@ -249,6 +252,7 @@ class StaffClassCard extends StatelessWidget {
             ),
           ),
           // Actions
+          // Actions
           Row(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -263,12 +267,18 @@ class StaffClassCard extends StatelessWidget {
                   icon: const Icon(Icons.edit_note, size: 20),
                   tooltip: 'Update Marks',
                 )
-              else
+              else ...[
                 IconButton(
                   onPressed: () => _navigateToAttendance(context),
                   icon: const Icon(Icons.check_circle_outline, size: 20),
                   tooltip: 'Mark Attendance',
                 ),
+                IconButton(
+                  onPressed: () => _navigateToCompleteMarks(context),
+                  icon: const Icon(Icons.stacked_bar_chart, size: 20),
+                  tooltip: 'Complete Marks',
+                ),
+              ],
             ],
           ),
         ],
@@ -288,6 +298,22 @@ class StaffClassCard extends StatelessWidget {
             classId: classData.id,
             subjectId: classData.subjectId!,
             subjectName: classData.subjectName!,
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _navigateToCompleteMarks(BuildContext context) {
+    Navigator.of(context, rootNavigator: false).push(
+      MaterialPageRoute(
+        builder: (context) => BlocProvider(
+          create: (context) => CompleteMarksBloc(
+            repository: context.read<CompleteMarksRepository>(),
+          ),
+          child: CompleteStudentsMarksScreen(
+            standard: classData.className,
+            classId: classData.id,
           ),
         ),
       ),

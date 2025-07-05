@@ -1113,6 +1113,8 @@ class _LoginScreenState extends State<LoginScreen>
             ),
             BlocProvider<StaffClassesBloc>(
               create: (context) => StaffClassesBloc(repository: classRepository, user: selectedUser),
+            ),BlocProvider<StaffClassesBloc>(
+              create: (context) => StaffClassesBloc(repository: classRepository, user: selectedUser),
             ),
           ],
           child: StaffHomeScreen(user: selectedUser),

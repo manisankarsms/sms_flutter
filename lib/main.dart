@@ -28,6 +28,7 @@ import 'package:sms/repositories/auth_repository.dart';
 import 'package:sms/repositories/class_details_repository.dart';
 import 'package:sms/repositories/class_repository.dart';
 import 'package:sms/repositories/complaint_repository.dart';
+import 'package:sms/repositories/complete_marks_repository.dart';
 import 'package:sms/repositories/configuration_repository.dart';
 import 'package:sms/repositories/dashboard_repository.dart';
 import 'package:sms/repositories/exam_repository.dart';
@@ -65,6 +66,7 @@ void main() async{
   final StudentDashboardRepository studentDashboardRepository = StudentDashboardRepository(webService: webService);
   final ClassRepository classRepository = ClassRepository(webService: webService);
   final StudentsRepository studentsRepository = StudentsRepository(webService: webService);
+  final CompleteMarksRepository completeMarksRepository = CompleteMarksRepository(webService: webService);
   final StudentRepository studentRepository = StudentRepository(webService: webService);
   final StaffRepository staffRepository = StaffRepository(webService: webService);
   final SubjectRepository subjectRepository = SubjectRepository(webService: webService);
@@ -166,6 +168,9 @@ void main() async{
         ),
         RepositoryProvider(
           create: (context) => studentsRepository,
+        ),
+        RepositoryProvider(
+          create: (context) => completeMarksRepository,
         ),
       ],
       child: MyApp(),
