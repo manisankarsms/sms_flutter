@@ -4,6 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sms/utils/constants.dart';
 import '../models/client.dart';
 import '../models/user.dart';
+import '../services/fcm_service.dart';
 import '../services/request.dart';
 import '../services/web_service.dart';
 
@@ -24,27 +25,30 @@ class AuthRepository {
   AuthRepository({required this.webService});
 
   Future<List<User>> signInWithMobileAndPassword(String mobile, String password, String userType) async {
+    String? fcmToken = await FCMService.getToken();
     try {
-      String request = frameLoginRequest(mobile, password);
+      String request = await frameLoginRequestFCM(mobile, password, fcmToken);
       if (kDebugMode) {
-        print(request);
+        print("POST Data: $request");
       }
-      final endpointMap = {
-        Constants.student: ApiEndpoints.studentLogin,
-        Constants.staff: ApiEndpoints.staffLogin,
-        Constants.admin: ApiEndpoints.adminLogin,
-      };
 
-      final endPoint = endpointMap[userType] ?? ApiEndpoints.adminLogin;
-      final data = await webService.postData(endPoint, request);
-      final List<dynamic> jsonResponse = jsonDecode(data.toString());
+      final data = await webService.postData(ApiEndpoints.loginWithFCM, request);
 
-      final users = jsonResponse.map((user) => User.fromJson(user)).toList();
+      if (kDebugMode) {
+        print("Response: $data");
+      }
 
-      // Save login session after successful login
-      await _saveLoginSession(users);
+      final Map<String, dynamic> response = jsonDecode(data.toString());
 
-      return users;
+      if (response['success'] == true) {
+        final List<dynamic> userList = response['data']['user'];
+        final users = userList.map((user) => User.fromJson(user)).toList();
+
+        await _saveLoginSession(users);
+        return users;
+      } else {
+        throw Exception(response['message'] ?? "Unknown error");
+      }
     } catch (error) {
       if (kDebugMode) {
         print("Error signing in: $error");

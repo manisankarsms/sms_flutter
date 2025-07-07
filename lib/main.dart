@@ -1,5 +1,7 @@
 import 'dart:ui';
+import 'package:firebase_core/firebase_core.dart';
 
+import 'firebase_options.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
@@ -48,6 +50,7 @@ import 'package:sms/repositories/students_repository.dart';
 import 'package:sms/repositories/subjects_repository.dart';
 import 'package:sms/screens/login_screen.dart';
 import 'package:sms/services/web_service.dart';
+import 'package:sms/services/fcm_service.dart'; // 🔥 Add FCM service
 import 'package:sms/utils/constants.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
@@ -59,7 +62,18 @@ import 'bloc/staffs/staff_bloc.dart';
 import 'bloc/theme/theme_bloc.dart';
 import 'dev_only/debug_logger.dart';
 
-void main() async{
+void main() async {
+  // 🔥 Ensure Flutter is initialized
+  WidgetsFlutterBinding.ensureInitialized();
+
+  // ✅ Initialize Firebase FIRST!
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
+
+  // ✅ Now it's safe to initialize services using Firebase
+  await FCMService.initialize();
+
   final WebService webService = WebService(baseUrl: Constants.baseUrl);
   final AuthRepository authRepository = AuthRepository(webService: webService);
   final DashboardRepository dashboardRepository = DashboardRepository(webService: webService);
@@ -85,95 +99,93 @@ void main() async{
   final ClassDetailsRepository classDetailsRepository = ClassDetailsRepository(webService: webService);
   final AttendanceRepository attendanceRepository = AttendanceRepository(webService: webService);
 
-  final app =
-    MultiBlocProvider(
-      providers: [
-        BlocProvider<AuthBloc>(
-          create: (context) => AuthBloc(authRepository: authRepository)
-            ..add(AppStarted()), // 🔥 Trigger session check on app start
-        ),
-        RepositoryProvider<ClassDetailsRepository>(
-          create: (context) => classDetailsRepository,
-        ),
-        BlocProvider<DashboardBloc>(
-          create: (context) => DashboardBloc(repository: dashboardRepository),
-        ),
-        BlocProvider<StaffsBloc>(
-          create: (context) => StaffsBloc(repository: staffRepository),
-        ),
-        BlocProvider<HolidayBloc>(
-          create: (context) => HolidayBloc(repository: holidayRepository),
-        ),
-        BlocProvider<PostBloc>(
-          create: (context) => PostBloc(postRepository: postRepository),
-        ),
-        BlocProvider<FeedBloc>(
-          create: (context) => FeedBloc(feedRepository: feedRepository),
-        ),
-        BlocProvider<ThemeBloc>(
-          create: (context) => ThemeBloc(),
-        ),
-        BlocProvider<LanguageBloc>(
-          create: (context) => LanguageBloc(),
-        ),
-        BlocProvider(
-          create: (context) => ComplaintBloc(complaintRepository),
-        ),
-        BlocProvider(
-          create: (context) => FeesBloc(feesRepository),
-        ),
-        BlocProvider(
-          create: (context) => LibraryBloc(libraryRepository: libraryRepository),
-        ),
-        BlocProvider(
-          create: (context) => StudentBloc(studentRepository: studentRepository),
-        ),
-        BlocProvider(
-          create: (context) => StaffRegistrationBloc(repository: staffRepository),
-        ),
-        BlocProvider(
-          create: (context) => SubjectBloc(subjectRepository: subjectRepository),
-        ),
-        BlocProvider(
-          create: (context) => ExamBloc(examRepository: examRepository),
-        ),
-        BlocProvider(
-          create: (context) => ConfigurationBloc(configurationRepository),
-        ),
-        BlocProvider(
-          create: (context) => PermissionBloc(repo: permissionRepository),
-        ),
-        BlocProvider(
-          create: (context) => RulesBloc(repository: rulesRepository),
-        ),
-        BlocProvider(
-          create: (context) => UserBloc(userRepository: studentAdminRepository),
-        ),
-        BlocProvider(
-          create: (context) => StudentsBloc(repository: studentsRepository),
-        ),
-        BlocProvider(
-          create: (context) => AttendanceBloc(repository: attendanceRepository),
-        ),
-        BlocProvider(
-          create: (context) => ProfileBloc(profileRepository),
-        ),
-        BlocProvider(
-          create: (context) => StudentDashboardBloc(repository: studentDashboardRepository),
-        ),
-        BlocProvider<ClassDetailsBloc>(
-          create: (context) => ClassDetailsBloc(
-              classDetailsRepository: context.read<ClassDetailsRepository>()
-          ),
-        ),
-        RepositoryProvider(
-          create: (context) => studentsRepository,
-        ),
-        RepositoryProvider(
-          create: (context) => completeMarksRepository,
-        ),
-      ],
-      child: MyApp(),
+  final app = MultiBlocProvider(
+    providers: [
+      BlocProvider<AuthBloc>(
+        create: (context) => AuthBloc(authRepository: authRepository)
+          ..add(AppStarted()), // 🔥 Trigger session check on app start
+      ),
+      RepositoryProvider<ClassDetailsRepository>(
+        create: (context) => classDetailsRepository,
+      ),
+      BlocProvider<DashboardBloc>(
+        create: (context) => DashboardBloc(repository: dashboardRepository),
+      ),
+      BlocProvider<StaffsBloc>(
+        create: (context) => StaffsBloc(repository: staffRepository),
+      ),
+      BlocProvider<HolidayBloc>(
+        create: (context) => HolidayBloc(repository: holidayRepository),
+      ),
+      BlocProvider<PostBloc>(
+        create: (context) => PostBloc(postRepository: postRepository),
+      ),
+      BlocProvider<FeedBloc>(
+        create: (context) => FeedBloc(feedRepository: feedRepository),
+      ),
+      BlocProvider<ThemeBloc>(
+        create: (context) => ThemeBloc(),
+      ),
+      BlocProvider<LanguageBloc>(
+        create: (context) => LanguageBloc(),
+      ),
+      BlocProvider(
+        create: (context) => ComplaintBloc(complaintRepository),
+      ),
+      BlocProvider(
+        create: (context) => FeesBloc(feesRepository),
+      ),
+      BlocProvider(
+        create: (context) => LibraryBloc(libraryRepository: libraryRepository),
+      ),
+      BlocProvider(
+        create: (context) => StudentBloc(studentRepository: studentRepository),
+      ),
+      BlocProvider(
+        create: (context) => StaffRegistrationBloc(repository: staffRepository),
+      ),
+      BlocProvider(
+        create: (context) => SubjectBloc(subjectRepository: subjectRepository),
+      ),
+      BlocProvider(
+        create: (context) => ExamBloc(examRepository: examRepository),
+      ),
+      BlocProvider(
+        create: (context) => ConfigurationBloc(configurationRepository),
+      ),
+      BlocProvider(
+        create: (context) => PermissionBloc(repo: permissionRepository),
+      ),
+      BlocProvider(
+        create: (context) => RulesBloc(repository: rulesRepository),
+      ),
+      BlocProvider(
+        create: (context) => UserBloc(userRepository: studentAdminRepository),
+      ),
+      BlocProvider(
+        create: (context) => StudentsBloc(repository: studentsRepository),
+      ),
+      BlocProvider(
+        create: (context) => AttendanceBloc(repository: attendanceRepository),
+      ),
+      BlocProvider(
+        create: (context) => ProfileBloc(profileRepository),
+      ),
+      BlocProvider(
+        create: (context) => StudentDashboardBloc(repository: studentDashboardRepository),
+      ),
+      BlocProvider<ClassDetailsBloc>(
+        create: (context) => ClassDetailsBloc(
+            classDetailsRepository: context.read<ClassDetailsRepository>()),
+      ),
+      RepositoryProvider(
+        create: (context) => studentsRepository,
+      ),
+      RepositoryProvider(
+        create: (context) => completeMarksRepository,
+      ),
+    ],
+    child: MyApp(),
   );
   DebugLogger.initWithZone(app);
 }

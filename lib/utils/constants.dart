@@ -13,6 +13,7 @@ class Constants {
 
 class ApiEndpoints {
   static const String adminLogin = 'users/login';
+  static const String loginWithFCM = 'users/login-fcm';
   static const String studentLogin = 'users/login';
   static const String staffLogin = 'users/login';
 

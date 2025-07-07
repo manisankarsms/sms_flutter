@@ -1,4 +1,6 @@
 import 'dart:convert';
+import 'dart:io';
+import 'package:device_info_plus/device_info_plus.dart';
 
 import 'package:sms/models/student.dart';
 
@@ -8,6 +10,20 @@ String frameLoginRequest(String mobile, String password) {
   Map<String, dynamic> jsonMap = {
     'mobileNumber': mobile,
     'password': password,
+  };
+  return jsonEncode(jsonMap);
+}
+
+Future<String> frameLoginRequestFCM(String mobile, String password, String? fcmToken) async {
+  final deviceId = await getDeviceId();  // ✅ await here
+  final platform = getPlatform();
+
+  Map<String, dynamic> jsonMap = {
+    'mobileNumber': mobile,
+    'password': password,
+    'fcmToken': fcmToken,
+    'platform': platform,
+    'deviceId': deviceId
   };
   return jsonEncode(jsonMap);
 }
@@ -56,4 +72,23 @@ String frameAddClassRequest(Class myClass) {
     'sectionName': myClass.sectionName
   };
   return jsonEncode(jsonMap);
+}
+
+Future<String> getDeviceId() async {
+  final DeviceInfoPlugin deviceInfo = DeviceInfoPlugin();
+
+  if (Platform.isAndroid) {
+    final androidInfo = await deviceInfo.androidInfo;
+    return androidInfo.id ?? "unknown";
+  } else if (Platform.isIOS) {
+    final iosInfo = await deviceInfo.iosInfo;
+    return iosInfo.identifierForVendor ?? "unknown";
+  }
+  return "unsupported_platform";
+}
+
+String getPlatform() {
+  if (Platform.isAndroid) return "android";
+  if (Platform.isIOS) return "ios";
+  return "unknown";
 }
