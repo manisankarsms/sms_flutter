@@ -34,8 +34,8 @@ class FCMService {
     // Initialize local notifications
     await _initializeLocalNotifications();
 
-    // Get FCM token with retry mechanism
-    String? token = await getTokenWithRetry();
+    // Get FCM token
+    String? token = await getToken();
     print('FCM Token: $token');
 
     // Listen to token refresh
@@ -60,61 +60,22 @@ class FCMService {
     }
   }
 
-  // Get FCM token with retry mechanism
-  static Future<String?> getTokenWithRetry({int maxRetries = 5}) async {
-    for (int i = 0; i < maxRetries; i++) {
-      try {
-        // On iOS, wait for APNs token to be available
-        if (defaultTargetPlatform == TargetPlatform.iOS) {
-          String? apnsToken = await _firebaseMessaging.getAPNSToken();
-          if (apnsToken == null) {
-            print('APNs token not available yet, retrying... (${i + 1}/$maxRetries)');
-            await Future.delayed(Duration(seconds: 1 + i)); // Exponential backoff
-            continue;
-          }
-          print('APNs token available: ${apnsToken.substring(0, 20)}...');
-        }
-
-        String? token = await _firebaseMessaging.getToken();
-        if (token != null) {
-          return token;
-        }
-      } catch (e) {
-        print('Error getting FCM token (attempt ${i + 1}/$maxRetries): $e');
-        if (i < maxRetries - 1) {
-          await Future.delayed(Duration(seconds: 1 + i)); // Exponential backoff
-        }
-      }
-    }
-    return null;
-  }
-
-  // Get FCM token (original method for backward compatibility)
+  // Get FCM token
   static Future<String?> getToken() async {
-    return await getTokenWithRetry();
-  }
-
-  // Alternative method to get token with callback when available
-  static Future<void> getTokenWhenAvailable(Function(String) onTokenReceived) async {
-    // Try to get token immediately
-    String? token = await getTokenWithRetry();
-    if (token != null) {
-      onTokenReceived(token);
-      return;
+    try {
+      String? token = await _firebaseMessaging.getToken();
+      return token;
+    } catch (e) {
+      print('Error getting FCM token: $e');
+      return null;
     }
-
-    // If token is not available, listen for token refresh
-    _firebaseMessaging.onTokenRefresh.listen((newToken) {
-      print('FCM Token available: $newToken');
-      onTokenReceived(newToken);
-    });
   }
 
   // Method to manually refresh token
   static Future<String?> refreshToken() async {
     try {
       await _firebaseMessaging.deleteToken();
-      return await getTokenWithRetry();
+      return await getToken();
     } catch (e) {
       print('Error refreshing FCM token: $e');
       return null;
