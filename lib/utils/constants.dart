@@ -64,4 +64,7 @@ class ApiEndpoints {
   static const String uploadLogo = 'files/upload/profile';
 
   static const String userProfile = 'users';
+  static const String feesStructures = 'fees-structures';
+  static const String classes = 'classes';
+  static const String academicYears = 'academic-years';
 }

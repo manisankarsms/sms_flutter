@@ -3,8 +3,10 @@ import 'dart:convert'; // Add this import for JSON decoding
 import 'package:firebase_core/firebase_core.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter/foundation.dart'; // Add this import for kIsWeb
+import 'package:sms/repositories/fees_structure_repository.dart';
 
 import 'bloc/classes/classes_bloc.dart';
+import 'bloc/fees_structures/fees_structure_bloc.dart';
 import 'firebase_options.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -106,6 +108,7 @@ void main() async {
   final StudentAdminRepository studentAdminRepository = StudentAdminRepository(webService: webService);
   final ClassDetailsRepository classDetailsRepository = ClassDetailsRepository(webService: webService);
   final AttendanceRepository attendanceRepository = AttendanceRepository(webService: webService);
+  final FeesStructureRepository feesStructureRepository = FeesStructureRepository(webService: webService);
 
   final app = MultiBlocProvider(
     providers: [
@@ -181,6 +184,9 @@ void main() async {
       ),
       BlocProvider(
         create: (context) => StudentDashboardBloc(repository: studentDashboardRepository),
+      ),
+      BlocProvider<FeesStructureBloc>(
+        create: (context) => FeesStructureBloc(feesStructureRepository: feesStructureRepository),
       ),
       BlocProvider<ClassDetailsBloc>(
         create: (context) => ClassDetailsBloc(

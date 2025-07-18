@@ -28,6 +28,7 @@ import '../bloc/configuration/configuration_state.dart';
 import '../models/item.dart';
 import '../models/user.dart';
 import '../models/configuration.dart';
+import 'fees_structures_screen.dart';
 import 'login_screen.dart';
 
 class HomeScreenAdmin extends StatefulWidget {
@@ -126,6 +127,12 @@ class _HomeScreenAdminState extends State<HomeScreenAdmin> {
         permissionKey: 'posts',
       ),
       NavigationItem(
+        name: 'Fee Structure',
+        imagePath: 'assets/images/fees.png',
+        icon: Icons.receipt_long,
+        permissionKey: 'fee_structure',
+      ),
+      NavigationItem(
         name: 'Fees',
         imagePath: 'assets/images/fees.png',
         icon: Icons.payments_rounded,
@@ -201,6 +208,7 @@ class _HomeScreenAdminState extends State<HomeScreenAdmin> {
       ExamsListScreen(),
       HolidayScreen(user: user),
       PostsScreen(),
+      FeesStructureScreen(),
       AdminFeesScreen(),
       RulesScreen(user: user),
       ThemeScreen(),
@@ -292,6 +300,12 @@ class _HomeScreenAdminState extends State<HomeScreenAdmin> {
       imagePath: 'assets/images/posts.png',
       icon: Icons.article_rounded,
       permissionKey: 'posts',
+    ),
+    NavigationItem(
+      name: 'Fee Structure',
+      imagePath: 'assets/images/fees.png',
+      icon: Icons.receipt_long,
+      permissionKey: 'fee_structure',
     ),
     NavigationItem(
       name: 'Fees',
