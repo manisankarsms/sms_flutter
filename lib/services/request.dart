@@ -1,9 +1,8 @@
 import 'dart:convert';
-import 'dart:io';
+import 'dart:io' show Platform;
 import 'package:device_info_plus/device_info_plus.dart';
-
+import 'package:flutter/foundation.dart';
 import 'package:sms/models/student.dart';
-
 import '../models/class.dart';
 
 String frameLoginRequest(String mobile, String password) {
@@ -15,7 +14,7 @@ String frameLoginRequest(String mobile, String password) {
 }
 
 Future<String> frameLoginRequestFCM(String mobile, String password, String? fcmToken) async {
-  final deviceId = await getDeviceId();  // ✅ await here
+  final deviceId = await getDeviceId();
   final platform = getPlatform();
 
   Map<String, dynamic> jsonMap = {
@@ -51,8 +50,7 @@ String frameProfileRequest(String mobile, String userId) {
   return jsonEncode(jsonMap);
 }
 
-String frameAddStudentRequest(
-    Student student) {
+String frameAddStudentRequest(Student student) {
   Map<String, dynamic> jsonMap = {
     'firstName': student.firstName,
     'lastName': student.lastName,
@@ -75,20 +73,60 @@ String frameAddClassRequest(Class myClass) {
 }
 
 Future<String> getDeviceId() async {
-  final DeviceInfoPlugin deviceInfo = DeviceInfoPlugin();
+  try {
+    final DeviceInfoPlugin deviceInfo = DeviceInfoPlugin();
 
-  if (Platform.isAndroid) {
-    final androidInfo = await deviceInfo.androidInfo;
-    return androidInfo.id ?? "unknown";
-  } else if (Platform.isIOS) {
-    final iosInfo = await deviceInfo.iosInfo;
-    return iosInfo.identifierForVendor ?? "unknown";
+    if (kIsWeb) {
+      // For web platform, use browser info as device ID
+      final webBrowserInfo = await deviceInfo.webBrowserInfo;
+      // Create a unique identifier from browser info
+      final browserIdentifier = '${webBrowserInfo.browserName.name}_${webBrowserInfo.userAgent?.hashCode ?? 'unknown'}';
+      return browserIdentifier;
+    } else if (Platform.isAndroid) {
+      final androidInfo = await deviceInfo.androidInfo;
+      return androidInfo.id;
+    } else if (Platform.isIOS) {
+      final iosInfo = await deviceInfo.iosInfo;
+      return iosInfo.identifierForVendor ?? "unknown_ios";
+    } else if (Platform.isMacOS) {
+      final macInfo = await deviceInfo.macOsInfo;
+      return macInfo.systemGUID ?? "unknown_macos";
+    } else if (Platform.isWindows) {
+      final windowsInfo = await deviceInfo.windowsInfo;
+      return windowsInfo.computerName;
+    } else if (Platform.isLinux) {
+      final linuxInfo = await deviceInfo.linuxInfo;
+      return linuxInfo.machineId ?? "unknown_linux";
+    }
+    return "unsupported_platform";
+  } catch (e) {
+    if (kDebugMode) {
+      print('Error getting device ID: $e');
+    }
+    return "error_getting_device_id";
   }
-  return "unsupported_platform";
 }
 
 String getPlatform() {
-  if (Platform.isAndroid) return "android";
-  if (Platform.isIOS) return "ios";
-  return "unknown";
+  try {
+    if (kIsWeb) {
+      return "web";
+    } else if (Platform.isAndroid) {
+      return "android";
+    } else if (Platform.isIOS) {
+      return "ios";
+    } else if (Platform.isMacOS) {
+      return "macos";
+    } else if (Platform.isWindows) {
+      return "windows";
+    } else if (Platform.isLinux) {
+      return "linux";
+    }
+    return "unknown";
+  } catch (e) {
+    if (kDebugMode) {
+      print('Error getting platform: $e');
+    }
+    return "error_getting_platform";
+  }
 }

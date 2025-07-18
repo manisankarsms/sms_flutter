@@ -4,11 +4,26 @@ import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 
 import '../cryptography/aes.dart';
+import '../utils/constants.dart'; // Add this import
 
 class WebService {
   final String baseUrl;
 
   WebService({required this.baseUrl});
+
+  // Helper method to build headers with optional tenantId
+  Map<String, String> _buildHeaders() {
+    final headers = <String, String>{
+      'Content-Type': 'application/json; charset=UTF-8',
+    };
+
+    // Add tenantId to headers if it's not null or empty
+    if (Constants.tenantId.isNotEmpty) {
+      headers['X-Tenant'] = Constants.tenantId;
+    }
+
+    return headers;
+  }
 
   Future<String> postData(String endpoint, String data) async {
     try {
@@ -20,9 +35,7 @@ class WebService {
 
       final response = await http.post(
         Uri.parse('$baseUrl/$endpoint'),
-        headers: <String, String>{
-          'Content-Type': 'application/json; charset=UTF-8',
-        },
+        headers: _buildHeaders(),
         body: data, // Send data directly, not double-encoded
       );
 
@@ -63,9 +76,7 @@ class WebService {
 
       final response = await http.get(
         Uri.parse('$baseUrl/$endpoint'),
-        headers: <String, String>{
-          'Content-Type': 'application/json; charset=UTF-8',
-        },
+        headers: _buildHeaders(),
       );
 
       if (kDebugMode) {
@@ -106,9 +117,7 @@ class WebService {
 
       final response = await http.put(
         Uri.parse('$baseUrl/$endpoint'),
-        headers: <String, String>{
-          'Content-Type': 'application/json; charset=UTF-8',
-        },
+        headers: _buildHeaders(),
         body: data,
       );
 
@@ -148,9 +157,7 @@ class WebService {
 
       final response = await http.delete(
         Uri.parse('$baseUrl/$endpoint'),
-        headers: <String, String>{
-          'Content-Type': 'application/json; charset=UTF-8',
-        },
+        headers: _buildHeaders(),
       );
 
       if (kDebugMode) {

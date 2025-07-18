@@ -2,17 +2,21 @@ import 'dart:convert';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
-import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:flutter/services.dart';
+
+// Only import flutter_local_notifications for mobile platforms
+import 'package:flutter_local_notifications/flutter_local_notifications.dart'
+if (dart.library.html) 'package:sms/services/web_notification_stub.dart';
 
 class FCMService {
   static final FirebaseMessaging _firebaseMessaging = FirebaseMessaging.instance;
-  static final FlutterLocalNotificationsPlugin _localNotifications = FlutterLocalNotificationsPlugin();
+  static FlutterLocalNotificationsPlugin? _localNotifications;
 
   // Initialize FCM
   static Future<void> initialize() async {
     await Firebase.initializeApp();
 
-    // Request permissions (iOS)
+    // Request permissions (iOS and Android)
     NotificationSettings settings = await _firebaseMessaging.requestPermission(
       alert: true,
       announcement: false,
@@ -31,8 +35,13 @@ class FCMService {
       print('User declined or has not accepted permission');
     }
 
-    // Initialize local notifications
-    await _initializeLocalNotifications();
+    // Initialize local notifications only for mobile platforms
+    if (!kIsWeb) {
+      await _initializeLocalNotifications();
+    } else {
+      // For web, request notification permission
+      await _requestWebNotificationPermission();
+    }
 
     // Get FCM token
     String? token = await getToken();
@@ -44,8 +53,10 @@ class FCMService {
       // Send token to your server
     });
 
-    // Handle background messages
-    FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
+    // Handle background messages (not supported on web)
+    if (!kIsWeb) {
+      FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
+    }
 
     // Handle foreground messages
     FirebaseMessaging.onMessage.listen(_handleForegroundMessage);
@@ -60,10 +71,22 @@ class FCMService {
     }
   }
 
-  // Get FCM token
+  // Get FCM token with web-specific handling
   static Future<String?> getToken() async {
     try {
-      String? token = await _firebaseMessaging.getToken();
+      String? token;
+
+      if (kIsWeb) {
+        // For web, you need to provide the vapidKey
+        // Get this from Firebase Console -> Project Settings -> Cloud Messaging -> Web configuration
+        token = await _firebaseMessaging.getToken(
+          vapidKey: 'BJ4mQoVHJJxHQbaRL7mQHowgnVpSxSAUeJ81rnTl2fBHoc7yTsEt35bQ2fSl_vbvr29DPmumpb8wJI-RimGXyp0', // Replace with your actual VAPID key
+        );
+      } else {
+        // For mobile platforms
+        token = await _firebaseMessaging.getToken();
+      }
+
       return token;
     } catch (e) {
       print('Error getting FCM token: $e');
@@ -84,18 +107,43 @@ class FCMService {
 
   // Subscribe to topic
   static Future<void> subscribeToTopic(String topic) async {
-    await _firebaseMessaging.subscribeToTopic(topic);
-    print('Subscribed to topic: $topic');
+    try {
+      await _firebaseMessaging.subscribeToTopic(topic);
+      print('Subscribed to topic: $topic');
+    } catch (e) {
+      print('Error subscribing to topic: $e');
+    }
   }
 
   // Unsubscribe from topic
   static Future<void> unsubscribeFromTopic(String topic) async {
-    await _firebaseMessaging.unsubscribeFromTopic(topic);
-    print('Unsubscribed from topic: $topic');
+    try {
+      await _firebaseMessaging.unsubscribeFromTopic(topic);
+      print('Unsubscribed from topic: $topic');
+    } catch (e) {
+      print('Error unsubscribing from topic: $e');
+    }
   }
 
-  // Initialize local notifications
+  // Request web notification permission
+  static Future<void> _requestWebNotificationPermission() async {
+    if (kIsWeb) {
+      try {
+        // Request notification permission for web
+        NotificationSettings settings = await _firebaseMessaging.requestPermission();
+        print('Web notification permission: ${settings.authorizationStatus}');
+      } catch (e) {
+        print('Error requesting web notification permission: $e');
+      }
+    }
+  }
+
+  // Initialize local notifications (mobile only)
   static Future<void> _initializeLocalNotifications() async {
+    if (kIsWeb) return; // Skip for web
+
+    _localNotifications = FlutterLocalNotificationsPlugin();
+
     const AndroidInitializationSettings initializationSettingsAndroid =
     AndroidInitializationSettings('@mipmap/ic_launcher');
 
@@ -112,7 +160,7 @@ class FCMService {
       iOS: initializationSettingsIOS,
     );
 
-    await _localNotifications.initialize(
+    await _localNotifications!.initialize(
       initializationSettings,
       onDidReceiveNotificationResponse: (NotificationResponse response) {
         // Handle local notification tap
@@ -128,7 +176,7 @@ class FCMService {
       importance: Importance.high,
     );
 
-    await _localNotifications
+    await _localNotifications!
         .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>()
         ?.createNotificationChannel(channel);
   }
@@ -136,13 +184,32 @@ class FCMService {
   // Handle foreground messages
   static void _handleForegroundMessage(RemoteMessage message) {
     print('Received foreground message: ${message.messageId}');
+    print('Title: ${message.notification?.title}');
+    print('Body: ${message.notification?.body}');
+    print('Data: ${message.data}');
 
-    // Show local notification when app is in foreground
-    _showLocalNotification(message);
+    if (kIsWeb) {
+      // For web, show browser notification
+      _showWebNotification(message);
+    } else {
+      // For mobile, show local notification
+      _showLocalNotification(message);
+    }
   }
 
-  // Show local notification
+  // Show web notification
+  static void _showWebNotification(RemoteMessage message) {
+    if (kIsWeb) {
+      print('Showing web notification: ${message.notification?.title}');
+      // Web notifications are handled automatically by the browser
+      // You can add custom logic here if needed
+    }
+  }
+
+  // Show local notification (mobile only)
   static Future<void> _showLocalNotification(RemoteMessage message) async {
+    if (kIsWeb || _localNotifications == null) return;
+
     const AndroidNotificationDetails androidNotificationDetails =
     AndroidNotificationDetails(
       'high_importance_channel',
@@ -158,7 +225,7 @@ class FCMService {
       iOS: DarwinNotificationDetails(),
     );
 
-    await _localNotifications.show(
+    await _localNotifications!.show(
       message.hashCode,
       message.notification?.title ?? 'New Message',
       message.notification?.body ?? 'You have a new message',
@@ -175,10 +242,23 @@ class FCMService {
     // Navigate to specific screen based on notification data
     // Example: Get.toNamed('/notification-detail', arguments: message.data);
   }
+
+  // Check if FCM is supported on current platform
+  static bool get isSupported {
+    return true; // FCM is supported on all platforms
+  }
+
+  // Check if local notifications are supported
+  static bool get isLocalNotificationSupported {
+    return !kIsWeb;
+  }
 }
 
 // Background message handler (must be top-level function)
+// Note: This won't work on web platform
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
-  await Firebase.initializeApp();
-  print('Handling background message: ${message.messageId}');
+  if (!kIsWeb) {
+    await Firebase.initializeApp();
+    print('Handling background message: ${message.messageId}');
+  }
 }

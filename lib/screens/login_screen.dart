@@ -5,31 +5,16 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sms/bloc/auth/auth_bloc.dart';
 import 'package:sms/bloc/auth/auth_event.dart';
 import 'package:sms/bloc/auth/auth_state.dart';
-import 'package:sms/bloc/exam/exam_bloc.dart';
-import 'package:sms/repositories/exam_repository.dart';
 import 'package:sms/screens/home_screen_staff.dart';
 import 'package:sms/screens/home_screen_student.dart';
 import 'package:sms/screens/home_screen_admin.dart';
 import 'package:sms/utils/language_selector.dart';
-
 import '../bloc/classes/classes_bloc.dart';
 import '../bloc/classes_staff/staff_classes_bloc.dart';
-import '../bloc/dashboard/dashboard_bloc.dart';
-import '../bloc/feed/feed_bloc.dart';
-import '../bloc/holiday/holiday_bloc.dart';
-import '../bloc/post/post_bloc.dart';
-import '../bloc/staffs/staff_bloc.dart';
-import '../dev_only/debug_overlay.dart';
 import '../models/user.dart';
 import '../models/client.dart';
 import '../repositories/auth_repository.dart';
 import '../repositories/class_repository.dart';
-import '../repositories/dashboard_repository.dart';
-import '../repositories/feed_repository.dart';
-import '../repositories/holiday_repository.dart';
-import '../repositories/post_repository.dart';
-import '../repositories/staff_repository.dart';
-import '../repositories/students_repository.dart';
 import '../services/web_service.dart';
 import '../utils/constants.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
@@ -41,156 +26,148 @@ class LoginScreen extends StatefulWidget {
   _LoginScreenState createState() => _LoginScreenState();
 }
 
-class _LoginScreenState extends State<LoginScreen>
-    with SingleTickerProviderStateMixin {
-  final _mobileFormKey = GlobalKey<FormState>();
-  final _otpFormKey = GlobalKey<FormState>();
+class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin {
+  final _formKey = GlobalKey<FormState>();
 
-  // Mobile/Password Login Fields
-  String _mobile = '';
-  String _password = '';
-  bool _rememberMeMobile = false;
+  // Controllers
+  final _mobileController = TextEditingController();
+  final _passwordController = TextEditingController();
+  final _emailController = TextEditingController();
+  final _otpController = TextEditingController();
 
-  // Email/OTP Login Fields
-  String _email = '';
-  String _otp = '';
-  bool _isOtpSent = false;
-  bool _rememberMeOtp = false;
+  // Animations
+  late AnimationController _fadeController;
+  late AnimationController _slideController;
+  late Animation<double> _fadeAnimation;
+  late Animation<Offset> _slideAnimation;
 
+  // State
   bool _isLoading = false;
+  bool _isOtpMode = false;
+  bool _isOtpSent = false;
   bool _obscurePassword = true;
-  bool _isMockEnvironment = false;
-  bool _showDebugConsole = false;
+  bool _rememberMe = false;
+
+  // Client
   List<Client> _clients = [];
   Client? _selectedClient;
   bool _isLoadingClients = false;
 
-  bool _isCustomEnvironment = false;
-  String _customBaseUrl = '';
-
-  // Tab controller
-  late TabController _tabController;
-  int _currentTabIndex = 0;
-
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 2, vsync: this);
-    _tabController.addListener(() {
-      setState(() {
-        _currentTabIndex = _tabController.index;
-        // Reset form state when switching tabs
-        _resetFormStates();
-      });
-    });
-    _loadEnvironmentSetting();
-    _loadClientData();
-    _loadRememberMeSettings();
+    _setupAnimations();
+    _initializeApp();
+  }
+
+  void _setupAnimations() {
+    _fadeController = AnimationController(
+      duration: const Duration(milliseconds: 800),
+      vsync: this,
+    );
+    _slideController = AnimationController(
+      duration: const Duration(milliseconds: 600),
+      vsync: this,
+    );
+
+    _fadeAnimation = Tween<double>(
+      begin: 0.0,
+      end: 1.0,
+    ).animate(CurvedAnimation(
+      parent: _fadeController,
+      curve: Curves.easeInOut,
+    ));
+
+    _slideAnimation = Tween<Offset>(
+      begin: const Offset(0, 0.1),
+      end: Offset.zero,
+    ).animate(CurvedAnimation(
+      parent: _slideController,
+      curve: Curves.easeOutCubic,
+    ));
+
+    _fadeController.forward();
+    _slideController.forward();
   }
 
   @override
   void dispose() {
-    _tabController.dispose();
+    _mobileController.dispose();
+    _passwordController.dispose();
+    _emailController.dispose();
+    _otpController.dispose();
+    _fadeController.dispose();
+    _slideController.dispose();
     super.dispose();
   }
 
-  void _resetFormStates() {
-    _mobile = '';
-    _password = '';
-    _email = '';
-    _otp = '';
-    _isOtpSent = false;
-    _mobileFormKey.currentState?.reset();
-    _otpFormKey.currentState?.reset();
+  Future<void> _initializeApp() async {
+    await _loadRememberMeSettings();
+    if (!kIsWeb) {
+      await _loadClientData();
+    }
   }
 
-  // Load Remember Me settings
   Future<void> _loadRememberMeSettings() async {
     final prefs = await SharedPreferences.getInstance();
     setState(() {
-      _rememberMeMobile = prefs.getBool('rememberMeMobile') ?? false;
-      _rememberMeOtp = prefs.getBool('rememberMeOtp') ?? false;
-
-      // Load saved credentials if remember me was enabled
-      if (_rememberMeMobile) {
-        _mobile = prefs.getString('savedMobile') ?? '';
-      }
-      if (_rememberMeOtp) {
-        _email = prefs.getString('savedEmail') ?? '';
+      _rememberMe = prefs.getBool('rememberMe') ?? false;
+      if (_rememberMe) {
+        _mobileController.text = prefs.getString('savedMobile') ?? '';
+        _emailController.text = prefs.getString('savedEmail') ?? '';
       }
     });
   }
 
-  // Save Remember Me settings
   Future<void> _saveRememberMeSettings() async {
     final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('rememberMe', _rememberMe);
 
-    // Save mobile form settings
-    await prefs.setBool('rememberMeMobile', _rememberMeMobile);
-    if (_rememberMeMobile) {
-      await prefs.setString('savedMobile', _mobile);
+    if (_rememberMe) {
+      await prefs.setString('savedMobile', _mobileController.text);
+      await prefs.setString('savedEmail', _emailController.text);
     } else {
       await prefs.remove('savedMobile');
-    }
-
-    // Save email form settings
-    await prefs.setBool('rememberMeOtp', _rememberMeOtp);
-    if (_rememberMeOtp) {
-      await prefs.setString('savedEmail', _email);
-    } else {
       await prefs.remove('savedEmail');
     }
   }
 
-  // Load client data from SharedPreferences
   Future<void> _loadClientData() async {
-    if (kIsWeb) {
-      return;
-    }
+    setState(() => _isLoadingClients = true);
 
-    setState(() {
-      _isLoadingClients = true;
-    });
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final clientsJson = prefs.getString('clients');
+      final selectedClientId = prefs.getString('selectedClientId');
 
-    final prefs = await SharedPreferences.getInstance();
-    final clientsJson = prefs.getString('clients');
-    final selectedClientId = prefs.getString('selectedClientId');
-
-    if (clientsJson != null) {
-      final clientsList = Client.fromJsonList(clientsJson);
-
-      setState(() {
-        _clients = clientsList;
-
-        if (selectedClientId != null) {
-          try {
+      if (clientsJson != null && clientsJson.isNotEmpty) {
+        final clientsList = Client.fromJsonList(clientsJson);
+        setState(() {
+          _clients = clientsList;
+          if (selectedClientId != null) {
             _selectedClient = _clients.firstWhere(
                   (client) => client.id == selectedClientId,
+              orElse: () => _clients.first,
             );
-          } catch (e) {
-            _selectedClient = null;
+            // Save tenant ID to Constants
+            Constants.tenantId = _selectedClient?.id ?? '';
           }
-        }
-
-        _isLoadingClients = false;
-      });
-
-      if (_selectedClient == null && _clients.isNotEmpty) {
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          // _showClientSelectionDialog();
         });
       }
-    } else {
+
+      if (_clients.isEmpty) {
+        await _fetchClientData();
+      }
+    } catch (e) {
       await _fetchClientData();
+    } finally {
+      setState(() => _isLoadingClients = false);
     }
   }
 
-  // Fetch client data from API
   Future<void> _fetchClientData() async {
     try {
-      setState(() {
-        _isLoadingClients = true;
-      });
+      setState(() => _isLoadingClients = true);
 
       final authRepository = AuthRepository(
         webService: WebService(baseUrl: Constants.baseUrl),
@@ -198,558 +175,295 @@ class _LoginScreenState extends State<LoginScreen>
 
       final clients = await authRepository.fetchClients();
 
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setString('clients', Client.toJsonList(clients));
+      if (clients.isNotEmpty) {
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString('clients', Client.toJsonList(clients));
 
-      setState(() {
-        _clients = clients;
-        _isLoadingClients = false;
-      });
+        setState(() => _clients = clients);
 
-      if (_clients.isNotEmpty) {
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          // _showClientSelectionDialog();
-        });
+        if (_selectedClient == null && mounted) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            _showClientBottomSheet();
+          });
+        }
       }
     } catch (e) {
-      setState(() {
-        _isLoadingClients = false;
-      });
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Failed to load client data: ${e.toString()}'),
-          backgroundColor: Theme.of(context).colorScheme.error,
-        ),
-      );
-
-      print('Error fetching client data: $e');
+      _showSnackbar('Failed to load schools', isError: true);
+    } finally {
+      setState(() => _isLoadingClients = false);
     }
   }
 
-  // Reset client data
-  Future<void> _resetClientData() async {
+  Future<void> _selectClient(Client client) async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.remove('clients');
-    await prefs.remove('selectedClientId');
+    await prefs.setString('selectedClientId', client.id);
 
-    setState(() {
-      _clients = [];
-      _selectedClient = null;
-      Constants.baseUrl = _isMockEnvironment
-          ? Constants.mockBaseUrl
-          : Constants.prodBaseUrl;
-    });
+    setState(() => _selectedClient = client);
 
-    _fetchClientData();
+    // Save tenant ID to Constants
+    Constants.tenantId = client.id;
+
+    Navigator.pop(context);
   }
 
-  Future<void> _saveEnvironmentSetting({
-    required bool isMock,
-    required bool isCustom,
-    required String customUrl,
-  }) async {
-    final prefs = await SharedPreferences.getInstance();
-
-    await prefs.setBool('isMockEnvironment', isMock);
-    await prefs.setBool('isCustomEnvironment', isCustom);
-    await prefs.setString('customBaseUrl', customUrl);
-
-    setState(() {
-      _isMockEnvironment = isMock;
-      _isCustomEnvironment = isCustom;
-      _customBaseUrl = customUrl;
-
-      Constants.baseUrl = isCustom
-          ? customUrl
-          : (isMock ? Constants.mockBaseUrl : Constants.prodBaseUrl);
-    });
-  }
-
-  Future<void> _loadEnvironmentSetting() async {
-    final prefs = await SharedPreferences.getInstance();
-    setState(() {
-      _isMockEnvironment = prefs.getBool('isMockEnvironment') ?? false;
-      _isCustomEnvironment = prefs.getBool('isCustomEnvironment') ?? false;
-      _customBaseUrl = prefs.getString('customBaseUrl') ?? '';
-
-      Constants.baseUrl = _isCustomEnvironment
-          ? _customBaseUrl
-          : (_isMockEnvironment
-          ? Constants.mockBaseUrl
-          : Constants.prodBaseUrl);
-    });
-  }
-
-  void _toggleDebugConsole() {
-    setState(() {
-      _showDebugConsole = !_showDebugConsole;
-    });
+  void _showClientBottomSheet() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      isDismissible: false,
+      enableDrag: false,
+      backgroundColor: Colors.transparent,
+      builder: (context) => Container(
+        height: MediaQuery.of(context).size.height * 0.7,
+        decoration: BoxDecoration(
+          color: Theme.of(context).scaffoldBackgroundColor,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        child: Column(
+          children: [
+            Container(
+              height: 5,
+              width: 50,
+              margin: const EdgeInsets.symmetric(vertical: 12),
+              decoration: BoxDecoration(
+                color: Colors.grey[300],
+                borderRadius: BorderRadius.circular(10),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.all(20),
+              child: Text(
+                'Select Your School',
+                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+            Expanded(
+              child: ListView.builder(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                itemCount: _clients.length,
+                itemBuilder: (context, index) {
+                  final client = _clients[index];
+                  return Card(
+                    margin: const EdgeInsets.only(bottom: 12),
+                    elevation: 0,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                      side: BorderSide(
+                        color: Colors.grey.withOpacity(0.2),
+                      ),
+                    ),
+                    child: ListTile(
+                      contentPadding: const EdgeInsets.all(16),
+                      leading: CircleAvatar(
+                        radius: 24,
+                        backgroundColor: Theme.of(context).primaryColor.withOpacity(0.1),
+                        child: Text(
+                          client.name.substring(0, 2).toUpperCase(),
+                          style: TextStyle(
+                            color: Theme.of(context).primaryColor,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                      title: Text(
+                        client.name,
+                        style: const TextStyle(fontWeight: FontWeight.w600),
+                      ),
+                      subtitle: Text(client.schemaName),
+                      trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+                      onTap: () => _selectClient(client),
+                    ),
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final AuthBloc authBloc = BlocProvider.of<AuthBloc>(context);
-    final screenSize = MediaQuery.of(context).size;
-    final isSmallScreen = screenSize.width < 600;
+    final size = MediaQuery.of(context).size;
+    final authBloc = BlocProvider.of<AuthBloc>(context);
 
     return BlocListener<AuthBloc, AuthState>(
-      bloc: authBloc,
-      listener: (context, state) {
-        setState(() => _isLoading = state is AuthLoading);
-
-        if (state is AuthFailure) {
-          _showErrorSnackbar(state.error);
-        } else if (state is AuthAuthenticated) {
-          _navigateToHomeScreen(context, state.users, state.activeUser);
-        } else if (state is AuthMultipleUsers) {
-          _navigateToHomeScreen(context, state.users, null);
-        } else if (state is AuthUnauthenticated) {
-          if (ModalRoute.of(context)?.settings.name != '/login') {
-            Navigator.pushAndRemoveUntil(
-              context,
-              MaterialPageRoute(builder: (context) => const LoginScreen()),
-                  (route) => false,
-            );
-          }
-        } else if (state is OtpSent) {
-          setState(() {
-            _isOtpSent = true;
-          });
-          _showSuccessSnackbar('OTP sent to your email');
-        } else if (state is OtpVerified) {
-          _navigateToHomeScreen(context, state.users, state.selectedUser);
-        } else if (state is OtpFailure) {
-          _showErrorSnackbar(state.error);
-        } else if (state is SessionExpired) {
-          _showWarningSnackbar('Your session has expired. Please login again.');
-        } else if (state is SessionExtended) {
-          _showSuccessSnackbar('Session extended successfully');
-        }
-      },
+      listener: _handleAuthState,
       child: Scaffold(
-        appBar: AppBar(
-          backgroundColor: Colors.transparent,
-          elevation: 0,
-          actions: [
-            IconButton(
-              icon: Icon(
-                Icons.bug_report,
-                color: theme.colorScheme.primary,
-              ),
-              onPressed: () => _toggleDebugConsole(),
-              tooltip: 'Debug Console',
-            ),
-            IconButton(
-              icon: Icon(
-                Icons.settings,
-                color: theme.colorScheme.primary,
-              ),
-              onPressed: () => _showEnvironmentSelectionDialog(),
-              tooltip: 'Environment Settings',
-            ),
-          ],
-        ),
-        body: Stack(
+        body: _isLoadingClients && !kIsWeb
+            ? _buildLoadingScreen()
+            : Stack(
           children: [
+            _buildBackground(),
             SafeArea(
-              child: Container(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    colors: [
-                      theme.colorScheme.primary.withOpacity(0.1),
-                      theme.colorScheme.background,
-                    ],
-                  ),
-                ),
-                child: Center(
-                  child: _isLoadingClients && !kIsWeb
-                      ? _buildLoadingIndicator(theme)
-                      : SingleChildScrollView(
-                    child: LayoutBuilder(
-                      builder: (context, constraints) {
-                        return kIsWeb && !isSmallScreen
-                            ? _buildWebLayout(theme, authBloc)
-                            : _buildMobileLayout(theme, authBloc);
-                      },
+              child: Center(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.all(24),
+                  child: FadeTransition(
+                    opacity: _fadeAnimation,
+                    child: SlideTransition(
+                      position: _slideAnimation,
+                      child: _buildLoginCard(authBloc),
                     ),
                   ),
                 ),
               ),
             ),
-            if (_showDebugConsole) DebugConsoleOverlay(),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildLoadingIndicator(ThemeData theme) {
+  Widget _buildLoadingScreen() {
+    return Container(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            Theme.of(context).primaryColor.withOpacity(0.1),
+            Theme.of(context).primaryColor.withOpacity(0.05),
+          ],
+        ),
+      ),
+      child: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            CircularProgressIndicator(
+              color: Theme.of(context).primaryColor,
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'Loading schools...',
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildBackground() {
+    return Container(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            Theme.of(context).primaryColor.withOpacity(0.1),
+            Theme.of(context).primaryColor.withOpacity(0.05),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildLoginCard(AuthBloc authBloc) {
+    final isWeb = kIsWeb && MediaQuery.of(context).size.width > 600;
+
+    return Container(
+      constraints: BoxConstraints(maxWidth: isWeb ? 400 : double.infinity),
+      child: Card(
+        elevation: isWeb ? 8 : 0,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(24),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(32),
+          child: Form(
+            key: _formKey,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                _buildHeader(),
+                const SizedBox(height: 32),
+                _buildLoginToggle(),
+                const SizedBox(height: 24),
+                AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 300),
+                  child: _isOtpMode
+                      ? _buildOtpForm(authBloc)
+                      : _buildPasswordForm(authBloc),
+                ),
+                const SizedBox(height: 16),
+                _buildRememberMe(),
+                const SizedBox(height: 24),
+                _buildLoginButton(authBloc),
+                if (!kIsWeb && _selectedClient != null) ...[
+                  const SizedBox(height: 16),
+                  _buildChangeSchoolButton(),
+                ],
+                const SizedBox(height: 16),
+                const LanguageSelector(),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildHeader() {
     return Column(
-      mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        CircularProgressIndicator(
-          color: theme.colorScheme.primary,
+        Icon(
+          Icons.school,
+          size: 48,
+          color: Theme.of(context).primaryColor,
         ),
         const SizedBox(height: 16),
         Text(
-          'Loading schools...',
-          style: theme.textTheme.titleMedium,
-        ),
-      ],
-    );
-  }
-
-  Widget _buildWebLayout(ThemeData theme, AuthBloc authBloc) {
-    return Center(
-      child: Container(
-        width: 1000,
-        margin: const EdgeInsets.symmetric(vertical: 32),
-        child: Card(
-          elevation: 4,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(24),
-          ),
-          child: Row(
-            children: [
-              Expanded(
-                flex: 5,
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: theme.colorScheme.primary.withOpacity(0.8),
-                    borderRadius: const BorderRadius.only(
-                      topLeft: Radius.circular(24),
-                      bottomLeft: Radius.circular(24),
-                    ),
-                  ),
-                  padding: const EdgeInsets.all(40),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      _buildLogo(size: 120),
-                      const SizedBox(height: 40),
-                      Text(
-                        'School Management System',
-                        style: theme.textTheme.headlineMedium?.copyWith(
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-                      Text(
-                        AppLocalizations.of(context)?.app_description ??
-                            'Manage your educational journey efficiently with our comprehensive school management platform.',
-                        style: theme.textTheme.bodyLarge?.copyWith(
-                          color: Colors.white.withOpacity(0.8),
-                        ),
-                      ),
-                      const SizedBox(height: 40),
-                      Wrap(
-                        spacing: 24,
-                        runSpacing: 16,
-                        children: [
-                          _buildFeatureItem(
-                              Icons.security,
-                              AppLocalizations.of(context)?.secure_access ??
-                                  'Secure Access'),
-                          _buildFeatureItem(
-                              Icons.devices,
-                              AppLocalizations.of(context)?.cross_platform ??
-                                  'Cross-Platform'),
-                          _buildFeatureItem(
-                              Icons.analytics,
-                              AppLocalizations.of(context)?.real_time_reports ??
-                                  'Real-time Reports'),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              Expanded(
-                flex: 4,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 32),
-                  child: _buildLoginForm(theme, authBloc, isWeb: true),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildMobileLayout(ThemeData theme, AuthBloc authBloc) {
-    return Padding(
-      padding: const EdgeInsets.all(24.0),
-      child: _buildLoginForm(theme, authBloc, isWeb: false),
-    );
-  }
-
-  Widget _buildLogo({double size = 100.0}) {
-    Widget imageWidget;
-
-    if (_selectedClient != null && _selectedClient!.logoUrl.isNotEmpty) {
-      imageWidget = Image.network(
-        _selectedClient!.logoUrl,
-        width: size,
-        height: size,
-        fit: BoxFit.contain,
-        errorBuilder: (context, error, stackTrace) => Image.asset(
-          'assets/images/students.png',
-          width: size,
-          height: size,
-        ),
-        loadingBuilder: (context, child, loadingProgress) {
-          if (loadingProgress == null) return child;
-          return SizedBox(
-            width: size,
-            height: size,
-            child: Center(
-              child: CircularProgressIndicator(
-                value: loadingProgress.expectedTotalBytes != null
-                    ? loadingProgress.cumulativeBytesLoaded /
-                    loadingProgress.expectedTotalBytes!
-                    : null,
-                color: Theme.of(context).colorScheme.primary,
-              ),
-            ),
-          );
-        },
-      );
-    } else {
-      imageWidget = Image.asset(
-        'assets/images/students.png',
-        width: size,
-        height: size,
-      );
-    }
-
-    return Container(
-      padding: const EdgeInsets.all(4),
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface,
-        borderRadius: BorderRadius.circular(4),
-        boxShadow: [
-          BoxShadow(
-            color: Theme.of(context).shadowColor.withOpacity(0.1),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: imageWidget,
-    );
-  }
-
-  Widget _buildLoginForm(ThemeData theme, AuthBloc authBloc, {required bool isWeb}) {
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.center,
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        if (!isWeb) ...[
-          Center(
-            child: Hero(
-              tag: 'logo',
-              child: _buildLogo(),
-            ),
-          ),
-          const SizedBox(height: 24),
-        ],
-
-        Text(
-          _selectedClient != null
-              ? 'Welcome to \n${_selectedClient!.name}'
-              : (AppLocalizations.of(context)?.welcome ?? "Welcome"),
-          style: theme.textTheme.displaySmall?.copyWith(
+          _selectedClient?.name ?? 'School Management System',
+          style: Theme.of(context).textTheme.headlineSmall?.copyWith(
             fontWeight: FontWeight.bold,
-            color: isWeb
-                ? theme.colorScheme.primary
-                : theme.colorScheme.onBackground,
           ),
           textAlign: TextAlign.center,
         ),
+        const SizedBox(height: 8),
         Text(
-          AppLocalizations.of(context)?.sign_in_to_continue ??
-              'Sign in to continue',
-          style: theme.textTheme.bodyLarge?.copyWith(
-            color: theme.colorScheme.onSurface.withOpacity(0.7),
-          ),
-          textAlign: TextAlign.center,
-        ),
-        const SizedBox(height: 32),
-
-        // Tab Bar
-        Container(
-          decoration: BoxDecoration(
-            color: theme.colorScheme.surface,
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(
-              color: theme.colorScheme.outline.withOpacity(0.2),
-            ),
-          ),
-          child: TabBar(
-            controller: _tabController,
-            indicator: BoxDecoration(
-              color: theme.colorScheme.primary,
-              borderRadius: BorderRadius.circular(12),
-            ),
-            indicatorSize: TabBarIndicatorSize.tab,
-            labelColor: theme.colorScheme.onPrimary,
-            unselectedLabelColor: theme.colorScheme.onSurface.withOpacity(0.7),
-            labelStyle: const TextStyle(fontWeight: FontWeight.bold),
-            unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.normal),
-            tabs: const [
-              Tab(
-                icon: Icon(Icons.phone),
-                text: 'Mobile & Password',
-              ),
-              Tab(
-                icon: Icon(Icons.email),
-                text: 'Email & OTP',
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 24),
-
-        // Tab Bar View
-        SizedBox(
-          height: 400,
-          child: TabBarView(
-            controller: _tabController,
-            children: [
-              _buildMobilePasswordForm(theme, authBloc),
-              _buildEmailOtpForm(theme, authBloc),
-            ],
-          ),
-        ),
-
-        const SizedBox(height: 24),
-
-        // Language Selection
-        Container(
-          color: theme.colorScheme.surface,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-            child: LanguageSelector(),
+          'Sign in to continue',
+          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+            color: Colors.grey[600],
           ),
         ),
       ],
     );
   }
 
-  Widget _buildMobilePasswordForm(ThemeData theme, AuthBloc authBloc) {
-    return Form(
-      key: _mobileFormKey,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
+  Widget _buildLoginToggle() {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.grey[100],
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Row(
         children: [
-          _buildTextField(
-            label: 'Mobile Number',
-            prefixIcon: Icons.phone,
-            onChanged: (value) => _mobile = value,
-            validator: (value) {
-              if (value == null || value.isEmpty) {
-                return 'Please enter your mobile number';
-              }
-              if (value.length < 10) {
-                return 'Please enter a valid mobile number';
-              }
-              return null;
-            },
-            keyboardType: TextInputType.phone,
-          ),
-          const SizedBox(height: 16),
-          _buildTextField(
-            label: 'Password',
-            prefixIcon: Icons.lock_outline,
-            obscureText: _obscurePassword,
-            onChanged: (value) => _password = value,
-            validator: (value) {
-              if (value == null || value.isEmpty) {
-                return 'Please enter your password';
-              }
-              return null;
-            },
-            suffixIcon: IconButton(
-              icon: Icon(
-                _obscurePassword
-                    ? Icons.visibility_outlined
-                    : Icons.visibility_off_outlined,
-                color: theme.colorScheme.primary,
-              ),
-              onPressed: () {
-                setState(() {
-                  _obscurePassword = !_obscurePassword;
-                });
-              },
+          Expanded(
+            child: _buildToggleButton(
+              title: 'Mobile',
+              icon: Icons.phone,
+              isSelected: !_isOtpMode,
+              onTap: () => setState(() {
+                _isOtpMode = false;
+                _isOtpSent = false;
+              }),
             ),
           ),
-          const SizedBox(height: 16),
-
-          // Remember Me Checkbox
-          Row(
-            children: [
-              Checkbox(
-                value: _rememberMeMobile,
-                onChanged: (value) {
-                  setState(() {
-                    _rememberMeMobile = value ?? false;
-                  });
-                },
-                activeColor: theme.colorScheme.primary,
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Text(
-                  'Remember me (7 days)',
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    color: theme.colorScheme.onSurface.withOpacity(0.7),
-                  ),
-                ),
-              ),
-            ],
-          ),
-
-          const SizedBox(height: 24),
-          ElevatedButton(
-            onPressed: _isLoading
-                ? null
-                : () {
-              if (_mobileFormKey.currentState!.validate()) {
-                _loginWithMobile(authBloc);
-              }
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: theme.colorScheme.primary,
-              foregroundColor: theme.colorScheme.onPrimary,
-              padding: const EdgeInsets.symmetric(vertical: 16),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
-              ),
-              elevation: 0,
-            ),
-            child: _isLoading
-                ? const SizedBox(
-              height: 20,
-              width: 20,
-              child: CircularProgressIndicator(
-                strokeWidth: 2,
-                color: Colors.white,
-              ),
-            )
-                : Text(
-              AppLocalizations.of(context)?.login ?? 'Log In',
-              style: const TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-              ),
+          Expanded(
+            child: _buildToggleButton(
+              title: 'Email',
+              icon: Icons.email,
+              isSelected: _isOtpMode,
+              onTap: () => setState(() {
+                _isOtpMode = true;
+                _passwordController.clear();
+              }),
             ),
           ),
         ],
@@ -757,354 +471,295 @@ class _LoginScreenState extends State<LoginScreen>
     );
   }
 
-  Widget _buildEmailOtpForm(ThemeData theme, AuthBloc authBloc) {
-    return Form(
-      key: _otpFormKey,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          _buildTextField(
-            label: 'Email Address',
-            prefixIcon: Icons.email_outlined,
-            onChanged: (value) => _email = value,
-            validator: (value) {
-              if (value == null || value.isEmpty) {
-                return 'Please enter your email';
-              }
-              if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(value)) {
-                return 'Please enter a valid email';
-              }
-              return null;
-            },
-            keyboardType: TextInputType.emailAddress,
-            enabled: !_isOtpSent,
-          ),
-          const SizedBox(height: 16),
-          if (!_isOtpSent) ...[
-            ElevatedButton(
-              onPressed: _isLoading
-                  ? null
-                  : () {
-                if (_otpFormKey.currentState!.validate()) {
-                  _getOtp(authBloc);
-                }
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: theme.colorScheme.secondary,
-                foregroundColor: theme.colorScheme.onSecondary,
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                elevation: 0,
+  Widget _buildToggleButton({
+    required String title,
+    required IconData icon,
+    required bool isSelected,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.symmetric(vertical: 12),
+        decoration: BoxDecoration(
+          color: isSelected ? Theme.of(context).primaryColor : Colors.transparent,
+          borderRadius: BorderRadius.circular(10),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              icon,
+              size: 18,
+              color: isSelected ? Colors.white : Colors.grey[600],
+            ),
+            const SizedBox(width: 8),
+            Text(
+              title,
+              style: TextStyle(
+                color: isSelected ? Colors.white : Colors.grey[600],
+                fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
               ),
-              child: _isLoading
-                  ? const SizedBox(
-                height: 20,
-                width: 20,
-                child: CircularProgressIndicator(
-                  strokeWidth: 2,
-                  color: Colors.white,
-                ),
-              )
-                  : const Text(
-                'Send OTP',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
-          ] else ...[
-            _buildTextField(
-              label: 'Enter OTP',
-              prefixIcon: Icons.security,
-              onChanged: (value) => _otp = value,
-              validator: (value) {
-                if (value == null || value.isEmpty) {
-                  return 'Please enter the OTP';
-                }
-                if (value.length != 6) {
-                  return 'OTP must be 6 digits';
-                }
-                return null;
-              },
-              keyboardType: TextInputType.number,
-            ),
-            const SizedBox(height: 16),
-
-            // Remember Me Checkbox for OTP
-            Row(
-              children: [
-                Checkbox(
-                  value: _rememberMeOtp,
-                  onChanged: (value) {
-                    setState(() {
-                      _rememberMeOtp = value ?? false;
-                    });
-                  },
-                  activeColor: theme.colorScheme.primary,
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    'Remember me (7 days)',
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      color: theme.colorScheme.onSurface.withOpacity(0.7),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-
-            const SizedBox(height: 16),
-            Row(
-              children: [
-                Expanded(
-                  child: TextButton(
-                    onPressed: _isLoading
-                        ? null
-                        : () {
-                      setState(() {
-                        _isOtpSent = false;
-                        _otp = '';
-                      });
-                    },
-                    child: Text(
-                      'Change Email',
-                      style: TextStyle(
-                        color: theme.colorScheme.secondary,
-                      ),
-                    ),
-                  ),
-                ),
-                Expanded(
-                  flex: 2,
-                  child: ElevatedButton(
-                    onPressed: _isLoading
-                        ? null
-                        : () {
-                      if (_otpFormKey.currentState!.validate()) {
-                        _verifyOtp(authBloc);
-                      }
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: theme.colorScheme.primary,
-                      foregroundColor: theme.colorScheme.onPrimary,
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      elevation: 0,
-                    ),
-                    child: _isLoading
-                        ? const SizedBox(
-                      height: 20,
-                      width: 20,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        color: Colors.white,
-                      ),
-                    )
-                        : const Text(
-                      'Verify OTP',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                ),
-              ],
             ),
           ],
-        ],
+        ),
       ),
     );
   }
 
-  Widget _buildFeatureItem(IconData icon, String text) {
-    return Row(
+  Widget _buildPasswordForm(AuthBloc authBloc) {
+    return Column(
+      key: const ValueKey('password'),
       children: [
-        Icon(
-          icon,
-          color: Colors.white,
-          size: 20,
+        _buildTextField(
+          controller: _mobileController,
+          label: 'Mobile Number',
+          prefixIcon: Icons.phone,
+          keyboardType: TextInputType.phone,
+          validator: (value) {
+            if (value?.isEmpty ?? true) return 'Enter mobile number';
+            if (value!.length < 10) return 'Enter valid mobile number';
+            return null;
+          },
         ),
-        const SizedBox(width: 8),
-        Text(
-          text,
-          style: const TextStyle(
-            color: Colors.white,
-            fontSize: 14,
+        const SizedBox(height: 16),
+        _buildTextField(
+          controller: _passwordController,
+          label: 'Password',
+          prefixIcon: Icons.lock,
+          obscureText: _obscurePassword,
+          validator: (value) => value?.isEmpty ?? true ? 'Enter password' : null,
+          suffixIcon: IconButton(
+            icon: Icon(
+              _obscurePassword ? Icons.visibility_off : Icons.visibility,
+              color: Colors.grey,
+            ),
+            onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
           ),
         ),
+      ],
+    );
+  }
+
+  Widget _buildOtpForm(AuthBloc authBloc) {
+    return Column(
+      key: const ValueKey('otp'),
+      children: [
+        _buildTextField(
+          controller: _emailController,
+          label: 'Email Address',
+          prefixIcon: Icons.email,
+          keyboardType: TextInputType.emailAddress,
+          enabled: !_isOtpSent,
+          validator: (value) {
+            if (value?.isEmpty ?? true) return 'Enter email';
+            if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(value!)) {
+              return 'Enter valid email';
+            }
+            return null;
+          },
+        ),
+        if (_isOtpSent) ...[
+          const SizedBox(height: 16),
+          _buildTextField(
+            controller: _otpController,
+            label: 'OTP Code',
+            prefixIcon: Icons.security,
+            keyboardType: TextInputType.number,
+            validator: (value) {
+              if (value?.isEmpty ?? true) return 'Enter OTP';
+              if (value!.length != 6) return 'OTP must be 6 digits';
+              return null;
+            },
+          ),
+          const SizedBox(height: 8),
+          Align(
+            alignment: Alignment.centerRight,
+            child: TextButton(
+              onPressed: () => setState(() {
+                _isOtpSent = false;
+                _otpController.clear();
+              }),
+              child: const Text('Change Email'),
+            ),
+          ),
+        ],
       ],
     );
   }
 
   Widget _buildTextField({
+    required TextEditingController controller,
     required String label,
     required IconData prefixIcon,
     bool obscureText = false,
-    Function(String)? onChanged,
-    String? Function(String?)? validator,
     Widget? suffixIcon,
     TextInputType? keyboardType,
     bool enabled = true,
+    String? Function(String?)? validator,
   }) {
-    final theme = Theme.of(context);
-
     return TextFormField(
+      controller: controller,
       obscureText: obscureText,
-      onChanged: onChanged,
-      validator: validator,
       keyboardType: keyboardType,
       enabled: enabled,
-      style: TextStyle(
-        color: enabled
-            ? theme.colorScheme.onSurface
-            : theme.colorScheme.onSurface.withOpacity(0.5),
-      ),
+      validator: validator,
       decoration: InputDecoration(
         labelText: label,
-        prefixIcon: Icon(
-          prefixIcon,
-          color: enabled
-              ? theme.colorScheme.primary
-              : theme.colorScheme.primary.withOpacity(0.5),
-        ),
+        prefixIcon: Icon(prefixIcon, size: 20),
         suffixIcon: suffixIcon,
-        filled: true,
-        fillColor: enabled
-            ? theme.colorScheme.surface
-            : theme.colorScheme.surface.withOpacity(0.5),
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
-          borderSide: BorderSide(
-            color: theme.colorScheme.outline.withOpacity(0.3),
-          ),
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: Colors.grey[300]!),
         ),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
-          borderSide: BorderSide(
-            color: theme.colorScheme.outline.withOpacity(0.3),
-          ),
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: Colors.grey[300]!),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
-          borderSide: BorderSide(
-            color: theme.colorScheme.primary,
-            width: 2,
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: Theme.of(context).primaryColor, width: 2),
+        ),
+        filled: true,
+        fillColor: Colors.grey[50],
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      ),
+    );
+  }
+
+  Widget _buildRememberMe() {
+    return Row(
+      children: [
+        SizedBox(
+          height: 24,
+          width: 24,
+          child: Checkbox(
+            value: _rememberMe,
+            onChanged: (value) => setState(() => _rememberMe = value ?? false),
+            materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
           ),
         ),
-        errorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
-          borderSide: BorderSide(
-            color: theme.colorScheme.error,
+        const SizedBox(width: 8),
+        Text(
+          'Remember me',
+          style: TextStyle(color: Colors.grey[600]),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildLoginButton(AuthBloc authBloc) {
+    String buttonText = 'Sign In';
+    if (_isOtpMode && !_isOtpSent) {
+      buttonText = 'Send OTP';
+    } else if (_isOtpMode && _isOtpSent) {
+      buttonText = 'Verify OTP';
+    }
+
+    return SizedBox(
+      width: double.infinity,
+      height: 48,
+      child: ElevatedButton(
+        onPressed: _isLoading ? null : () => _handleLogin(authBloc),
+        style: ElevatedButton.styleFrom(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+          elevation: 0,
+        ),
+        child: _isLoading
+            ? const SizedBox(
+          height: 20,
+          width: 20,
+          child: CircularProgressIndicator(
+            strokeWidth: 2,
+            valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+          ),
+        )
+            : Text(
+          buttonText,
+          style: const TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.w600,
           ),
         ),
-        disabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
-          borderSide: BorderSide(
-            color: theme.colorScheme.outline.withOpacity(0.2),
-          ),
-        ),
-        contentPadding: const EdgeInsets.symmetric(
-          vertical: 16,
-          horizontal: 16,
-        ),
       ),
     );
   }
 
-  void _loginWithMobile(AuthBloc authBloc) {
-    // Since we removed user type selection, we'll use a default or derive it from the response
-    authBloc.add(LoginButtonPressed(
-      email: _mobile,
-      password: _password,
-      userType: 'Student', // Default user type, or you can modify your backend to handle this
-    ));
-  }
-
-  void _getOtp(AuthBloc authBloc) {
-    authBloc.add(GetOtpRequested(_email));
-  }
-
-  void _verifyOtp(AuthBloc authBloc) {
-    authBloc.add(VerifyOtpRequested(_email, _otp));
-  }
-
-  void _showErrorSnackbar(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: Theme.of(context).colorScheme.error,
-        behavior: SnackBarBehavior.floating,
+  Widget _buildChangeSchoolButton() {
+    return OutlinedButton.icon(
+      onPressed: _showClientBottomSheet,
+      icon: const Icon(Icons.swap_horiz, size: 18),
+      label: const Text('Change School'),
+      style: OutlinedButton.styleFrom(
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(10),
+          borderRadius: BorderRadius.circular(12),
         ),
-        margin: const EdgeInsets.all(16),
+        side: BorderSide(color: Colors.grey[300]!),
       ),
     );
   }
 
-  void _showSuccessSnackbar(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: Theme.of(context).colorScheme.error,
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(10),
-        ),
-        margin: const EdgeInsets.all(16),
-      ),
-    );
-  }
+  void _handleLogin(AuthBloc authBloc) {
+    if (_formKey.currentState!.validate()) {
+      _saveRememberMeSettings();
 
-  void _showWarningSnackbar(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: Theme.of(context).colorScheme.error,
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(10),
-        ),
-        margin: const EdgeInsets.all(16),
-      ),
-    );
-  }
-
-  void _navigateToHomeScreen(BuildContext context, List<User> users, User? activeUser) {
-    if (activeUser != null) {
-      // If an active user is already selected, navigate directly
-      _navigateBasedOnUserType(context, activeUser, users);
-    } else {
-      // Otherwise, show user selection dialog
-      _showUserSelectionDialog(context, users);
+      if (_isOtpMode) {
+        if (!_isOtpSent) {
+          authBloc.add(GetOtpRequested(_emailController.text));
+        } else {
+          authBloc.add(VerifyOtpRequested(_emailController.text, _otpController.text));
+        }
+      } else {
+        authBloc.add(LoginButtonPressed(
+          email: _mobileController.text,
+          password: _passwordController.text,
+          userType: 'Student',
+        ));
+      }
     }
   }
 
-  // Navigate based on user type
-  void _navigateBasedOnUserType(BuildContext context, User selectedUser, List<User> users) {
+  void _handleAuthState(BuildContext context, AuthState state) {
+    setState(() => _isLoading = state is AuthLoading);
+
+    if (state is AuthFailure) {
+      _showSnackbar(state.error, isError: true);
+    } else if (state is AuthAuthenticated) {
+      _navigateToHome(state.users, state.activeUser);
+    } else if (state is AuthMultipleUsers) {
+      _navigateToHome(state.users, null);
+    } else if (state is OtpSent) {
+      setState(() => _isOtpSent = true);
+      _showSnackbar('OTP sent to your email');
+    } else if (state is OtpVerified) {
+      _navigateToHome(state.users, state.selectedUser);
+    } else if (state is OtpFailure) {
+      _showSnackbar(state.error, isError: true);
+    }
+  }
+
+  void _navigateToHome(List<User> users, User? activeUser) {
+    if (activeUser != null) {
+      _navigateByRole(context, activeUser, users);
+    } else {
+      _showUserSelection(users);
+    }
+  }
+
+  void _navigateByRole(BuildContext context, User selectedUser, List<User> users) {
     Widget homeScreen;
     final WebService webService = WebService(baseUrl: Constants.baseUrl);
-    final AuthRepository authRepository = AuthRepository(webService: webService);
-    final DashboardRepository dashboardRepository = DashboardRepository(webService: webService);
-    final ClassRepository classRepository = ClassRepository(webService: webService);
-    final StudentsRepository studentsRepository = StudentsRepository(webService: webService);
-    final StaffRepository staffRepository = StaffRepository(webService: webService);
-    final HolidayRepository holidayRepository = HolidayRepository(webService: webService);
-    final PostRepository postRepository = PostRepository(webService: webService);
-    final FeedRepository feedRepository = FeedRepository(webService: webService);
-    final ExamRepository examRepository = ExamRepository(webService: webService);
+
+    final classRepository = ClassRepository(webService: webService);
 
     switch (selectedUser.role.toLowerCase()) {
       case Constants.student:
         homeScreen = StudentHomeScreen(users: users, selectedUser: selectedUser);
         break;
+
       case Constants.staff:
         homeScreen = MultiBlocProvider(
           providers: [
@@ -1113,41 +768,23 @@ class _LoginScreenState extends State<LoginScreen>
             ),
             BlocProvider<StaffClassesBloc>(
               create: (context) => StaffClassesBloc(repository: classRepository, user: selectedUser),
-            ),BlocProvider<StaffClassesBloc>(
-              create: (context) => StaffClassesBloc(repository: classRepository, user: selectedUser),
             ),
           ],
           child: StaffHomeScreen(user: selectedUser),
         );
         break;
+
       case Constants.admin:
         homeScreen = MultiBlocProvider(
           providers: [
-            BlocProvider<DashboardBloc>(
-              create: (context) => DashboardBloc(repository: dashboardRepository),
-            ),
             BlocProvider<ClassesBloc>(
               create: (context) => ClassesBloc(repository: classRepository, user: selectedUser),
-            ),
-            BlocProvider<StaffsBloc>(
-              create: (context) => StaffsBloc(repository: staffRepository),
-            ),
-            BlocProvider<HolidayBloc>(
-              create: (context) => HolidayBloc(repository: holidayRepository),
-            ),
-            BlocProvider<PostBloc>(
-              create: (context) => PostBloc(postRepository: postRepository),
-            ),
-            BlocProvider<FeedBloc>(
-              create: (context) => FeedBloc(feedRepository: feedRepository),
-            ),
-            BlocProvider<ExamBloc>(
-              create: (context) => ExamBloc(examRepository: examRepository),
             ),
           ],
           child: HomeScreenAdmin(user: selectedUser),
         );
         break;
+
       default:
         homeScreen = StudentHomeScreen(users: users, selectedUser: selectedUser);
     }
@@ -1158,172 +795,87 @@ class _LoginScreenState extends State<LoginScreen>
     );
   }
 
-  void _showUserSelectionDialog(BuildContext context, List<User> users) {
-    showDialog(
+
+  void _showUserSelection(List<User> users) {
+    showModalBottomSheet(
       context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: Text("Select User"),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: users.map((user) {
-              return ListTile(
-                leading: CircleAvatar(
-                  radius: 18,
-                  backgroundColor: Theme.of(context).colorScheme.primary.withOpacity(0.2),
-                  child: Text(
-                    user.displayName.isNotEmpty ? user.displayName[0] : "?",
-                    style: TextStyle(
-                      color: Theme.of(context).colorScheme.primary,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => Container(
+        constraints: BoxConstraints(
+          maxHeight: MediaQuery.of(context).size.height * 0.7,
+        ),
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              height: 5,
+              width: 50,
+              margin: const EdgeInsets.symmetric(vertical: 12),
+              decoration: BoxDecoration(
+                color: Colors.grey[300],
+                borderRadius: BorderRadius.circular(10),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.all(20),
+              child: Text(
+                'Select User',
+                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                  fontWeight: FontWeight.bold,
                 ),
-                title: Text(user.displayName),
-                subtitle: Text(user.role),
-                onTap: () {
-                  Navigator.pop(context); // Close dialog
-                  context.read<AuthBloc>().add(UserSelected(user, users)); // Pass all users
+              ),
+            ),
+            Flexible(
+              child: ListView.builder(
+                shrinkWrap: true,
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                itemCount: users.length,
+                itemBuilder: (context, index) {
+                  final user = users[index];
+                  return Card(
+                    margin: const EdgeInsets.only(bottom: 12),
+                    child: ListTile(
+                      leading: CircleAvatar(
+                        backgroundColor: Theme.of(context).primaryColor.withOpacity(0.1),
+                        child: Text(
+                          user.displayName.isNotEmpty ? user.displayName[0] : '?',
+                          style: TextStyle(color: Theme.of(context).primaryColor),
+                        ),
+                      ),
+                      title: Text(user.displayName),
+                      subtitle: Text(user.role),
+                      trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+                      onTap: () {
+                        Navigator.pop(context);
+                        context.read<AuthBloc>().add(UserSelected(user, users));
+                      },
+                    ),
+                  );
                 },
-              );
-            }).toList(),
-          ),
-        );
-      },
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 
-  void _showEnvironmentSelectionDialog() {
-    showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: Text('Environment Settings'),
-          content: StatefulBuilder(
-            builder: (context, setDialogState) {
-              return SingleChildScrollView(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Select Environment:',
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        color: Theme.of(context).colorScheme.primary,
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    RadioListTile<String>(
-                      title: Text('Production'),
-                      value: 'prod',
-                      groupValue: _isCustomEnvironment
-                          ? 'custom'
-                          : (_isMockEnvironment ? 'mock' : 'prod'),
-                      onChanged: (value) {
-                        setDialogState(() {
-                          _isMockEnvironment = false;
-                          _isCustomEnvironment = false;
-                        });
-                      },
-                    ),
-                    RadioListTile<String>(
-                      title: Text('Mock (Development)'),
-                      value: 'mock',
-                      groupValue: _isCustomEnvironment
-                          ? 'custom'
-                          : (_isMockEnvironment ? 'mock' : 'prod'),
-                      onChanged: (value) {
-                        setDialogState(() {
-                          _isMockEnvironment = true;
-                          _isCustomEnvironment = false;
-                        });
-                      },
-                    ),
-                    RadioListTile<String>(
-                      title: Text('Custom'),
-                      value: 'custom',
-                      groupValue: _isCustomEnvironment
-                          ? 'custom'
-                          : (_isMockEnvironment ? 'mock' : 'prod'),
-                      onChanged: (value) {
-                        setDialogState(() {
-                          _isCustomEnvironment = true;
-                        });
-                      },
-                    ),
-                    if (_isCustomEnvironment)
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 12.0),
-                        child: TextField(
-                          decoration: InputDecoration(
-                            labelText: 'Custom Base URL',
-                            hintText: 'https://your-api.com',
-                          ),
-                          controller: TextEditingController(text: _customBaseUrl),
-                          onChanged: (value) {
-                            _customBaseUrl = value;
-                          },
-                        ),
-                      ),
-                    const SizedBox(height: 8),
-                    Text(
-                      'Current Base URL:',
-                      style: TextStyle(fontWeight: FontWeight.bold),
-                    ),
-                    Text(
-                      _isCustomEnvironment
-                          ? _customBaseUrl
-                          : (_isMockEnvironment
-                          ? Constants.mockBaseUrl
-                          : Constants.prodBaseUrl),
-                      style: TextStyle(
-                        color: Theme.of(context).colorScheme.secondary,
-                      ),
-                    ),
-                  ],
-                ),
-              );
-            },
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: Text('Cancel'),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                final baseUrl = _isCustomEnvironment
-                    ? _customBaseUrl
-                    : (_isMockEnvironment
-                    ? Constants.mockBaseUrl
-                    : Constants.prodBaseUrl);
-
-                _saveEnvironmentSetting(
-                  isMock: _isMockEnvironment,
-                  isCustom: _isCustomEnvironment,
-                  customUrl: _customBaseUrl,
-                );
-
-                Constants.baseUrl = baseUrl;
-                Navigator.pop(context);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(
-                      'Environment set to ${_isCustomEnvironment ? 'Custom' : (_isMockEnvironment ? 'Mock' : 'Production')}',
-                    ),
-                    behavior: SnackBarBehavior.floating,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                  ),
-                );
-              },
-              child: Text('Save'),
-            ),
-          ],
-        );
-      },
+  void _showSnackbar(String message, {bool isError = false}) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: isError ? Colors.red : Colors.green,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(10),
+        ),
+        margin: const EdgeInsets.all(16),
+      ),
     );
   }
 }

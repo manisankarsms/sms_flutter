@@ -1,11 +1,12 @@
 class Constants {
-  static String baseUrl = "https://web-production-2ad17.up.railway.app/api/v1";
-  static const String prodBaseUrl = 'https://web-production-2ad17.up.railway.app/api/v1'; //Zoho Catalyst
+  static String baseUrl = "http://0.0.0.0:8080/api/v1";
+  static const String prodBaseUrl = 'http://0.0.0.0:8080/api/v1'; //Zoho Catalyst
   static const String mockBaseUrl = 'https://mock.apidog.com/m1/820032-799426-default'; //ApiDog
-  // static const String baseUrl = 'https://0ceba48b-6fa5-45d1-9520-4d0792c8d123.mock.pstmn.io'; //Postman
-  // static const String baseUrl = 'https://api.mockfly.dev/mocks/8bc986d0-f33b-4f0d-80cf-a9655739a6c4'; //MockFly
 
+  // Tenant/Client ID
+  static String tenantId = '';
 
+  // User roles
   static const String student = 'student';
   static const String staff = 'staff';
   static const String admin = 'admin';

@@ -3,28 +3,19 @@ import 'dart:convert';
 class Client {
   final String id;
   final String name;
-  final String address;
-  final String baseUrl;
-  final String logoUrl;
-  final Map<String, dynamic> metadata;
+  final String schemaName;
 
   Client({
     required this.id,
     required this.name,
-    required this.address,
-    required this.baseUrl,
-    this.logoUrl = '',
-    this.metadata = const {},
+    required this.schemaName,
   });
 
   factory Client.fromJson(Map<String, dynamic> json) {
     return Client(
       id: json['id'] as String,
       name: json['name'] as String,
-      address: json['address'] as String,
-      baseUrl: json['baseUrl'] as String,
-      logoUrl: json['logoUrl'] as String? ?? '',
-      metadata: json['metadata'] as Map<String, dynamic>? ?? {},
+      schemaName: json['schemaName'] as String,
     );
   }
 
@@ -32,22 +23,25 @@ class Client {
     return {
       'id': id,
       'name': name,
-      'address': address,
-      'baseUrl': baseUrl,
-      'logoUrl': logoUrl,
-      'metadata': metadata,
+      'schemaName': schemaName,
     };
   }
 
-  // Convert a list of clients to JSON string
+  /// Convert a list of clients to JSON string
   static String toJsonList(List<Client> clients) {
-    final List<Map<String, dynamic>> jsonList = clients.map((client) => client.toJson()).toList();
+    final List<Map<String, dynamic>> jsonList =
+    clients.map((client) => client.toJson()).toList();
     return jsonEncode(jsonList);
   }
 
-  // Parse a JSON string to a list of clients
+  /// Parse a JSON string to a list of clients
   static List<Client> fromJsonList(String jsonString) {
-    final List<dynamic> jsonList = jsonDecode(jsonString);
-    return jsonList.map((json) => Client.fromJson(json)).toList();
+    final dynamic decoded = jsonDecode(jsonString);
+    if (decoded is! List) {
+      throw FormatException("Expected a JSON list");
+    }
+    return decoded
+        .map<Client>((json) => Client.fromJson(json as Map<String, dynamic>))
+        .toList();
   }
 }

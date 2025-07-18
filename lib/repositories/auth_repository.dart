@@ -25,7 +25,26 @@ class AuthRepository {
   AuthRepository({required this.webService});
 
   Future<List<User>> signInWithMobileAndPassword(String mobile, String password, String userType) async {
-    String? fcmToken = await FCMService.getToken();
+    String? fcmToken;
+
+    try {
+      // Try to get FCM token with timeout
+      fcmToken = await FCMService.getToken().timeout(
+        const Duration(seconds: 10),
+        onTimeout: () {
+          if (kDebugMode) {
+            print("FCM token request timed out");
+          }
+          return null;
+        },
+      );
+    } catch (e) {
+      if (kDebugMode) {
+        print("Error getting FCM token: $e");
+      }
+      fcmToken = null;
+    }
+
     try {
       String request = await frameLoginRequestFCM(mobile, password, fcmToken);
       if (kDebugMode) {
@@ -45,6 +64,12 @@ class AuthRepository {
         final users = userList.map((user) => User.fromJson(user)).toList();
 
         await _saveLoginSession(users);
+
+        // Try to update FCM token after successful login if it wasn't available initially
+        if (fcmToken == null) {
+          _updateFCMTokenAsync();
+        }
+
         return users;
       } else {
         throw Exception(response['message'] ?? "Unknown error");
@@ -54,6 +79,24 @@ class AuthRepository {
         print("Error signing in: $error");
       }
       rethrow;
+    }
+  }
+
+  // Async method to update FCM token after login
+  void _updateFCMTokenAsync() async {
+    try {
+      String? fcmToken = await FCMService.getToken();
+      if (fcmToken != null) {
+        // Send updated token to server
+        // You can implement an API call here to update the token
+        if (kDebugMode) {
+          print("FCM token updated after login: $fcmToken");
+        }
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print("Error updating FCM token after login: $e");
+      }
     }
   }
 
@@ -276,15 +319,17 @@ class AuthRepository {
 
   Future<List<Client>> fetchClients() async {
     try {
-      final String responseString = await webService.fetchData('config/clients');
+      final String responseString = await webService.fetchData('tenants');
       if (kDebugMode) {
         print("Fetch Clients API Response: $responseString");
       }
+
       final Map<String, dynamic> response = jsonDecode(responseString);
-      if (response['status'] != 1) {
+      if (response['success'] != true) {
         throw Exception(response['message'] ?? 'Failed to fetch clients');
       }
-      final List<dynamic> clientsJson = response['clients'];
+
+      final List<dynamic> clientsJson = response['data'];
       return clientsJson.map((json) => Client.fromJson(json)).toList();
     } catch (e) {
       if (kDebugMode) {
