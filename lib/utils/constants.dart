@@ -1,6 +1,6 @@
 class Constants {
-  static String baseUrl = "http://0.0.0.0:8080/api/v1";
-  static const String prodBaseUrl = 'http://0.0.0.0:8080/api/v1'; //Zoho Catalyst
+  static String baseUrl = "https://web-production-28310.up.railway.app/api/v1";
+  static const String prodBaseUrl = 'https://web-production-28310.up.railway.app/api/v1'; //Zoho Catalyst
   static const String mockBaseUrl = 'https://mock.apidog.com/m1/820032-799426-default'; //ApiDog
 
   // Tenant/Client ID
@@ -67,4 +67,6 @@ class ApiEndpoints {
   static const String feesStructures = 'fees-structures';
   static const String classes = 'classes';
   static const String academicYears = 'academic-years';
+  static const String studentFees = 'student-fees';
+  static const String feePayments = 'fee-payments';
 }

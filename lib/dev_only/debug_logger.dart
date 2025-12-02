@@ -39,7 +39,6 @@ class DebugLogger {
         log('FlutterError: ${details.toString()}');
       };
 
-      runApp(app);
     }, (error, stack) {
       log('Uncaught error: $error');
       log(stack.toString());

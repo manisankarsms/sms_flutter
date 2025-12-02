@@ -17,6 +17,7 @@ import 'package:sms/screens/posts_screen.dart';
 import 'package:sms/screens/rules_screen.dart';
 import 'package:sms/screens/staffs_screen.dart';
 import 'package:sms/screens/student_admin_screen.dart';
+import 'package:sms/screens/student_fees_assignment_screen.dart';
 import 'package:sms/screens/subjects_screen.dart';
 import 'package:sms/screens/theme_screen.dart';
 
@@ -28,6 +29,7 @@ import '../bloc/configuration/configuration_state.dart';
 import '../models/item.dart';
 import '../models/user.dart';
 import '../models/configuration.dart';
+import 'FeesManagementScreen.dart';
 import 'fees_structures_screen.dart';
 import 'login_screen.dart';
 
@@ -127,16 +129,10 @@ class _HomeScreenAdminState extends State<HomeScreenAdmin> {
         permissionKey: 'posts',
       ),
       NavigationItem(
-        name: 'Fee Structure',
+        name: 'Fees Management',
         imagePath: 'assets/images/fees.png',
-        icon: Icons.receipt_long,
-        permissionKey: 'fee_structure',
-      ),
-      NavigationItem(
-        name: 'Fees',
-        imagePath: 'assets/images/fees.png',
-        icon: Icons.payments_rounded,
-        permissionKey: 'fees',
+        icon: Icons.account_balance_wallet,
+        permissionKey: 'fees_management',
       ),
       NavigationItem(
         name: 'Rules',
@@ -208,8 +204,7 @@ class _HomeScreenAdminState extends State<HomeScreenAdmin> {
       ExamsListScreen(),
       HolidayScreen(user: user),
       PostsScreen(),
-      FeesStructureScreen(),
-      AdminFeesScreen(),
+      FeesManagementScreen(user: user),
       RulesScreen(user: user),
       ThemeScreen(),
       ComplaintListScreen(),
@@ -302,16 +297,10 @@ class _HomeScreenAdminState extends State<HomeScreenAdmin> {
       permissionKey: 'posts',
     ),
     NavigationItem(
-      name: 'Fee Structure',
+      name: 'Fees Management',
       imagePath: 'assets/images/fees.png',
-      icon: Icons.receipt_long,
-      permissionKey: 'fee_structure',
-    ),
-    NavigationItem(
-      name: 'Fees',
-      imagePath: 'assets/images/fees.png',
-      icon: Icons.payments_rounded,
-      permissionKey: 'fees',
+      icon: Icons.account_balance_wallet,
+      permissionKey: 'fees_management',
     ),
     NavigationItem(
       name: 'Themes',

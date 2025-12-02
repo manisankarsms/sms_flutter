@@ -6,8 +6,7 @@ import 'package:sms/models/client.dart';
 import 'package:sms/repositories/auth_repository.dart';
 import 'package:sms/services/web_service.dart';
 import 'package:sms/utils/constants.dart';
-import 'package:qr_code_scanner/qr_code_scanner.dart';
-import 'dart:io';
+import 'package:mobile_scanner/mobile_scanner.dart';
 
 class ClientSelectionScreen extends StatefulWidget {
   const ClientSelectionScreen({Key? key}) : super(key: key);
@@ -34,10 +33,10 @@ class _ClientSelectionScreenState extends State<ClientSelectionScreen> with Tick
   Client? _selectedClient;
 
   // QR Scanner
-  QRViewController? _qrController;
-  final GlobalKey _qrKey = GlobalKey(debugLabel: 'QR');
+  MobileScannerController? _scannerController;
   bool _isQRScanning = false;
   String? _qrResult;
+  bool _scannerReady = false;
 
   @override
   void initState() {
@@ -81,17 +80,8 @@ class _ClientSelectionScreenState extends State<ClientSelectionScreen> with Tick
     _schoolIdController.dispose();
     _fadeController.dispose();
     _slideController.dispose();
-    _qrController?.dispose();
+    _scannerController?.dispose();
     super.dispose();
-  }
-
-  @override
-  void reassemble() {
-    super.reassemble();
-    if (Platform.isAndroid) {
-      _qrController?.pauseCamera();
-    }
-    _qrController?.resumeCamera();
   }
 
   Future<void> _checkExistingClient() async {
@@ -737,15 +727,119 @@ class _ClientSelectionScreenState extends State<ClientSelectionScreen> with Tick
   Widget _buildQRScanner() {
     return Stack(
       children: [
-        QRView(
-          key: _qrKey,
-          onQRViewCreated: _onQRViewCreated,
-          overlay: QrScannerOverlayShape(
-            borderColor: Theme.of(context).primaryColor,
-            borderRadius: 12,
-            borderLength: 30,
-            borderWidth: 4,
-            cutOutSize: 200,
+        MobileScanner(
+          controller: _scannerController,
+          onDetect: _onQRDetected,
+        ),
+        // Custom overlay
+        Center(
+          child: Container(
+            width: 250,
+            height: 250,
+            decoration: BoxDecoration(
+              border: Border.all(
+                color: Theme.of(context).primaryColor,
+                width: 3,
+              ),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Stack(
+              children: [
+                // Corner decorations
+                Positioned(
+                  top: -2,
+                  left: -2,
+                  child: Container(
+                    width: 30,
+                    height: 30,
+                    decoration: BoxDecoration(
+                      border: Border(
+                        top: BorderSide(
+                          color: Theme.of(context).primaryColor,
+                          width: 4,
+                        ),
+                        left: BorderSide(
+                          color: Theme.of(context).primaryColor,
+                          width: 4,
+                        ),
+                      ),
+                      borderRadius: const BorderRadius.only(
+                        topLeft: Radius.circular(12),
+                      ),
+                    ),
+                  ),
+                ),
+                Positioned(
+                  top: -2,
+                  right: -2,
+                  child: Container(
+                    width: 30,
+                    height: 30,
+                    decoration: BoxDecoration(
+                      border: Border(
+                        top: BorderSide(
+                          color: Theme.of(context).primaryColor,
+                          width: 4,
+                        ),
+                        right: BorderSide(
+                          color: Theme.of(context).primaryColor,
+                          width: 4,
+                        ),
+                      ),
+                      borderRadius: const BorderRadius.only(
+                        topRight: Radius.circular(12),
+                      ),
+                    ),
+                  ),
+                ),
+                Positioned(
+                  bottom: -2,
+                  left: -2,
+                  child: Container(
+                    width: 30,
+                    height: 30,
+                    decoration: BoxDecoration(
+                      border: Border(
+                        bottom: BorderSide(
+                          color: Theme.of(context).primaryColor,
+                          width: 4,
+                        ),
+                        left: BorderSide(
+                          color: Theme.of(context).primaryColor,
+                          width: 4,
+                        ),
+                      ),
+                      borderRadius: const BorderRadius.only(
+                        bottomLeft: Radius.circular(12),
+                      ),
+                    ),
+                  ),
+                ),
+                Positioned(
+                  bottom: -2,
+                  right: -2,
+                  child: Container(
+                    width: 30,
+                    height: 30,
+                    decoration: BoxDecoration(
+                      border: Border(
+                        bottom: BorderSide(
+                          color: Theme.of(context).primaryColor,
+                          width: 4,
+                        ),
+                        right: BorderSide(
+                          color: Theme.of(context).primaryColor,
+                          width: 4,
+                        ),
+                      ),
+                      borderRadius: const BorderRadius.only(
+                        bottomRight: Radius.circular(12),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
         Positioned(
@@ -773,46 +867,60 @@ class _ClientSelectionScreenState extends State<ClientSelectionScreen> with Tick
   }
 
   void _startQRScanning() {
+    _scannerController = MobileScannerController(
+      detectionSpeed: DetectionSpeed.normal,
+      facing: CameraFacing.back,
+      torchEnabled: false,
+    );
+
     setState(() {
       _isQRScanning = true;
       _qrResult = null;
+      _scannerReady = false;
     });
   }
 
-  void _stopQRScanning() {
-    _qrController?.pauseCamera();
+  void _stopQRScanning() async {
+    await _scannerController?.stop();
+    _scannerController?.dispose();
+    _scannerController = null;
+
     setState(() {
       _isQRScanning = false;
+      _scannerReady = false;
     });
   }
 
-  void _toggleFlash() {
-    _qrController?.toggleFlash();
+  void _toggleFlash() async {
+    await _scannerController?.toggleTorch();
   }
 
-  void _onQRViewCreated(QRViewController controller) {
-    setState(() => _qrController = controller);
+  void _onQRDetected(BarcodeCapture capture) {
+    final List<Barcode> barcodes = capture.barcodes;
 
-    controller.scannedDataStream.listen((scanData) {
-      if (scanData.code != null && scanData.code!.isNotEmpty) {
-        // Pause the camera to prevent multiple scans
-        controller.pauseCamera();
+    if (barcodes.isEmpty) return;
 
-        setState(() {
-          _qrResult = scanData.code;
-          _isQRScanning = false;
-        });
+    final String? code = barcodes.first.rawValue;
 
-        // Provide haptic feedback
-        HapticFeedback.mediumImpact();
+    if (code != null && code.isNotEmpty && _scannerReady == false) {
+      // Prevent multiple scans
+      setState(() {
+        _qrResult = code;
+        _scannerReady = true;
+      });
 
-        // Show success message
-        _showSnackbar('QR Code scanned successfully!');
+      // Stop scanning
+      _stopQRScanning();
 
-        // Process the scanned data
-        _processQRResult(scanData.code!);
-      }
-    });
+      // Provide haptic feedback
+      HapticFeedback.mediumImpact();
+
+      // Show success message
+      _showSnackbar('QR Code scanned successfully!');
+
+      // Process the scanned data
+      _processQRResult(code);
+    }
   }
 
   void _processQRResult(String qrData) {
