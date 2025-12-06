@@ -1,7 +1,7 @@
 class Constants {
-  static String baseUrl = "http://103.14.121.216:8080/api/v1";
-  static const String prodBaseUrl = 'http://103.14.121.216:8080/api/v1'; //Zoho Catalyst
-  static const String mockBaseUrl = 'http://103.14.121.216:8080/api/v1'; //ApiDog
+  static String baseUrl = "https://manisankarsms.co.in/api/v1";
+  static const String prodBaseUrl = 'https://manisankarsms.co.in/api/v1'; //Zoho Catalyst
+  static const String mockBaseUrl = 'https://manisankarsms.co.in/api/v1'; //ApiDog
 
   // Tenant/Client ID
   static String tenantId = '';
